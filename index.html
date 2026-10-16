@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/student/svg/xvs-logo.svg" />
+  <link rel="apple-touch-icon" href="/student/icons/apple-touch-icon.png" />
+  <!-- The manifest sits at a fixed address so the per-school one the backend
+       serves can take its place without a rebuild. -->
+  <link rel="manifest" href="/student/manifest.webmanifest" />
+  <meta name="theme-color" content="#4A659D" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>XVS Student</title>
+</head>
+
+<body>
+  <!-- The boot screen: shown from the first paint until React mounts. -->
+  <div id="root">
+    <div style="display:flex;min-height:100vh;align-items:center;justify-content:center;background:#F9FAFB">
+      <img src="/student/svg/xvs-loading.svg" width="160" height="203" alt="Loading" />
+    </div>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>
