@@ -38,24 +38,35 @@ order.
 
 ### 1. A static site for this app
 
-A new Render **Static Site** per environment, from `codextechhub/student-fe`:
+A Render **Static Site** per environment, from `codextechhub/student-fe`, in
+the My works project beside that environment's school-fe site:
 
 | Setting | Staging | Production |
 | --- | --- | --- |
+| Name | `xvs-student-staging-fe` | `xvs-prod-student` |
 | Branch | `staging` | `production` |
 | Build command | `npm ci && npm run build` | same |
 | Publish directory | `dist` | same |
-| `VITE_BACKEND_URL` | the staging API, ending `/v1` | `https://api.codexng.com/v1` |
-| Auto-deploy | on | off (deployed by hand, as school-fe is) |
+| `VITE_BACKEND_URL` | `https://api-staging.codexng.com/v1` | `https://api.codexng.com/v1` |
+| `VITE_APP_BASE_DOMAIN` | `xvs-staging.codexng.com` | `xvs.codexng.com` |
+| `VITE_CSRF_COOKIE_NAME` | `csrftoken_staging` | `csrftoken` |
+| Auto-deploy | on commit | off (deployed by hand, as school-fe is) |
+
+The last two variables must match that environment's school-fe and API. The
+base domain is how the app reads the school off its address: built without
+it, every staging address reads as "no school". The cookie name is the API's
+`CSRF_COOKIE_NAME`; staging and production share `.codexng.com`, so staging's
+has its own name.
 
 Under **Redirects/Rewrites**, one rule: Rewrite `/*` to `/index.html`. A
 file that exists is served first, so this only catches the app's own routes
 on a refresh.
 
-Under **Headers**, `Cache-Control: no-cache` on `/sw.js` and on
-`/index.html`, so a new version reaches phones on their next open rather than
-whenever a cache lets go. Everything under `/assets/` is named by its content
-and may be cached for good.
+Under **Headers**: `Cache-Control: no-cache` on `/sw.js` and `/index.html`,
+so a new version reaches phones on their next open, and
+`Content-Type: application/manifest+json` on `/manifest.webmanifest`, which
+Render otherwise sends as a plain download. Everything under `/assets/` is
+named by its content and may be cached for good.
 
 ### 2. Two rules on school-fe's static site
 
@@ -66,8 +77,8 @@ otherwise answer `/student/` with school-fe's page):
 
 | Type | Source | Destination |
 | --- | --- | --- |
-| Rewrite | `/student/app/*` | `<API>/v1/portal/student/app/*` |
-| Rewrite | `/student/*` | `https://<this app's static site>.onrender.com/*` |
+| Rewrite | `/student/app/*` | `https://api-staging.codexng.com/v1/portal/student/app/*` (production: `https://api.codexng.com/...`) |
+| Rewrite | `/student/*` | `https://xvs-student-staging-fe.onrender.com/*` (production: `https://xvs-prod-student.onrender.com/*`) |
 
 The first passes the school's own manifest and crest icons through from the
 API. The app asks for `/student/app/<slug>/manifest.webmanifest` on its own
