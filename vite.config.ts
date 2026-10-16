@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import path from "path";
-import { defineConfig } from "vite";
+import { defineConfig, type ProxyOptions } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
@@ -27,12 +28,55 @@ import { workboxOptions } from "./pwa.config";
  */
 const devApiTarget = process.env.DEV_API_TARGET ?? "http://localhost:8000";
 
+/**
+ * `/student/manifest.webmanifest` is the school's own manifest (its name, and
+ * icons drawn from its crest), which the backend serves per school.
+ *
+ * In production the host passes the address through to
+ * `/v1/portal/student/app/<slug>/manifest.webmanifest`, with the slug taken
+ * from the school's address. This does the same in development, reading the
+ * slug from the Host header (`lagoon-view.localhost:5175`), and answers with the
+ * app's own XVS manifest in `public/` when the backend cannot be reached or
+ * the address names no school.
+ */
+const fallbackManifest = () => readFileSync(path.resolve(__dirname, "public/manifest.webmanifest"));
+
+const schoolManifest: ProxyOptions = {
+  target: devApiTarget,
+  changeOrigin: false,
+  configure: (proxy) => {
+    proxy.on("proxyReq", (proxyReq, req) => {
+      const host = (req.headers.host ?? "").split(":")[0].toLowerCase();
+      const slug = host.endsWith(".localhost") ? host.slice(0, -".localhost".length) : "";
+      proxyReq.path = `/v1/portal/student/app/${encodeURIComponent(slug || "_")}/manifest.webmanifest`;
+    });
+    proxy.on("proxyRes", (proxyRes, _req, res) => {
+      if ((proxyRes.statusCode ?? 500) < 400) {
+        res.writeHead(proxyRes.statusCode ?? 200, proxyRes.headers);
+        proxyRes.pipe(res);
+        return;
+      }
+      proxyRes.resume();
+      res.writeHead(200, { "Content-Type": "application/manifest+json" });
+      res.end(fallbackManifest());
+    });
+    proxy.on("error", (_error, _req, res) => {
+      if ("writeHead" in res && !res.headersSent) {
+        res.writeHead(200, { "Content-Type": "application/manifest+json" });
+        res.end(fallbackManifest());
+      }
+    });
+  },
+  selfHandleResponse: true,
+};
+
 export default defineConfig({
   base: "/student/",
   server: {
     port: 5175,
     strictPort: true,
     proxy: {
+      "/student/manifest.webmanifest": schoolManifest,
       "/v1": { target: devApiTarget, changeOrigin: false },
       "/media": { target: devApiTarget, changeOrigin: false },
     },

@@ -8,7 +8,10 @@ import "@fontsource-variable/geist/index.css";
 import "@fontsource-variable/geist-mono/index.css";
 
 import App from "./App";
+import { applySchoolTouchIcon } from "./lib/touch-icon";
 import { store } from "./redux/store";
+
+void applySchoolTouchIcon();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
