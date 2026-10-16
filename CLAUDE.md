@@ -66,3 +66,7 @@ belongs in both.
   `npm test`, `npx vite build`. CI runs the same four.
 - Test pupils come from the backend's `seed_student_portal_scenarios`; the
   plan lists who signs in as whom.
+- Releasing: `./deploy-staging.sh` puts main on staging; `./release.sh
+  promote` moves staging to production with a version tag, `rollback <tag>`
+  steps back. Both are school-fe's scripts, kept in step with them. Commit
+  only to main.
