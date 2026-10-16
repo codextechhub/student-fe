@@ -34,8 +34,11 @@ the backend documents win: they record the owner's later decisions.
    an offline bar. Paying and edits wait for a connection.
 8. Phone and tablet layouts are derived from the desktop design: bottom tabs,
    full-screen sheets, pull to refresh. The owner reviews them on a phone.
-9. Tablet upright is the phone app; tablet sideways is a desktop-style side
-   rail, with two panes where they help (notices, fees).
+9. **Navigation is a floating tab bar at every size** (owner, 16 October
+   2026, replacing a side rail on a sideways tablet and desktop): a frosted
+   pill above the bottom edge with the screen showing raised inside it, More
+   once there are too many tabs. Content may still use two panes where they
+   help (notices, fees) on wide screens.
 10. Messages and Assignments are not built, and are hidden.
 11. **Paying offers two choices, Card and Bank transfer.** Card goes to
     Paystack's own page (OPay is only what Paystack offers there) and comes
@@ -357,11 +360,10 @@ school-fe sends a pupil straight to the student app's sign-in after it.
 
 ### Phase 3: shell, Home, Notices, Profile
 
-- **Shell:** desktop sidebar of the screens built so far; on a phone and an
-  upright tablet, bottom tabs with a More sheet; sideways tablet, the side
-  rail. Header from `me/`; the branch line recedes where `show_branch` is
-  false. Pull to refresh. The offline bar and "Last updated" from the
-  per-pupil offline copy.
+- **Shell:** the floating tab bar of the screens built so far, at every size,
+  with a More sheet once there are more than five. Header from `me/`; the
+  branch line recedes where `show_branch` is false. Pull to refresh. The
+  offline bar and "Last updated" from the per-pupil offline copy.
 - **Home:** the five blocks, each with its own unavailable state; links only
   to screens already built.
 - **Notices:** list and detail (two panes on a sideways tablet), mark read,
@@ -369,6 +371,22 @@ school-fe sends a pupil straight to the student app's sign-in after it.
 - **Profile:** both blocks, phone and email edits with the server's per-field
   refusals, photo change and remove behind `photo_editable`; edits disabled
   offline.
+
+**Done 16 October 2026.** Driven in the browser as Adaeze and Femi at 390px,
+an upright tablet (820), a sideways tablet (1180) and a desktop (1440): Home's
+five blocks, including an unpublished timetable, a free period, a pupil not on
+today's register and no register yet this term; notices as a list then a
+notice on a phone and two panes on wide screens, marked read with the badge
+clearing; a refused phone number shown under its box, a saved one, a photo
+uploaded and removed; and, with every request failing, Home and Profile shown
+from the pupil's copy under "You're offline. Last updated 1:15pm." with
+editing off, clearing on reconnecting.
+
+Found while driving it, fixed: the pupil's photograph is served only with the
+pupil's token, so a plain image showed initials; photos are now fetched with
+the token (and only the showing pupil's, so the switcher shows siblings'
+initials). The switcher's saved name and photo went stale after a change and
+now follow `me/`.
 
 ### Phase 4: Timetable and Attendance
 

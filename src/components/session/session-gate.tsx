@@ -7,6 +7,7 @@ import { SchoolMark } from "@/components/school-mark";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { sessionSettled } from "@/redux/features/session-slice";
+import { ALL_TAGS, baseApi } from "@/redux/services/base-api";
 import { useSchoolNameQuery } from "@/redux/services/school-api";
 import { schoolLogoUrl } from "@/utils/school-brand";
 import { currentSchoolSlug } from "@/utils/school-host";
@@ -25,6 +26,12 @@ export function SessionBoot({ children }: { children: ReactNode }) {
   useEffect(() => {
     dispatch(bootSession());
   }, [dispatch]);
+  // Back online: read everything on screen again, which also clears the offline bar.
+  useEffect(() => {
+    const again = () => dispatch(baseApi.util.invalidateTags([...ALL_TAGS]));
+    window.addEventListener("online", again);
+    return () => window.removeEventListener("online", again);
+  }, [dispatch]);
   return <>{children}</>;
 }
 
@@ -37,7 +44,7 @@ export function SignedIn({ children }: { children: ReactNode }) {
   if (status !== "signed-in" || !active) {
     return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />;
   }
-  return <div key={active}>{children}</div>;
+  return <div key={active} className="contents">{children}</div>;
 }
 
 function Booting() {

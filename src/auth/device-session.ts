@@ -1,5 +1,7 @@
 import type { ThunkDispatch, UnknownAction } from "@reduxjs/toolkit";
 
+import { wipePupil } from "@/offline/offline-copy";
+import { wentOffline } from "@/redux/features/connectivity-slice";
 import { sessionSettled, type SessionState } from "@/redux/features/session-slice";
 import { baseApi } from "@/redux/services/base-api";
 import type { Me } from "@/redux/services/portal-api";
@@ -128,6 +130,7 @@ async function forget(account: string): Promise<string> {
   const pupil = (await listPupils()).find((p) => p.account === account);
   dropAccess(account);
   await deletePupil(account);
+  await wipePupil(account);
   return pupil?.firstName
     ? `${pupil.firstName} was signed out on this phone. Sign in again to carry on.`
     : "";
@@ -138,8 +141,9 @@ async function forget(account: string): Promise<string> {
  * pupil used last (or the first on the phone) whose sign-in still works.
  *
  * A pupil whose sign-in has ended is taken off and the next one tried. If the
- * school cannot be reached, nobody is taken off and the app says it is
- * offline rather than asking anyone to sign in again.
+ * school cannot be reached, nobody is taken off: a pupil already on the phone
+ * is opened on their offline copy, read-only, and only a sign-in handed across
+ * with nothing kept yet waits on the "can't reach your school" screen.
  */
 export const bootSession = () => async (dispatch: Dispatch) => {
   let handedOver: string | null = null;
@@ -158,9 +162,15 @@ export const bootSession = () => async (dispatch: Dispatch) => {
 
   let notice = "";
   let unreachable = false;
+  const known = new Set((await listPupils()).map((p) => p.account));
   for (const account of [...new Set(order)]) {
     const me = await fetchMe(account);
     if (me === "unreachable") {
+      if (known.has(account)) {
+        dispatch(wentOffline());
+        await show(dispatch, account, notice);
+        return;
+      }
       unreachable = true;
       continue;
     }
@@ -248,7 +258,8 @@ export const switchPupil =
         return { ok: false, message: notice };
       }
       if (!outcome.ok) {
-        return { ok: false, message: "We can't reach your school right now. Try again in a moment." };
+        // No signal: open the pupil on their offline copy, read-only.
+        dispatch(wentOffline());
       }
     }
     await show(dispatch, account, notice);
@@ -265,6 +276,7 @@ export const signOutPupil =
     await authPost("/user/auth/device/sign-out/", { account });
     dropAccess(account);
     await deletePupil(account);
+    await wipePupil(account);
     if (getState().session.active !== account) {
       const { status, active } = getState().session;
       dispatch(sessionSettled({ status, pupils: await listPupils(), active }));
@@ -296,4 +308,31 @@ export const endPupil =
       if (opened.ok) return;
     }
     await showNobody(dispatch, notice);
+  };
+
+/**
+ * Brings the showing pupil's saved name and photo up to date with `me/`.
+ *
+ * The switcher shows what was saved when the pupil signed in. A photo changed
+ * or removed since, or a name the school corrected, would otherwise stay
+ * stale on the phone until the pupil signed in again.
+ */
+export const refreshShowingPupil =
+  (me: Me) =>
+  async (dispatch: Dispatch, getState: GetState): Promise<void> => {
+    const { active, status } = getState().session;
+    if (!active) return;
+    const saved = (await listPupils()).find((p) => p.account === active);
+    const fresh = pupilFrom(active, me);
+    if (
+      saved &&
+      saved.fullName === fresh.fullName &&
+      saved.firstName === fresh.firstName &&
+      saved.photo === fresh.photo
+    ) {
+      return;
+    }
+    await putPupil(fresh);
+    if (getState().session.active !== active) return;
+    dispatch(sessionSettled({ status, pupils: await listPupils(), active }));
   };

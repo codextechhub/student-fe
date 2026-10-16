@@ -1,0 +1,9 @@
+/* The app's own page-level rules, kept out of index.css, which is school-fe's
+   stylesheet copied as it is. */
+
+/* The browser's pull-to-reload would reload the page and drop each pupil's
+   in-memory sign-in; the app's own pull to refresh replaces it. */
+html,
+body {
+  overscroll-behavior-y: none;
+}

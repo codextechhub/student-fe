@@ -1,0 +1,60 @@
+/**
+ * How the app writes money, dates and times.
+ *
+ * Money arrives in kobo and is shown in naira with two decimals. A calendar
+ * date ("2026-10-16") is read as written, never through `new Date()`, which
+ * takes it as UTC midnight and can name the day before. Times of day
+ * ("08:00:00") are clock readings at the school, shown as "8:00".
+ */
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+const naira = new Intl.NumberFormat("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** "₦11,687.50" from 1168750 kobo. */
+export function formatNaira(kobo: number): string {
+  const sign = kobo < 0 ? "-" : "";
+  return `${sign}₦${naira.format(Math.abs(kobo) / 100)}`;
+}
+
+function parts(value: string): { y: number; m: number; d: number } | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value || "");
+  if (!match) return null;
+  return { y: Number(match[1]), m: Number(match[2]), d: Number(match[3]) };
+}
+
+/** "16 Oct 2026" from "2026-10-16" (or the date part of a timestamp read in the school's day). */
+export function formatDate(value: string): string {
+  const p = parts(value);
+  return p ? `${p.d} ${MONTHS[p.m - 1]} ${p.y}` : "";
+}
+
+/** "Friday, 16 Oct 2026". */
+export function formatLongDate(value: string): string {
+  const p = parts(value);
+  if (!p) return "";
+  const weekday = WEEKDAYS[new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay()];
+  return `${weekday}, ${p.d} ${MONTHS[p.m - 1]} ${p.y}`;
+}
+
+/** "16 Oct 2026" for a timestamp, on the reader's own calendar. */
+export function formatTimestampDate(value: string): string {
+  const at = new Date(value);
+  if (Number.isNaN(at.getTime())) return "";
+  return `${at.getDate()} ${MONTHS[at.getMonth()]} ${at.getFullYear()}`;
+}
+
+/** "8:00" from "08:00:00". */
+export function formatClock(value: string): string {
+  const match = /^(\d{1,2}):(\d{2})/.exec(value || "");
+  return match ? `${Number(match[1])}:${match[2]}` : "";
+}
+
+/** "7:12am" for a moment, as the offline bar says when the data was last read. */
+export function formatTimeOfDay(at: number): string {
+  const when = new Date(at);
+  const hours = when.getHours();
+  const minutes = String(when.getMinutes()).padStart(2, "0");
+  return `${hours % 12 || 12}:${minutes}${hours < 12 ? "am" : "pm"}`;
+}

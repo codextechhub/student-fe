@@ -2,6 +2,8 @@ import "fake-indexeddb/auto";
 import { configureStore, type Middleware, type UnknownAction } from "@reduxjs/toolkit";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { wipePupil, keepAnswer, keptAnswer, resetOfflineCopyForTests } from "@/offline/offline-copy";
+import { connectivityReducer } from "@/redux/features/connectivity-slice";
 import { sessionReducer } from "@/redux/features/session-slice";
 import { baseApi } from "@/redux/services/base-api";
 
@@ -66,7 +68,11 @@ function makeStore() {
     return next(action);
   };
   const store = configureStore({
-    reducer: { session: sessionReducer, [baseApi.reducerPath]: baseApi.reducer },
+    reducer: {
+      session: sessionReducer,
+      connectivity: connectivityReducer,
+      [baseApi.reducerPath]: baseApi.reducer,
+    },
     middleware: (d) => d().prepend(record).concat(baseApi.middleware),
   });
   return { store, seen };
@@ -74,6 +80,8 @@ function makeStore() {
 
 beforeEach(async () => {
   resetPupilsStoreForTests();
+  resetOfflineCopyForTests();
+  for (const account of Object.keys(PUPILS)) await wipePupil(account);
   for (const p of await listPupils()) await deletePupil(p.account);
   await setActiveAccount(null);
   for (const account of Object.keys(PUPILS)) dropAccess(account);
@@ -119,15 +127,26 @@ describe("opening the app", () => {
     expect(session.notice).toContain("Femi was signed out on this phone");
   });
 
-  it("signs nobody out when the school cannot be reached", async () => {
+  it("with no signal, opens the pupil already on the phone on their offline copy and signs nobody out", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => {
       throw new TypeError("Failed to fetch");
     }));
     await putPupil(pupil("a-ebere"));
     const { store } = makeStore();
     await store.dispatch(bootSession());
-    expect(store.getState().session.status).toBe("unreachable");
+    expect(store.getState().session).toMatchObject({ status: "signed-in", active: "a-ebere" });
+    expect(store.getState().connectivity.offline).toBe(true);
     expect(await listPupils()).toHaveLength(1);
+  });
+
+  it("with no signal and nobody kept on the phone, says the school can't be reached", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new TypeError("Failed to fetch");
+    }));
+    sessionStorage.setItem(HANDOVER_KEY, "a-femi");
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    expect(store.getState().session.status).toBe("unreachable");
   });
 
   it("takes over a sign-in school-fe handed across", async () => {
@@ -210,6 +229,19 @@ describe("switching and signing out", () => {
     expect(session.pupils.map((p) => p.account)).toEqual(["a-femi"]);
     expect(accessFor("a-ebere")).toBe("");
     expect(calls.find((c) => c.key === "POST /user/auth/device/sign-out/")?.body).toEqual({ account: "a-ebere" });
+  });
+
+  it("signing a pupil out wipes their offline copy and leaves their sibling's", async () => {
+    api();
+    await putPupil(pupil("a-ebere"));
+    await putPupil(pupil("a-femi"));
+    await keepAnswer("a-ebere", "/portal/student/results/", { mine: "ebere" });
+    await keepAnswer("a-femi", "/portal/student/results/", { mine: "femi" });
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    await store.dispatch(signOutPupil("a-ebere"));
+    expect(await keptAnswer("a-ebere", "/portal/student/results/")).toBeNull();
+    expect((await keptAnswer("a-femi", "/portal/student/results/"))?.data).toEqual({ mine: "femi" });
   });
 
   it("the last pupil signing out goes to the sign-in screen", async () => {

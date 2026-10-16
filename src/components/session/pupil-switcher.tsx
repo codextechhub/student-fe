@@ -79,7 +79,8 @@ export function PupilSwitcher() {
                   onClick={() => choose(pupil.account)}
                   className="flex w-full min-w-0 items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-accent disabled:opacity-60"
                 >
-                  <PupilAvatar name={pupil.fullName} photo={pupil.photo} size={36} />
+                  {/* Only the showing pupil's photo can be fetched with the token in hand. */}
+                  <PupilAvatar name={pupil.fullName} photo={pupil.account === active ? pupil.photo : undefined} size={36} />
                   <span className="min-w-0 flex-1 truncate text-sm text-foreground">{pupil.fullName}</span>
                   {pupil.account === active && <Check className="size-4 shrink-0 text-primary" aria-label="Showing" />}
                 </button>

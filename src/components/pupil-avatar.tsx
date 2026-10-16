@@ -1,8 +1,16 @@
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { useAuthImageQuery } from "@/redux/services/portal-api";
 
-/** A pupil's photo, or their initials on the brand colour where there is none or it fails to load. */
+/**
+ * A pupil's photo, or their initials on the brand colour where there is none
+ * or it cannot be shown.
+ *
+ * The photograph is served only to the pupil it belongs to, so it is fetched
+ * with the showing pupil's token rather than linked; another pupil's photo on
+ * a shared phone therefore shows as their initials.
+ */
 export function PupilAvatar({
   name,
   photo,
@@ -15,6 +23,7 @@ export function PupilAvatar({
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
+  const { data: shown, isError } = useAuthImageQuery(photo ?? "", { skip: !photo });
   const initials = name
     .trim()
     .split(/\s+/)
@@ -23,10 +32,10 @@ export function PupilAvatar({
     .join("");
   const style = { width: size, height: size };
 
-  if (photo && !failed) {
+  if (photo && shown && !isError && !failed) {
     return (
       <img
-        src={photo}
+        src={shown}
         alt=""
         style={style}
         onError={() => setFailed(true)}

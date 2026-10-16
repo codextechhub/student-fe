@@ -2,6 +2,7 @@ import { configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
 
 import { endPupil } from "@/auth/device-session";
 
+import { connectivityReducer } from "./features/connectivity-slice";
 import { sessionEnded, sessionReducer } from "./features/session-slice";
 import { baseApi } from "./services/base-api";
 
@@ -20,7 +21,11 @@ listener.startListening({
 
 /** The app's one store; each feature's endpoints are injected into `baseApi`. */
 export const store = configureStore({
-  reducer: { session: sessionReducer, [baseApi.reducerPath]: baseApi.reducer },
+  reducer: {
+    session: sessionReducer,
+    connectivity: connectivityReducer,
+    [baseApi.reducerPath]: baseApi.reducer,
+  },
   middleware: (getDefault) => getDefault().prepend(listener.middleware).concat(baseApi.middleware),
 });
 

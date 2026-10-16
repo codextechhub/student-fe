@@ -45,9 +45,10 @@ belongs in both.
 - **school-fe hands pupils across.** Its sign-in page leaves the device account
   in sessionStorage under `xvs.student.handover` and opens `/student/`; both
   apps name that key and must agree.
-- **Phones are the main screen.** The layout is derived from the desktop design:
-  bottom tabs and full-screen sheets on a phone and an upright tablet, a side
-  rail on a sideways tablet and desktop. Horizontal page overflow is a bug.
+- **Phones are the main screen.** The layout is derived from the desktop design.
+  Navigation is the floating tab bar at every size, desktop included (the
+  owner's choice); sheets come up from the bottom on a phone; wide screens may
+  split a screen into two panes. Horizontal page overflow is a bug.
 - **Money comes from the API as kobo.** Never compute a balance the API can
   give; after a payment, read `fees/` again.
 

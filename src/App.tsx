@@ -1,9 +1,13 @@
 import { BrowserRouter, Route, Routes } from "react-router";
+import { Toaster } from "sonner";
 
 import { SessionBoot, SignedIn } from "@/components/session/session-gate";
+import { AppShell } from "@/components/shell/app-shell";
 import { UpdateBar } from "@/components/update-bar";
 import { HomePage } from "@/pages/home";
+import { NoticesPage } from "@/pages/notices";
 import { NotFoundPage } from "@/pages/not-found";
+import { ProfilePage } from "@/pages/profile";
 import { SignInPage } from "@/pages/sign-in";
 
 /**
@@ -11,8 +15,8 @@ import { SignInPage } from "@/pages/sign-in";
  *
  * The router's basename matches Vite's `base`, so a route written here as
  * `/fees` is served at `/student/fees` and never collides with a school-fe
- * address on the same origin. Every screen but sign-in is for a signed-in
- * pupil and remounts when the pupil showing changes.
+ * address on the same origin. Every screen but sign-in sits in the app shell,
+ * for a signed-in pupil, and remounts when the pupil showing changes.
  */
 export default function App() {
   return (
@@ -21,17 +25,22 @@ export default function App() {
         <Routes>
           <Route path="/sign-in" element={<SignInPage />} />
           <Route
-            path="/"
             element={
               <SignedIn>
-                <HomePage />
+                <AppShell />
               </SignedIn>
             }
-          />
+          >
+            <Route index element={<HomePage />} />
+            <Route path="notices" element={<NoticesPage />} />
+            <Route path="notices/:id" element={<NoticesPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+          </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </SessionBoot>
       <UpdateBar />
+      <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>
   );
 }
