@@ -312,7 +312,22 @@ per-school manifest exists).
 
 ### Phase 2: signing in, several pupils, signing out
 
-Waits for the backend's session routes.
+The backend's routes are built (backend `5bfa0543`, `8a8aea02`). Every call
+carries cookies, an `X-CSRFToken` from `GET /v1/user/auth/csrf/`, and, once
+signed in, `Authorization: Bearer <access>` with `?tenant=<slug>`.
+
+| Call | Body | Answers |
+|---|---|---|
+| `POST /v1/user/auth/login/` | `{identifier, password, tenant, session: "device"}` | 200 with `account` (32 hex), `access` (15 minutes), `user`, `school`; the credential is an httpOnly cookie `device_session_<account>` on `/v1/user/auth/`, lasting the school's `session_days` (default 30). No refresh token in the body. 403 `DEVICE_SESSION_NOT_OFFERED` for a staff account: send them to the school's main sign-in. Otherwise the usual 401 `INVALID_CREDENTIALS` and 403 not activated, locked, suspended, deactivated. |
+| `POST /v1/user/auth/device/refresh/` | `{account}` | 200 `{access, account, session_id}`, cookie rotated and its days restarted. 409 `TOKEN_STALE` (in `error.error_code`): another window refreshed first, the cookie is untouched, ask again. 401 `TOKEN_EXPIRED` / `TOKEN_REVOKED` / `TOKEN_INVALID`: the cookie is cleared, drop that pupil and show sign-in. |
+| `POST /v1/user/auth/device/sign-out/` | `{account}` | Always 200; ends that pupil on this phone only. The app wipes that pupil's offline copy itself. |
+| `POST /v1/user/auth/device/hand-over/` | none | From school-fe: a normal sign-in answers `device_app: {path: "/student/"}` for a pupil (null for staff); school-fe calls this, then goes to `app_path`. 200 `{account, access, session_id, app_path}`. |
+
+**Refreshing:** one refresh per pupil at a time, across every tab and window
+of the app: `navigator.locks.request("refresh:" + account)` around an in-tab
+promise, and on 409 `TOKEN_STALE` one retry after the lock. The switcher keeps
+only `{account, name, photo}` per pupil in IndexedDB; the photo comes from
+`me/`.
 
 - **In `student-fe`:** the sign-in screen; the pupil switcher; "Add another
   pupil"; "Sign out" (this pupil, this phone); the auth module refreshing per
