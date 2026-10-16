@@ -113,6 +113,69 @@ export type Profile = {
   editable: { phone: string; email: string };
 };
 
+/** One period in the week grid. */
+export type TimetableCell = {
+  start_time: string;
+  end_time: string;
+  kind: "LESSON" | "BREAK" | string;
+  label: string;
+  subject?: string;
+  teacher?: string;
+  room?: string;
+};
+
+export type Timetable = {
+  published: boolean;
+  class_name: string;
+  days: { day_of_week: number; day_label: string; is_today: boolean; cells: TimetableCell[] }[];
+  today: { date: string; periods: TodayPeriod[] } | null;
+};
+
+/** A term the pupil can look at attendance for. */
+export type AttendanceTerm = {
+  id: number;
+  name: string;
+  session_name: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+};
+
+/** One school day: marked (with its mark), not taken yet, closed, suspended, or before the pupil joined. */
+export type AttendanceDay = {
+  date: string;
+  state: "MARKED" | "NOT_TAKEN" | "CLOSED" | "SUSPENDED" | "NOT_ON_ROLL" | string;
+  mark: "P" | "L" | "A" | "E" | null;
+  arrived_at: string | null;
+  closed_reason: string | null;
+};
+
+export type AttendanceNote = {
+  date: string;
+  mark: "L" | "A" | "E";
+  mark_label: string;
+  reason_label: string | null;
+  note: string;
+  arrived_at: string | null;
+};
+
+export type Attendance = {
+  term: AttendanceTerm | null;
+  terms: AttendanceTerm[];
+  counts: {
+    present: number;
+    late: number;
+    absent: number;
+    excused: number;
+    not_taken: number;
+    opened: number;
+    rate: number | null;
+  };
+  days: AttendanceDay[];
+  notes: AttendanceNote[];
+  today: AttendanceDay | null;
+};
+
 const unwrap = <T,>(body: { data: T }) => body.data;
 
 /** The pupil portal's reads and the pupil's own few writes, all for the pupil showing. */
@@ -127,6 +190,16 @@ export const portalApi = baseApi.injectEndpoints({
       query: () => "/portal/student/home/",
       transformResponse: unwrap<Home>,
       providesTags: ["Home"],
+    }),
+    timetable: build.query<Timetable, void>({
+      query: () => "/portal/student/timetable/",
+      transformResponse: unwrap<Timetable>,
+      providesTags: ["Timetable"],
+    }),
+    attendance: build.query<Attendance, number | null>({
+      query: (term) => (term ? `/portal/student/attendance/?term=${term}` : "/portal/student/attendance/"),
+      transformResponse: unwrap<Attendance>,
+      providesTags: ["Attendance"],
     }),
     notices: build.query<NoticePage, number>({
       query: (page) => `/portal/student/notices/?page=${page}`,
@@ -203,6 +276,8 @@ export const portalApi = baseApi.injectEndpoints({
 export const {
   useMeQuery,
   useHomeQuery,
+  useTimetableQuery,
+  useAttendanceQuery,
   useNoticesQuery,
   useNoticeQuery,
   useMarkNoticeReadMutation,

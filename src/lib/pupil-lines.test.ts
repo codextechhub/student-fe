@@ -33,3 +33,17 @@ describe("how the app words attendance", () => {
     expect(rateLine(null)).toBe("No register has been taken this term yet.");
   });
 });
+
+describe("the next class", () => {
+  it("names the next lesson with its time and room, skipping a break", async () => {
+    const { nextLine } = await import("@/components/today-periods");
+    const period = (state: "done" | "now" | "next" | "later", kind = "LESSON", subject = "Maths") => ({
+      start_time: "09:30:00", end_time: "10:15:00", kind, label: "P", subject, room: "Science Lab", state,
+    });
+    expect(nextLine([period("done"), period("next", "LESSON", "Basic Science")])).toBe(
+      "Next: Basic Science, 9:30 · Science Lab",
+    );
+    expect(nextLine([period("next", "BREAK")])).toBe("");
+    expect(nextLine([period("done")])).toBe("");
+  });
+});

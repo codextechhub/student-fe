@@ -395,6 +395,17 @@ now follow `me/`.
 - **Attendance:** counts, rate and encouragement line, month calendars, days
   to note, excused and closed days, a term picker.
 
+**Done 16 October 2026.** Driven in the browser: Adaeze's published JSS1 A
+timetable as today's list and day tabs on a phone (today chosen) and a week
+grid on a desktop with today's column picked out and the break as one band;
+Femi's unpublished one says so. Ebere's attendance (backend `d8463a89` gave
+her an absent, a late at 8:20 and an excused day this term) shows 71% with
+the "talk to your class teacher" wording, the counts, month calendars and the
+three days to note; last year's Third Term opens from the term picker. The tab
+bar holds all five screens; Results and Fees take their places on it when
+built, and the rest move under More (owner's choice: Home, Timetable,
+Results, Fees on the bar).
+
 ### Phase 5: Results and report cards
 
 - **This term:** tiles (position only where the school ranks, class average

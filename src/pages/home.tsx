@@ -3,7 +3,8 @@ import { Link } from "react-router";
 
 import { PageShell } from "@/components/layout/page-shell";
 import { PupilAvatar } from "@/components/pupil-avatar";
-import { formatClock, formatDate, formatLongDate, formatNaira, formatTimestampDate } from "@/lib/format";
+import { TodayPeriods } from "@/components/today-periods";
+import { formatDate, formatLongDate, formatNaira, formatTimestampDate } from "@/lib/format";
 import { classLine, rateLine, todayLine } from "@/lib/pupil-lines";
 import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
@@ -12,7 +13,6 @@ import {
   useHomeQuery,
   useMeQuery,
   type Home,
-  type TodayPeriod,
   type Unavailable,
 } from "@/redux/services/portal-api";
 
@@ -94,8 +94,6 @@ function UnavailableLine({ block }: { block: Unavailable }) {
   return <p className="text-xs text-muted-foreground">{block.message}</p>;
 }
 
-const STATE_BADGE: Record<TodayPeriod["state"], string> = { now: "Now", next: "Next", done: "Done", later: "" };
-
 function TodayCard({ block }: { block: Home["today"] }) {
   if (!block.available) {
     return (
@@ -104,65 +102,18 @@ function TodayCard({ block }: { block: Home["today"] }) {
       </Card>
     );
   }
-  if (!block.published) {
-    return (
-      <Card title="Today's classes">
-        <p className="text-xs text-muted-foreground">
-          Your class timetable hasn&apos;t been published yet.
-        </p>
-      </Card>
-    );
-  }
-  if (block.periods.length === 0) {
-    return (
-      <Card title="Today's classes">
-        <p className="text-xs text-muted-foreground">No classes today.</p>
-      </Card>
-    );
-  }
   return (
     <Card title="Today's classes">
-      <ol className="space-y-1">
-        {block.periods.map((period) => {
-          const isBreak = period.kind === "BREAK";
-          const highlight = period.state === "now" || period.state === "next";
-          const badge = STATE_BADGE[period.state];
-          return (
-            <li
-              key={`${period.start_time}-${period.label}`}
-              className={cn(
-                "flex min-w-0 items-center gap-3 rounded-lg px-2 py-2",
-                highlight && "bg-primary/10",
-                period.state === "done" && "opacity-60",
-              )}
-            >
-              <span className={cn("w-11 shrink-0 text-xs tabular-nums", highlight ? "text-primary" : "text-muted-foreground")}>
-                {formatClock(period.start_time)}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-foreground">
-                  {isBreak ? period.label : period.subject || "Free period"}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {isBreak
-                    ? `${formatClock(period.start_time)} to ${formatClock(period.end_time)}`
-                    : [period.teacher, period.room].filter(Boolean).join(" · ")}
-                </p>
-              </div>
-              {badge && (
-                <span
-                  className={cn(
-                    "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                    period.state === "done" ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground",
-                  )}
-                >
-                  {badge}
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ol>
+      {block.published ? (
+        <TodayPeriods periods={block.periods} />
+      ) : (
+        <p className="text-xs text-muted-foreground">Your class timetable hasn&apos;t been published yet.</p>
+      )}
+      {block.published && block.periods.length > 0 && (
+        <Link to="/timetable" className="mt-3 inline-block text-xs font-medium text-primary">
+          Full timetable
+        </Link>
+      )}
     </Card>
   );
 }
@@ -176,6 +127,9 @@ function AttendanceCard({ block }: { block: Home["attendance"] }) {
         <div className="space-y-1">
           {todayLine(block.today) && <p className="text-sm text-foreground">{todayLine(block.today)}</p>}
           <p className="text-xs text-muted-foreground">{rateLine(block.rate)}</p>
+          <Link to="/attendance" className="inline-block pt-2 text-xs font-medium text-primary">
+            Day by day
+          </Link>
         </div>
       )}
     </Card>

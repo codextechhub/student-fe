@@ -4,11 +4,13 @@ import { Toaster } from "sonner";
 import { SessionBoot, SignedIn } from "@/components/session/session-gate";
 import { AppShell } from "@/components/shell/app-shell";
 import { UpdateBar } from "@/components/update-bar";
+import { AttendancePage } from "@/pages/attendance";
 import { HomePage } from "@/pages/home";
 import { NoticesPage } from "@/pages/notices";
 import { NotFoundPage } from "@/pages/not-found";
 import { ProfilePage } from "@/pages/profile";
 import { SignInPage } from "@/pages/sign-in";
+import { TimetablePage } from "@/pages/timetable";
 
 /**
  * The student app's routes, all under `/student/`.
@@ -32,6 +34,8 @@ export default function App() {
             }
           >
             <Route index element={<HomePage />} />
+            <Route path="timetable" element={<TimetablePage />} />
+            <Route path="attendance" element={<AttendancePage />} />
             <Route path="notices" element={<NoticesPage />} />
             <Route path="notices/:id" element={<NoticesPage />} />
             <Route path="profile" element={<ProfilePage />} />

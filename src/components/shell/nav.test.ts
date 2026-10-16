@@ -3,23 +3,27 @@ import { describe, expect, it } from "vitest";
 
 import { itemFor, splitTabs, type NavItem } from "./nav";
 
-const make = (n: number): NavItem[] =>
-  Array.from({ length: n }, (_, i) => ({ key: "home", label: `S${i}`, path: `/s${i}`, icon: Home }));
+const item = (label: string, onBar = false): NavItem => ({ key: "home", label, path: `/${label}`, icon: Home, onBar });
 
-describe("the phone's tab bar", () => {
-  it("shows up to five destinations as tabs", () => {
-    expect(splitTabs(make(5))).toEqual({ tabs: make(5), more: [] });
+describe("the tab bar", () => {
+  it("shows every screen as a tab while there are five or fewer", () => {
+    const five = ["Home", "Timetable", "Attendance", "Notices", "Profile"].map((l) => item(l));
+    expect(splitTabs(five)).toEqual({ tabs: five, more: [] });
   });
 
-  it("keeps four tabs and puts the rest under More when there are more than five", () => {
-    const { tabs, more } = splitTabs(make(7));
-    expect(tabs.map((t) => t.label)).toEqual(["S0", "S1", "S2", "S3"]);
-    expect(more.map((t) => t.label)).toEqual(["S4", "S5", "S6"]);
+  it("keeps the chosen four and puts the rest under More once there are more than five", () => {
+    const all = [
+      item("Home", true), item("Timetable", true), item("Results", true), item("Attendance"),
+      item("Notices"), item("Fees", true), item("Profile"),
+    ];
+    const { tabs, more } = splitTabs(all);
+    expect(tabs.map((t) => t.label)).toEqual(["Home", "Timetable", "Results", "Fees"]);
+    expect(more.map((t) => t.label)).toEqual(["Attendance", "Notices", "Profile"]);
   });
 
-  it("names the screen a notice belongs to", () => {
+  it("names the screen a path belongs to", () => {
     expect(itemFor("/notices/12")?.key).toBe("notices");
     expect(itemFor("/")?.key).toBe("home");
-    expect(itemFor("/profile")?.key).toBe("profile");
+    expect(itemFor("/timetable")?.key).toBe("timetable");
   });
 });
