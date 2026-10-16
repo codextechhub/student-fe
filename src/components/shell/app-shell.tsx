@@ -100,6 +100,11 @@ const TAB =
 function TabBar({ badges }: { badges: Partial<Record<NavItem["key"], number>> }) {
   const { tabs, more } = splitTabs(NAV);
   const [moreOpen, setMoreOpen] = useState(false);
+  const { pathname } = useLocation();
+  // More stands for the screens under it: picked out when one is open, and
+  // carrying their unread counts so a new notice is not hidden behind it.
+  const moreShowing = more.some((item) => item.key === itemFor(pathname)?.key);
+  const moreCount = more.reduce((sum, item) => sum + (badges[item.key] ?? 0), 0);
   return (
     <nav
       aria-label="Screens"
@@ -137,8 +142,22 @@ function TabBar({ badges }: { badges: Partial<Record<NavItem["key"], number>> })
         })}
         {more.length > 0 && (
           <Dialog.Root open={moreOpen} onOpenChange={setMoreOpen}>
-            <Dialog.Trigger className={cn(TAB, "text-muted-foreground hover:text-foreground")}>
-              <MoreHorizontal className="size-5" />
+            <Dialog.Trigger
+              className={cn(
+                TAB,
+                moreShowing
+                  ? "bg-white font-medium text-primary shadow-sm ring-1 ring-black/5"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <span className="relative">
+                <MoreHorizontal className="size-5" />
+                {moreCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] leading-4 font-semibold text-primary-foreground">
+                    {moreCount > 9 ? "9+" : moreCount}
+                  </span>
+                )}
+              </span>
               More
             </Dialog.Trigger>
             <Dialog.Portal>

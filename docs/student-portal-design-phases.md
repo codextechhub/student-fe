@@ -419,6 +419,17 @@ Results, Fees on the bar).
   same layout as school-fe's `ReportCardSheet` and `YearBlock`; Download PDF
   prints through the browser, as the backend plan chose.
 
+**Done 16 October 2026.** Driven in the browser: Ebere's Third Term (tiles,
+each subject's component marks, grade and remark, the chart, the class
+teacher's remark) and the term picker; her full session (year average and
+position, "3 of 3", "Promoted to JSS2 A", the term strip, every subject across
+three terms with its annual grade and change on last term, the year's remark,
+next session) and the annual report card on its own page, drawn by
+school-fe's `ReportCardSheet` and set to print A4 portrait; Adaeze with one
+term released ("1 of 3", the year's summary still to come); Zainab's held term
+in the school's own words on both tabs, and her held card refused. The tab bar
+now holds Home, Timetable, Results and More, which carries the unread notices.
+
 ### Phase 6: Fees, receipts and paying
 
 - **Fees:** the "normally paid by your guardian" banner, totals, a card per

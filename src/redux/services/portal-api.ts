@@ -1,4 +1,5 @@
 import { baseApi } from "./base-api";
+import type { ReportCard } from "./report-card-types";
 
 /** The signed-in pupil, for the app's header and the switcher. */
 export type Me = {
@@ -176,6 +177,78 @@ export type Attendance = {
   today: AttendanceDay | null;
 };
 
+/** A term the pupil has a published result for: released, or held by the school. */
+export type ResultTerm = { id: number; name: string; session: string; state: "released" | "withheld" };
+
+/** One subject's result in a released term. */
+export type SubjectResult = {
+  name: string;
+  /** The main teacher, frozen when the card was published; null on older cards. */
+  teacher: string | null;
+  cells: { short_name: string; max_score: number | null; mark: number | string | null }[];
+  total: number | null;
+  obtainable: number | null;
+  percentage: string | null;
+  grade: string | null;
+  remark: string | null;
+};
+
+/**
+ * One term's result. `withheld` carries the school's sentence and no figures;
+ * `not_published` means nothing has been published for the pupil yet.
+ */
+export type TermResult = {
+  state: "released" | "withheld" | "not_published";
+  term: { id: number; name: string; session: string } | null;
+  terms: ResultTerm[];
+  message?: string;
+  released_at?: string;
+  class_name?: string;
+  components?: { short_name: string; max_score: number; is_exam: boolean }[];
+  subjects?: SubjectResult[];
+  summary?: {
+    overall_average: string | null;
+    subjects: number;
+    position?: number;
+    position_label?: string;
+    /** Only where the school shows class figures. */
+    class_average?: string;
+  };
+  teacher_comment?: string;
+  class_teacher?: string | null;
+  next_term_begins?: string | null;
+};
+
+/** The school year: each term's figures and, once the last term is released, the year's block. */
+export type SessionResults = {
+  state: "released" | "withheld" | "not_published";
+  session: { id: number; name: string } | null;
+  terms: (ResultTerm & {
+    released_at?: string;
+    average?: string | null;
+    position_label?: string;
+    class_average?: string;
+  })[];
+  terms_released?: number;
+  terms_total?: number;
+  cumulative: null | {
+    terms: { id: number; name: string }[];
+    subjects: {
+      name: string;
+      terms: { term: string; percentage: string | null }[];
+      annual_average: string | null;
+      annual_grade?: string | null;
+    }[];
+    annual_average: string | null;
+    annual_position_label?: string;
+    class_average?: string;
+    promotion: string | null;
+    remark: string;
+    class_teacher: string | null;
+  };
+  next_term_begins?: string | null;
+};
+
 const unwrap = <T,>(body: { data: T }) => body.data;
 
 /** The pupil portal's reads and the pupil's own few writes, all for the pupil showing. */
@@ -200,6 +273,21 @@ export const portalApi = baseApi.injectEndpoints({
       query: (term) => (term ? `/portal/student/attendance/?term=${term}` : "/portal/student/attendance/"),
       transformResponse: unwrap<Attendance>,
       providesTags: ["Attendance"],
+    }),
+    results: build.query<TermResult, number | null>({
+      query: (term) => (term ? `/portal/student/results/?term=${term}` : "/portal/student/results/"),
+      transformResponse: unwrap<TermResult>,
+      providesTags: ["Results"],
+    }),
+    sessionResults: build.query<SessionResults, void>({
+      query: () => "/portal/student/results/session/",
+      transformResponse: unwrap<SessionResults>,
+      providesTags: ["Results"],
+    }),
+    reportCard: build.query<ReportCard, number>({
+      query: (term) => `/portal/student/results/report-card/?term=${term}`,
+      transformResponse: unwrap<ReportCard>,
+      providesTags: ["Results"],
     }),
     notices: build.query<NoticePage, number>({
       query: (page) => `/portal/student/notices/?page=${page}`,
@@ -278,6 +366,9 @@ export const {
   useHomeQuery,
   useTimetableQuery,
   useAttendanceQuery,
+  useResultsQuery,
+  useSessionResultsQuery,
+  useReportCardQuery,
   useNoticesQuery,
   useNoticeQuery,
   useMarkNoticeReadMutation,

@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, CircleCheck, Home, User, type LucideIcon } from "lucide-react";
+import { Award, Bell, CalendarDays, CircleCheck, Home, User, type LucideIcon } from "lucide-react";
 
 /** One destination in the app's navigation. */
 export type NavItem = {
@@ -14,7 +14,7 @@ export type NavItem = {
  * The app's screens, in the design's order.
  *
  * Only built screens are listed: an item that opened nothing would look like a
- * working screen that does nothing. Results and Fees join as they are built;
+ * working screen that does nothing. Fees joins when it is built;
  * Messages and Assignments are not built.
  *
  * When there are more screens than the bar holds, the bar keeps Home,
@@ -24,6 +24,7 @@ export type NavItem = {
 export const NAV: NavItem[] = [
   { key: "home", label: "Home", path: "/", icon: Home, onBar: true },
   { key: "timetable", label: "Timetable", path: "/timetable", icon: CalendarDays, onBar: true },
+  { key: "results", label: "Results", path: "/results", icon: Award, onBar: true },
   { key: "attendance", label: "Attendance", path: "/attendance", icon: CircleCheck },
   { key: "notices", label: "Notices", path: "/notices", icon: Bell },
   { key: "profile", label: "Profile", path: "/profile", icon: User },

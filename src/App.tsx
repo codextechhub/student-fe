@@ -9,6 +9,8 @@ import { HomePage } from "@/pages/home";
 import { NoticesPage } from "@/pages/notices";
 import { NotFoundPage } from "@/pages/not-found";
 import { ProfilePage } from "@/pages/profile";
+import { ReportCardPage } from "@/pages/report-card";
+import { ResultsPage } from "@/pages/results";
 import { SignInPage } from "@/pages/sign-in";
 import { TimetablePage } from "@/pages/timetable";
 
@@ -35,6 +37,8 @@ export default function App() {
           >
             <Route index element={<HomePage />} />
             <Route path="timetable" element={<TimetablePage />} />
+            <Route path="results" element={<ResultsPage />} />
+            <Route path="results/card/:termId" element={<ReportCardPage />} />
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="notices" element={<NoticesPage />} />
             <Route path="notices/:id" element={<NoticesPage />} />
