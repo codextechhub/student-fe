@@ -338,6 +338,23 @@ only `{account, name, photo}` per pupil in IndexedDB; the photo comes from
   pages show the admission number where a pupil has no email (both show an
   empty "Email" field today).
 
+**Done 16 October 2026** (student-fe and school-fe `0168851`). Driven in
+the browser against the real API: Ebere signs in, Femi is added on the same
+phone, the two switch both ways, a reload opens the pupil used last, signing
+Ebere out leaves Femi signed in and showing, school-fe's sign-in hands Adaeze
+across to `/student/` and leaves school-fe with no session, and the reset and
+activation pages show "Signs in with: LV/2026/0030" and send a pupil to the
+student app's sign-in. At 390px nothing overflows, the switcher is a bottom
+sheet, and inputs are 16px.
+
+Found while driving it, fixed with tests: switching cleared the last pupil's
+reads, then waited on storage before making the next pupil active, and in that
+gap the still-mounted screen refetched the last pupil's details into the cache
+the next pupil's screen read ("Hi, Femi" on Ebere's screen). The switch now
+does its waiting first, and the request layer drops any answer that arrives
+after the pupil showing changed. Activation turned out to sign nobody in, so
+school-fe sends a pupil straight to the student app's sign-in after it.
+
 ### Phase 3: shell, Home, Notices, Profile
 
 - **Shell:** desktop sidebar of the screens built so far; on a phone and an

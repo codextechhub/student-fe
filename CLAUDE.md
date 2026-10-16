@@ -37,6 +37,14 @@ belongs in both.
   API sets. The app keeps only `{account, name, photo}` per pupil for the
   switcher. This app shares an origin with school-fe, so anything readable here
   is readable by school-fe's scripts too.
+- **Switching pupils is one step.** `auth/device-session.ts` owns every change
+  to who is showing: it does its waiting first, then clears the API cache and
+  sets the new pupil in the same tick, and the request layer drops any answer
+  that arrives after the pupil changed. Never set the active pupil anywhere
+  else.
+- **school-fe hands pupils across.** Its sign-in page leaves the device account
+  in sessionStorage under `xvs.student.handover` and opens `/student/`; both
+  apps name that key and must agree.
 - **Phones are the main screen.** The layout is derived from the desktop design:
   bottom tabs and full-screen sheets on a phone and an upright tablet, a side
   rail on a sideways tablet and desktop. Horizontal page overflow is a bug.
