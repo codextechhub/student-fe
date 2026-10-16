@@ -3,6 +3,7 @@ import { Link } from "react-router";
 
 import { PageShell } from "@/components/layout/page-shell";
 import { PupilAvatar } from "@/components/pupil-avatar";
+import { PushOffer } from "@/components/push-settings";
 import { TodayPeriods } from "@/components/today-periods";
 import { formatDate, formatLongDate, formatNaira, formatTimestampDate } from "@/lib/format";
 import { classLine, rateLine, todayLine } from "@/lib/pupil-lines";
@@ -23,7 +24,8 @@ import {
  * Every block is read in one call and arrives with `available`; a block the
  * school could not read shows the sentence it sent, never a zero, and the rest
  * still show. Messages and assignments are not built, so their blocks are not
- * drawn. Links appear only to screens that exist.
+ * drawn. Links appear only to screens that exist. A pupil not yet asked about
+ * notifications is offered them here, once.
  */
 export function HomePage() {
   const dispatch = useAppDispatch();
@@ -56,6 +58,8 @@ export function HomePage() {
           </div>
         </section>
       )}
+
+      <PushOffer />
 
       {isLoading && <div className="h-48 animate-pulse rounded-xl bg-muted" />}
       {isError && !home && (

@@ -1,6 +1,7 @@
 import type { ThunkDispatch, UnknownAction } from "@reduxjs/toolkit";
 
 import { wipePupil } from "@/offline/offline-copy";
+import { pushChoiceFor, setPushChoice } from "@/push/push-choice";
 import { wentOffline } from "@/redux/features/connectivity-slice";
 import { sessionSettled, type SessionState } from "@/redux/features/session-slice";
 import { baseApi } from "@/redux/services/base-api";
@@ -87,6 +88,9 @@ function pupilFrom(account: string, me: Me): DevicePupil {
  *
  * The same child signing in again gets a new device account, so an older entry
  * for the same pupil record is signed out and replaced, never listed twice.
+ * Their notifications choice moves to the new account; the school dropped the
+ * old account's subscription with it, and the new one is sent when they are
+ * shown.
  */
 async function adopt(account: string, me: Me): Promise<DevicePupil> {
   const pupil = pupilFrom(account, me);
@@ -95,6 +99,9 @@ async function adopt(account: string, me: Me): Promise<DevicePupil> {
       await authPost("/user/auth/device/sign-out/", { account: other.account });
       dropAccess(other.account);
       await deletePupil(other.account);
+      const choice = pushChoiceFor(other.account);
+      if (choice) setPushChoice(account, choice);
+      setPushChoice(other.account, null);
     }
   }
   await putPupil(pupil);
@@ -131,6 +138,7 @@ async function forget(account: string): Promise<string> {
   dropAccess(account);
   await deletePupil(account);
   await wipePupil(account);
+  setPushChoice(account, null);
   return pupil?.firstName
     ? `${pupil.firstName} was signed out on this phone. Sign in again to carry on.`
     : "";
@@ -138,7 +146,9 @@ async function forget(account: string): Promise<string> {
 
 /**
  * Opens the app: takes over a sign-in school-fe handed across, then opens the
- * pupil used last (or the first on the phone) whose sign-in still works.
+ * pupil a tapped notification named (`?pupil=`, when they are on this phone),
+ * else the pupil used last (or the first on the phone) whose sign-in still
+ * works.
  *
  * A pupil whose sign-in has ended is taken off and the next one tried. If the
  * school cannot be reached, nobody is taken off: a pupil already on the phone
@@ -154,15 +164,17 @@ export const bootSession = () => async (dispatch: Dispatch) => {
     handedOver = null;
   }
 
+  const known = new Set((await listPupils()).map((p) => p.account));
+  const requested = takeRequestedPupil();
   const order: string[] = [];
   if (handedOver) order.push(handedOver);
+  if (requested && known.has(requested)) order.push(requested);
   const last = await getActiveAccount();
   if (last) order.push(last);
   for (const pupil of await listPupils()) order.push(pupil.account);
 
   let notice = "";
   let unreachable = false;
-  const known = new Set((await listPupils()).map((p) => p.account));
   for (const account of [...new Set(order)]) {
     const me = await fetchMe(account);
     if (me === "unreachable") {
@@ -188,6 +200,23 @@ export const bootSession = () => async (dispatch: Dispatch) => {
   }
   await showNobody(dispatch, notice);
 };
+
+/**
+ * The pupil a tapped notification opened the app for, taken off the address
+ * so a reload or a shared link does not carry it.
+ */
+function takeRequestedPupil(): string | null {
+  try {
+    const url = new URL(window.location.href);
+    const requested = url.searchParams.get("pupil");
+    if (!requested) return null;
+    url.searchParams.delete("pupil");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    return requested;
+  } catch {
+    return null;
+  }
+}
 
 /** What the sign-in screen says for each refusal, in words a pupil can act on. */
 function refusalSentence(status: number, code: string, message: string): SignInResult {
@@ -267,6 +296,17 @@ export const switchPupil =
   };
 
 /**
+ * Shows the pupil a tapped notification is about, when they are on this
+ * phone; a notification for anybody else changes nothing.
+ */
+export const showPupilFromPush =
+  (account: string) =>
+  async (dispatch: Dispatch): Promise<void> => {
+    if (!(await listPupils()).some((pupil) => pupil.account === account)) return;
+    await dispatch(switchPupil(account));
+  };
+
+/**
  * Signs one pupil out of this phone. The others stay signed in, and the next
  * one on the list is shown, or the sign-in screen if there is none.
  */
@@ -277,6 +317,7 @@ export const signOutPupil =
     dropAccess(account);
     await deletePupil(account);
     await wipePupil(account);
+    setPushChoice(account, null);
     if (getState().session.active !== account) {
       const { status, active } = getState().session;
       dispatch(sessionSettled({ status, pupils: await listPupils(), active }));

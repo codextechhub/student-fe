@@ -16,6 +16,7 @@ import { ReceiptPage } from "@/pages/receipt";
 import { ReportCardPage } from "@/pages/report-card";
 import { ResultsPage } from "@/pages/results";
 import { SignInPage } from "@/pages/sign-in";
+import { PushListener } from "@/push/push-listener";
 import { TimetablePage } from "@/pages/timetable";
 
 /**
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </SessionBoot>
+      <PushListener />
       <UpdateBar />
       <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>

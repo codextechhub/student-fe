@@ -19,6 +19,10 @@ describe("service worker caching", () => {
     expect(denied("/media/students/photo.jpg")).toBe(true);
   });
 
+  it("loads the push handler into the worker", () => {
+    expect(workboxOptions.importScripts).toEqual(["push-sw.js"]);
+  });
+
   it("falls back only within the student app", () => {
     const allowed = (url: string) =>
       workboxOptions.navigateFallbackAllowlist.some((rule) => rule.test(url));

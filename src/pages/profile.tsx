@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { PupilAvatar } from "@/components/pupil-avatar";
+import { PushSetting } from "@/components/push-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/format";
@@ -33,7 +34,7 @@ const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
  * pupil's own phone and personal email can, and the server's refusal for a
  * value it cannot store is shown under its box. The photo can be changed or
  * removed only where the school lets pupils do that. Nothing can be changed
- * offline.
+ * offline. Notifications on this phone are turned on and off here too.
  */
 export function ProfilePage() {
   const { data: profile, isLoading, isError, refetch } = useProfileQuery();
@@ -65,6 +66,7 @@ export function ProfilePage() {
           </div>
         </>
       )}
+      <PushSetting />
     </PageShell>
   );
 }

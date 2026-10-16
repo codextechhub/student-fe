@@ -28,8 +28,9 @@ the backend documents win: they record the owner's later decisions.
    phone). Sign out ends that pupil on that phone only.
 5. The home-screen icon and name are the school's crest and name, falling back
    to the XVS crest, never the bare CodeX mark.
-6. Push notifications (Web Push) come later; the app launches without them.
-   What a push shows on a locked screen is still open.
+6. Push notifications (Web Push), ruled 16 October 2026: the backend sends
+   them with pywebpush, and a push says what happened and never shows a
+   figure (no marks, no amounts), because it can show on a locked screen.
 7. Offline: the last data seen, read-only, marked "Last updated 7:12am", under
    an offline bar. Paying and edits wait for a connection.
 8. Phone and tablet layouts are derived from the desktop design: bottom tabs,
@@ -161,7 +162,7 @@ agreed the shape and is building it.
 | Transfers applied to bills | **Absent, building** (last in the backend's queue) | per-school switch; deposits allocate by the school's receipt allocation setting |
 | Profile | **Served, not wired** | `GET/PATCH profile/`, `POST/DELETE profile/photo/` |
 | Notices | **Served, not wired** | `GET notices/`, `GET notices/{id}/`, `POST notices/{id}/read/`, `POST notices/read-all/` |
-| Push notifications | **Absent, building**; two owner decisions open | not to be built on yet |
+| Push notifications | **Served, wired** | `GET /notify/push/key/` (503 `PUSH_NOT_CONFIGURED` where there are no keys); `POST/DELETE /notify/push/subscriptions/` with `{endpoint, keys, account}`; payload `{title, body, tag, url, notification_id, account?}` |
 | Messages, Assignments | **Absent, parked** | hidden |
 
 **Bucket 3 (exists but closed) is empty.** The portal is closed to a school
@@ -473,9 +474,39 @@ FinPro v0.7.74 carries the auto-apply switch, moved in both apps.
 
 ### Phase 7: push notifications
 
-Waits for the backend's push channel and the owner's two open decisions (what
-a locked screen shows; the `pywebpush` dependency). Asks for permission only
-after a pupil's first sign-in, never on first load.
+- **Offer:** Home offers notifications once to each pupil who has not chosen,
+  after sign-in and never on first load; Turn on asks the browser's permission
+  from that tap, Not now puts the offer away. Profile keeps the setting: on,
+  off, blocked by the browser (only its settings undo that), or not available.
+- **Several pupils, one phone:** the browser holds one subscription and each
+  pupil who turns notifications on is remembered with the school for it.
+  Turning one off tells the school to stop for that pupil only; the browser's
+  subscription is never cancelled, because a sibling may still use it. A
+  pupil's choice is forgotten when they come off the phone, and carried over
+  when the same child signs in again.
+- **iPhone:** only the app added to the Home Screen gets notifications, so
+  there the offer says how to add it first, once per phone.
+- **Service worker:** `public/push-sw.js`, loaded into the generated worker,
+  shows the push as sent (the badge is the crest's silhouette) and on a tap
+  opens Notices, Results or Fees by the push's kind. When the push names the
+  pupil's device account, the app shows that pupil first: in the open app by
+  a message from the worker, or in a new window by `?pupil=`, which the app
+  takes off the address. A pupil who turned notifications on has the phone's
+  subscription re-sent each time they are shown, so a replaced subscription
+  or a changed key reaches the school.
+
+**Done 16 October 2026.** Driven in Chrome against the built app: Ebere and
+Femi signed in on one browser and each turned notifications on; the school
+held two rows on the one push endpoint, each with its own account. A real push
+for Femi's released result arrived through Chrome's push service as "Femi:
+Your Third Term result is ready", carrying his account. A tap while the app was
+open on Femi switched to the pupil it named and opened Results, and a cold
+start at `results?pupil=` opened Femi's Results with the parameter gone. Femi
+turning off removed his row only; Ebere's stayed and the browser's
+subscription was untouched. The offer at 390px and desktop, and Not now held
+across a reload. Not driven: an iPhone (the install steps are unit-checked
+only) and a click on the system notification itself, which the worker's tests
+cover.
 
 ### Parked: Messages and Assignments
 
@@ -498,7 +529,7 @@ backend plan and a staff-side design.
    offline copy on the simplest full screens; Results needs the backend's four
    figures, which ship second in its queue; Fees comes last because its card
    return and transfer routes ship second and third.
-5. **Push last, and parked until the owner decides.**
+5. **Push last**, once the owner ruled what a locked screen may show.
 6. **What we control:** everything except Phase 2's start, the bank-transfer
    panel's routes and push. Each of those is a backend item already agreed and
    queued, not an open question.

@@ -12,6 +12,10 @@
  * navigation fallback and given no runtime caching rule at all, and the
  * fallback page is the app's own `index.html` under `/student/`, never a page
  * of school-fe's, which shares the origin.
+ *
+ * Push notifications are handled by `public/push-sw.js`, loaded into the
+ * generated worker. It shows what the school sent and opens the app on a tap;
+ * it caches nothing.
  */
 export const workboxOptions = {
   globPatterns: ["**/*.{js,css,html,svg,png,woff2,webmanifest}"],
@@ -20,4 +24,5 @@ export const workboxOptions = {
   navigateFallbackDenylist: [/^\/v1\//, /^\/media\//],
   runtimeCaching: [],
   cleanupOutdatedCaches: true,
+  importScripts: ["push-sw.js"],
 };

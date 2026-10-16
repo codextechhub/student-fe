@@ -8,7 +8,9 @@ import { sessionReducer } from "@/redux/features/session-slice";
 import { baseApi } from "@/redux/services/base-api";
 
 import { accessFor, dropAccess } from "./access-tokens";
-import { bootSession, HANDOVER_KEY, signInPupil, signOutPupil, switchPupil } from "./device-session";
+import { pushChoiceFor, setPushChoice } from "@/push/push-choice";
+
+import { bootSession, HANDOVER_KEY, showPupilFromPush, signInPupil, signOutPupil, switchPupil } from "./device-session";
 import { deletePupil, listPupils, putPupil, resetPupilsStoreForTests, setActiveAccount } from "./pupils-store";
 import { routeFetch } from "./test-fetch";
 
@@ -86,6 +88,8 @@ beforeEach(async () => {
   await setActiveAccount(null);
   for (const account of Object.keys(PUPILS)) dropAccess(account);
   sessionStorage.clear();
+  localStorage.clear();
+  window.history.replaceState(null, "", "/student/");
 });
 
 afterEach(() => {
@@ -298,5 +302,73 @@ describe("signing in", () => {
       ok: false,
       message: "That admission number or email and password don't match. Check them and try again.",
     });
+  });
+});
+
+describe("notifications and the pupils on the phone", () => {
+  it("opens on the pupil a tapped notification named, and takes the name off the address", async () => {
+    api();
+    await putPupil(pupil("a-ebere"));
+    await putPupil(pupil("a-femi"));
+    await setActiveAccount("a-ebere");
+    window.history.replaceState(null, "", "/student/results?pupil=a-femi");
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    expect(store.getState().session.active).toBe("a-femi");
+    expect(window.location.pathname + window.location.search).toBe("/student/results");
+  });
+
+  it("ignores a notification naming somebody not on this phone", async () => {
+    api();
+    await putPupil(pupil("a-ebere"));
+    window.history.replaceState(null, "", "/student/results?pupil=a-stranger");
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    expect(store.getState().session.active).toBe("a-ebere");
+  });
+
+  it("a tap while the app is open shows the pupil it is about, and nobody else", async () => {
+    api();
+    await putPupil(pupil("a-ebere"));
+    await putPupil(pupil("a-femi"));
+    await setActiveAccount("a-ebere");
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    await store.dispatch(showPupilFromPush("a-stranger"));
+    expect(store.getState().session.active).toBe("a-ebere");
+    await store.dispatch(showPupilFromPush("a-femi"));
+    expect(store.getState().session.active).toBe("a-femi");
+  });
+
+  it("signing a pupil out forgets their notifications choice and keeps their sibling's", async () => {
+    api();
+    await putPupil(pupil("a-ebere"));
+    await putPupil(pupil("a-femi"));
+    setPushChoice("a-ebere", "on");
+    setPushChoice("a-femi", "on");
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    await store.dispatch(signOutPupil("a-ebere"));
+    expect(pushChoiceFor("a-ebere")).toBeNull();
+    expect(pushChoiceFor("a-femi")).toBe("on");
+  });
+
+  it("the same child signing in again keeps the choice they made", async () => {
+    const { calls, fetchMock } = api();
+    const inner = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (input, init) => {
+      if (String(input).includes("/user/auth/login/")) {
+        calls.push({ key: "POST /user/auth/login/", body: JSON.parse(String(init?.body)), headers: {} });
+        return new Response(JSON.stringify({ data: { account: "a-ebere-2", access: "tok-a-ebere-2" } }), { status: 200 });
+      }
+      return inner(input, init);
+    });
+    await putPupil(pupil("a-ebere"));
+    setPushChoice("a-ebere", "on");
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    await store.dispatch(signInPupil("LV/2026/0029", "secret"));
+    expect(pushChoiceFor("a-ebere-2")).toBe("on");
+    expect(pushChoiceFor("a-ebere")).toBeNull();
   });
 });
