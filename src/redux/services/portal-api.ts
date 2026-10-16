@@ -249,6 +249,98 @@ export type SessionResults = {
   next_term_begins?: string | null;
 };
 
+/** One fee bill: its lines and what is still owed, all in kobo. */
+export type Invoice = {
+  invoice_ref: number;
+  number: string;
+  title: string;
+  invoice_date: string | null;
+  due_date: string | null;
+  lines: { description: string; amount: number }[];
+  total: number;
+  paid: number;
+  balance: number;
+  status: string;
+  status_label: string;
+};
+
+/**
+ * The pupil's fees. `balance` below zero is credit. `can_pay` is the school's
+ * choice to let pupils pay here; `min_part_payment` its smallest card part
+ * payment, in kobo.
+ */
+export type Fees = {
+  balance: number;
+  total_billed: number;
+  total_paid: number;
+  invoices: Invoice[];
+  can_pay: boolean;
+  min_part_payment: number;
+};
+
+/** A payment on the pupil's account: confirmed with a receipt, or online and still being confirmed. */
+export type Payment = {
+  payment_ref: number | null;
+  reference: string;
+  amount: number;
+  status: "CONFIRMED" | "PENDING" | string;
+  status_label: string;
+  method: string;
+  method_label: string;
+  paid_on: string | null;
+  /** Who started an online payment; empty for a transfer or one the school recorded. */
+  payer_name: string;
+  /** How the money arrived: a transfer into the pupil's account, online, or recorded by the school. */
+  source?: "TRANSFER_ACCOUNT" | "ONLINE" | "SCHOOL" | string;
+  source_label?: string;
+  receipt_number: string;
+  invoice_number: string;
+  has_receipt: boolean;
+};
+
+export type Receipt = {
+  payment_ref: number;
+  receipt_number: string;
+  paid_on: string;
+  amount: number;
+  method: string;
+  method_label: string;
+  reference: string;
+  payer_name: string;
+  received_from: string;
+  lines: { invoice_number: string; title: string; amount_applied: number; balance_after: number }[];
+  balance_after: number;
+  issuer_name: string;
+};
+
+/** The family's own account number for paying fees by transfer. */
+export type TransferAccount =
+  | { state: "ISSUED"; bank_name: string; account_number: string; account_name: string; as_of: string }
+  | { state: "NONE"; as_of: string }
+  | { state: "UNAVAILABLE"; message: string };
+
+export type Deposit = {
+  reference: string;
+  amount: number;
+  status: "PENDING" | "CONFIRMED" | string;
+  status_label: string;
+  received_at: string;
+  payment_ref: number | null;
+  has_receipt: boolean;
+};
+
+/** A card payment handed to the gateway: where to send the pupil, and how to follow it. */
+export type Checkout = { checkout_url: string; reference: string; amount: number; balance_after: number };
+
+/** What the public status route says about a payment, by its reference. */
+export type PaymentStatus = {
+  status: "PENDING" | "CONFIRMED" | "FAILED" | "ABANDONED";
+  amount: number;
+  amount_naira: string;
+  payee_name: string;
+  paid_at: string | null;
+};
+
 const unwrap = <T,>(body: { data: T }) => body.data;
 
 /** The pupil portal's reads and the pupil's own few writes, all for the pupil showing. */
@@ -288,6 +380,59 @@ export const portalApi = baseApi.injectEndpoints({
       query: (term) => `/portal/student/results/report-card/?term=${term}`,
       transformResponse: unwrap<ReportCard>,
       providesTags: ["Results"],
+    }),
+    fees: build.query<Fees, void>({
+      query: () => "/portal/student/fees/",
+      transformResponse: unwrap<Fees>,
+      providesTags: ["Fees"],
+    }),
+    payments: build.query<Payment[], void>({
+      query: () => "/portal/student/fees/payments/",
+      transformResponse: unwrap<Payment[]>,
+      providesTags: ["Fees"],
+    }),
+    receipt: build.query<Receipt, number>({
+      query: (ref) => `/portal/student/fees/payments/${ref}/receipt/`,
+      transformResponse: unwrap<Receipt>,
+      providesTags: ["Fees"],
+    }),
+    /** The receipt's PDF, the one the school's receipt email attaches, as a local `blob:` address. */
+    receiptPdf: build.query<string, number>({
+      queryFn: async (ref, _api, _extra, baseQuery) => {
+        const result = await baseQuery({
+          url: `/portal/student/fees/payments/${ref}/receipt/?as=pdf`,
+          responseHandler: async (r) => (r.ok ? r.blob() : r.text()),
+        });
+        if (result.error) return { error: result.error };
+        return { data: URL.createObjectURL(result.data as Blob) };
+      },
+      keepUnusedDataFor: 0,
+    }),
+    startPayment: build.mutation<Checkout, { invoiceRef: number; amount: number }>({
+      query: ({ invoiceRef, amount }) => ({
+        url: `/portal/student/fees/invoices/${invoiceRef}/pay/`,
+        method: "POST",
+        body: { amount },
+      }),
+      transformResponse: unwrap<Checkout>,
+    }),
+    transferAccount: build.query<TransferAccount, void>({
+      query: () => "/portal/student/fees/transfer-account/",
+      transformResponse: unwrap<TransferAccount>,
+      providesTags: ["TransferAccount"],
+    }),
+    openTransferAccount: build.mutation<TransferAccount, void>({
+      query: () => ({ url: "/portal/student/fees/transfer-account/", method: "POST", body: {} }),
+      transformResponse: unwrap<TransferAccount>,
+      invalidatesTags: ["TransferAccount"],
+    }),
+    deposits: build.query<{ as_of: string; deposits: Deposit[] }, string>({
+      query: (since) => `/portal/student/fees/transfer-account/deposits/?since=${encodeURIComponent(since)}`,
+      transformResponse: unwrap<{ as_of: string; deposits: Deposit[] }>,
+    }),
+    paymentStatus: build.query<PaymentStatus, string>({
+      query: (reference) => `/payments/public/collections/${encodeURIComponent(reference)}/status/`,
+      transformResponse: unwrap<PaymentStatus>,
     }),
     notices: build.query<NoticePage, number>({
       query: (page) => `/portal/student/notices/?page=${page}`,
@@ -369,6 +514,15 @@ export const {
   useResultsQuery,
   useSessionResultsQuery,
   useReportCardQuery,
+  useFeesQuery,
+  usePaymentsQuery,
+  useReceiptQuery,
+  useLazyReceiptPdfQuery,
+  useStartPaymentMutation,
+  useTransferAccountQuery,
+  useOpenTransferAccountMutation,
+  useDepositsQuery,
+  usePaymentStatusQuery,
   useNoticesQuery,
   useNoticeQuery,
   useMarkNoticeReadMutation,

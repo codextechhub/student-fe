@@ -1,4 +1,5 @@
 import { configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
 
 import { endPupil } from "@/auth/device-session";
 
@@ -28,6 +29,10 @@ export const store = configureStore({
   },
   middleware: (getDefault) => getDefault().prepend(listener.middleware).concat(baseApi.middleware),
 });
+
+// Lets a query read again the moment the app is back in view or back online
+// (`refetchOnFocus`), as a pupil returning from their bank app expects.
+setupListeners(store.dispatch);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

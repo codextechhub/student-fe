@@ -5,10 +5,14 @@ import { SessionBoot, SignedIn } from "@/components/session/session-gate";
 import { AppShell } from "@/components/shell/app-shell";
 import { UpdateBar } from "@/components/update-bar";
 import { AttendancePage } from "@/pages/attendance";
+import { FeesPage } from "@/pages/fees";
 import { HomePage } from "@/pages/home";
 import { NoticesPage } from "@/pages/notices";
 import { NotFoundPage } from "@/pages/not-found";
+import { PaidPage } from "@/pages/paid";
+import { PayPage } from "@/pages/pay";
 import { ProfilePage } from "@/pages/profile";
+import { ReceiptPage } from "@/pages/receipt";
 import { ReportCardPage } from "@/pages/report-card";
 import { ResultsPage } from "@/pages/results";
 import { SignInPage } from "@/pages/sign-in";
@@ -40,6 +44,10 @@ export default function App() {
             <Route path="results" element={<ResultsPage />} />
             <Route path="results/card/:termId" element={<ReportCardPage />} />
             <Route path="attendance" element={<AttendancePage />} />
+            <Route path="fees" element={<FeesPage />} />
+            <Route path="fees/pay/:invoiceRef" element={<PayPage />} />
+            <Route path="fees/paid" element={<PaidPage />} />
+            <Route path="fees/receipts/:paymentRef" element={<ReceiptPage />} />
             <Route path="notices" element={<NoticesPage />} />
             <Route path="notices/:id" element={<NoticesPage />} />
             <Route path="profile" element={<ProfilePage />} />

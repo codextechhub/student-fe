@@ -58,3 +58,14 @@ export function formatTimeOfDay(at: number): string {
   const minutes = String(when.getMinutes()).padStart(2, "0");
   return `${hours % 12 || 12}:${minutes}${hours < 12 ? "am" : "pm"}`;
 }
+
+/**
+ * A typed naira amount in kobo: "20,000", "₦20,000.50" or "20000" all read;
+ * anything that is not a positive amount with at most two decimals is null.
+ */
+export function parseNaira(typed: string): number | null {
+  const clean = typed.replace(/[₦,\s]/g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null;
+  const kobo = Math.round(Number(clean) * 100);
+  return kobo > 0 ? kobo : null;
+}

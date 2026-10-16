@@ -166,6 +166,9 @@ function FeesCard({ block }: { block: Home["fees"] }) {
           {block.open_invoice_count > 1 && ` and ${block.open_invoice_count - 1} more`}
         </p>
       )}
+      <Link to="/fees" className="inline-block pt-2 text-xs font-medium text-primary">
+        View fees
+      </Link>
     </Card>
   );
 }

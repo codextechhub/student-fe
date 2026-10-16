@@ -456,6 +456,21 @@ now holds Home, Timetable, Results and More, which carries the unread notices.
   separate Read and Write switches, registered on the backend in the same
   change.
 
+**Done 16 October 2026.** Driven in the browser as Ebere: totals, the bill
+with its lines, and the payment history (confirmed with a receipt, pending
+with none); the receipt sheet and its PDF. Card: a ₦500 part payment refused
+before anything is sent, a valid one handed to Paystack's test checkout, and
+the return page in each of its states (an abandoned checkout as "didn't go
+through"; a confirmed one as "received" with the new balance and the receipt).
+Bank transfer: the pupil's own account number and name, then a deposit seen
+arriving ("on its way"), confirmed ("received"), and applied to the bill
+automatically, the balance dropping by the deposit. The deposit watch and the
+return page ask again the moment the app comes back into view, because a
+pupil paying from their banking app has left this one. A payment row names
+the payer only where the server does, and otherwise shows the server's
+`source_label`, so a family's transfer is never put down to the school.
+FinPro v0.7.74 carries the auto-apply switch, moved in both apps.
+
 ### Phase 7: push notifications
 
 Waits for the backend's push channel and the owner's two open decisions (what

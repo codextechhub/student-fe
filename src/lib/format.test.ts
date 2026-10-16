@@ -26,3 +26,14 @@ describe("formatting", () => {
     expect(formatTimeOfDay(new Date(2026, 9, 16, 0, 30).getTime())).toBe("12:30am");
   });
 });
+
+describe("reading a typed amount", () => {
+  it("reads naira as kobo, with or without the sign and commas", async () => {
+    const { parseNaira } = await import("./format");
+    expect(parseNaira("20,000")).toBe(2_000_000);
+    expect(parseNaira("₦1,000.50")).toBe(100_050);
+    expect(parseNaira("0")).toBeNull();
+    expect(parseNaira("12.345")).toBeNull();
+    expect(parseNaira("abc")).toBeNull();
+  });
+});
