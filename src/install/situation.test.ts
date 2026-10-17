@@ -6,7 +6,9 @@
  * Android phone, Safari on her iPhone, Chrome on that iPhone, the browser
  * inside Instagram or Facebook when the school posts the link there, and
  * Firefox or Safari on the family computer. Each gets exactly one way to
- * install, and never a button that cannot work.
+ * install, and never a button that cannot work. On her Samsung phone the
+ * link opens in Samsung Internet, whose install sets off Play Protect's
+ * "may put your device at risk" warning, so there she is sent to Chrome.
  */
 import { describe, expect, it } from "vitest";
 
@@ -42,6 +44,18 @@ const UA = {
     "Mozilla/5.0 (Linux; Android 14; SM-A546E; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0.6668.100 Mobile Safari/537.36 [LinkedInApp]/9.30.1234",
   lineAndroid:
     "Mozilla/5.0 (Linux; Android 14; SM-A546E; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0.6668.100 Mobile Safari/537.36 Line/14.17.1/IAB",
+  samsungInternet:
+    "Mozilla/5.0 (Linux; Android 14; SAMSUNG SM-A546E) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/27.0 Chrome/125.0.0.0 Mobile Safari/537.36",
+  edgeAndroid:
+    "Mozilla/5.0 (Linux; Android 14; SM-A546E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 EdgA/130.0.0.0",
+  operaAndroid:
+    "Mozilla/5.0 (Linux; Android 14; SM-A546E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 OPR/85.0.0.0",
+  phoenixAndroid:
+    "Mozilla/5.0 (Linux; Android 13; TECNO KJ5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 PHX/14.4",
+  miuiAndroid:
+    "Mozilla/5.0 (Linux; U; Android 13; en-gb; 23021RAAEG) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/112.0.5615.136 Mobile Safari/537.36 XiaoMi/MiuiBrowser/14.5.0-gn",
+  edgeDesktop:
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
   firefoxDesktop: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0",
   macSafari:
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
@@ -90,6 +104,24 @@ describe("a browser that cannot install", () => {
 
   it("never offers Install inside an app's browser, even with a prompt", () => {
     expect(installSituation(phone(UA.instagramAndroid), "ready")).toBe("open-in-chrome");
+  });
+});
+
+describe("an Android browser other than Chrome", () => {
+  it("sends Samsung Internet to Chrome, even with its own prompt in hand", () => {
+    expect(installSituation(phone(UA.samsungInternet), "ready")).toBe("open-in-chrome");
+    expect(installSituation(phone(UA.samsungInternet), "none")).toBe("open-in-chrome");
+  });
+
+  it("sends Edge, Opera and the phone makers' browsers to Chrome too", () => {
+    expect(installSituation(phone(UA.edgeAndroid), "ready")).toBe("open-in-chrome");
+    expect(installSituation(phone(UA.operaAndroid), "ready")).toBe("open-in-chrome");
+    expect(installSituation(phone(UA.phoenixAndroid), "none")).toBe("open-in-chrome");
+    expect(installSituation(phone(UA.miuiAndroid), "none")).toBe("open-in-chrome");
+  });
+
+  it("keeps Install for Edge on a computer, where nothing warns", () => {
+    expect(installSituation({ userAgent: UA.edgeDesktop, platform: "Win32", maxTouchPoints: 0 }, "ready")).toBe("prompt");
   });
 });
 

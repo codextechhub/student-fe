@@ -1,10 +1,10 @@
 import { useEffect, type ReactNode } from "react";
-import { Copy, Download, Share, Smartphone, SquarePlus } from "lucide-react";
+import { Copy, Download, ExternalLink, Share, Smartphone, SquarePlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { onInstalled, promptInstall } from "@/install/install-prompt";
-import type { InstallSituation } from "@/install/situation";
+import { browserFacts, isAndroid, type InstallSituation } from "@/install/situation";
 import { useAppName, useInstallOffer } from "@/install/use-install";
 
 /**
@@ -15,7 +15,8 @@ import { useAppName, useInstallOffer } from "@/install/use-install";
  * (`install/installed.ts`), and say exactly one thing by situation
  * (`install/situation.ts`): an Install button where the browser gave a
  * prompt, Safari's three steps on an iPhone, "open this page in Chrome" or
- * "in Safari" with Copy link in a browser that cannot install, and the
+ * "in Safari" with Copy link in a browser that cannot install (and on Android
+ * an Open in Chrome button that hands the page straight to Chrome), and the
  * browser's menu anywhere else. Not now puts the Home card away on this
  * device for good; the Profile row stays until the app is installed.
  *
@@ -153,7 +154,17 @@ function Address() {
   return <p className="mt-1 font-mono text-xs break-all text-foreground select-all">{appAddress()}</p>;
 }
 
-/** The one button a situation has: Install where the browser gave a prompt, Copy link where it cannot install. */
+/**
+ * An address Android opens in Chrome from any other browser or app: an
+ * intent link naming Chrome's package. Where Chrome is missing, what happens
+ * is the browser's choice, so Copy link stays beside it.
+ */
+export function chromeIntentUrl(address: string): string {
+  const url = new URL(address);
+  return `intent://${url.host}${url.pathname}${url.search}#Intent;scheme=${url.protocol.replace(":", "")};package=com.android.chrome;end`;
+}
+
+/** The buttons a situation has: Install where the browser gave a prompt, Open in Chrome and Copy link where it cannot install. */
 function InstallAction({ situation }: { situation: InstallSituation }) {
   if (situation === "prompt") {
     return (
@@ -164,16 +175,25 @@ function InstallAction({ situation }: { situation: InstallSituation }) {
   }
   if (situation === "open-in-safari" || situation === "open-in-chrome") {
     return (
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={async () => {
-          if (await copyText(appAddress())) toast.success("Link copied");
-          else toast.error("The link couldn't be copied. Press and hold the address to copy it.");
-        }}
-      >
-        <Copy className="size-4" aria-hidden /> Copy link
-      </Button>
+      <>
+        {situation === "open-in-chrome" && isAndroid(browserFacts()) && (
+          <Button size="sm" asChild>
+            <a href={chromeIntentUrl(appAddress())}>
+              <ExternalLink className="size-4" aria-hidden /> Open in Chrome
+            </a>
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={async () => {
+            if (await copyText(appAddress())) toast.success("Link copied");
+            else toast.error("The link couldn't be copied. Press and hold the address to copy it.");
+          }}
+        >
+          <Copy className="size-4" aria-hidden /> Copy link
+        </Button>
+      </>
     );
   }
   return null;

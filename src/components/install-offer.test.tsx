@@ -38,6 +38,10 @@ const UA = {
     "Mozilla/5.0 (Linux; Android 14; SM-A546E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
   iPhoneSafari:
     "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+  samsungInternet:
+    "Mozilla/5.0 (Linux; Android 14; SAMSUNG SM-A546E) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/27.0 Chrome/125.0.0.0 Mobile Safari/537.36",
+  iPhoneChrome:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.6723.90 Mobile/15E148 Safari/604.1",
   instagramAndroid:
     "Mozilla/5.0 (Linux; Android 14; SM-A546E; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0.6668.100 Mobile Safari/537.36 Instagram 352.0.0.38.100 Android",
 };
@@ -235,6 +239,34 @@ describe("the card", () => {
     expect(toast.success).toHaveBeenCalledWith("Link copied");
   });
 
+  it("sends Samsung Internet to Chrome in one tap, never through its own install", async () => {
+    setBrowser(UA.samsungInternet);
+    const m = await load();
+    m.prompt.captureInstallPrompt();
+    m.render(m.React.createElement(m.offer.InstallOffer));
+    const event = Object.assign(new Event("beforeinstallprompt", { cancelable: true }), {
+      prompt: vi.fn(async () => {}),
+      userChoice: Promise.resolve({ outcome: "accepted" as const }),
+    });
+    m.act(() => void window.dispatchEvent(event));
+    expect(m.text()).toContain("To install the app, open this page in Chrome.");
+    expect(m.button("Install app")).toBeUndefined();
+    const open = [...m.container.querySelectorAll("a")].find((a) => a.textContent?.includes("Open in Chrome"));
+    expect(open?.getAttribute("href")).toBe(
+      `intent://${window.location.host}/#Intent;scheme=${window.location.protocol.replace(":", "")};package=com.android.chrome;end`,
+    );
+    expect(m.button("Copy link")).toBeDefined();
+  });
+
+  it("offers Copy link but no Open in Chrome on an iPhone", async () => {
+    setBrowser(UA.iPhoneChrome, "iPhone");
+    const m = await load();
+    m.render(m.React.createElement(m.offer.InstallOffer));
+    expect(m.text()).toContain("open this page in Safari");
+    expect(m.text()).not.toContain("Open in Chrome");
+    expect(m.button("Copy link")).toBeDefined();
+  });
+
   it("goes the moment the page opens as the installed app", async () => {
     const m = await load();
     m.render(both(m));
@@ -267,5 +299,14 @@ describe("on an iPhone, with the notifications offer", () => {
     expect(m.container.querySelector('[aria-label="Get the app"]')).toBeNull();
     expect(m.text()).toContain("Get notifications");
     expect(m.text()).not.toContain("Add to Home Screen");
+  });
+});
+
+describe("the link that opens Chrome", () => {
+  it("names Chrome's package and keeps the school's address and scheme", async () => {
+    const { chromeIntentUrl } = await import("./install-offer");
+    expect(chromeIntentUrl("https://lagoon-view.xvs-staging.codexng.com/student/")).toBe(
+      "intent://lagoon-view.xvs-staging.codexng.com/student/#Intent;scheme=https;package=com.android.chrome;end",
+    );
   });
 });

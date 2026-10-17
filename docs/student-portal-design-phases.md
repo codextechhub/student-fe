@@ -532,6 +532,17 @@ open, and iPhone Safari, Instagram and Chrome on an iPhone by user agent, at
 Android phone, on staging. The backend's per-school manifest needs the same
 `related_applications` entry for the browser check to work there.
 
+**Install only through Chrome on Android, 17 October 2026.** Tried on a
+Samsung phone, Samsung Internet's own install set off Play Protect: "built
+for an older version of Android ... may put your device at risk". The browser
+builds the small Android app an install makes, and Samsung Internet builds it
+for an old Android; Chrome's is current, so it installs quietly. The card now
+offers Install only in Chrome on Android. Samsung Internet, Edge, Opera and
+the phone makers' browsers (Xiaomi, Tecno and Infinix's Phoenix, Oppo, vivo)
+are told to open the page in Chrome, with an Open in Chrome button that hands
+the page straight to Chrome, and Copy link beside it. Edge on a computer keeps
+Install. Not yet tried on a phone: the Open in Chrome button itself.
+
 ### Parked: Messages and Assignments
 
 No module owns them. When the owner calls for them, each starts from its own
