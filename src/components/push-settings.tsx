@@ -1,4 +1,4 @@
-import { Bell, BellOff } from "lucide-react";
+import { Bell, BellOff, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -30,8 +30,8 @@ const WHAT_THEY_SAY = "a new notice, a result ready to read, a payment confirmed
  * Shown only to a pupil who has not chosen yet, where the school sends
  * notifications and this browser can show them. On an iPhone that means the
  * installed app: in Safari the install card says how to add it, and this
- * offer waits. Turn on asks the browser's permission there and then; Not now
- * puts the offer away, and Profile keeps the setting.
+ * offer waits. Turn on asks the browser's permission there and then; the X
+ * puts the offer away for this pupil, and Profile keeps the setting.
  */
 export function PushOffer() {
   const { state, busy, turnOn, notNow } = usePush();
@@ -40,16 +40,25 @@ export function PushOffer() {
   if (state !== "undecided") return null;
 
   return (
-    <section className="flex min-w-0 flex-wrap items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+    <section
+      aria-label="Get notifications"
+      className="relative flex min-w-0 flex-wrap items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 pr-12"
+    >
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="absolute top-2 right-2 text-muted-foreground"
+        aria-label="Close"
+        onClick={notNow}
+      >
+        <X className="size-4" aria-hidden />
+      </Button>
       <Bell className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
       <div className="min-w-0 flex-1 basis-56">
         <h2 className="text-sm font-semibold text-foreground">Get notifications</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">Be told on this device about {WHAT_THEY_SAY}</p>
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
-        <Button variant="ghost" size="sm" onClick={notNow}>
-          Not now
-        </Button>
         <Button size="sm" disabled={busy || offline} onClick={async () => sayTurnOn(await turnOn(), firstName)}>
           {busy ? "Turning on" : "Turn on"}
         </Button>

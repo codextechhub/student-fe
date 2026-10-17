@@ -300,6 +300,15 @@ describe("on an iPhone, with the notifications offer", () => {
     expect(m.text()).toContain("Get notifications");
     expect(m.text()).not.toContain("Add to Home Screen");
   });
+
+  it("puts the notifications offer away with its X, for this pupil", async () => {
+    Object.defineProperty(navigator, "standalone", { configurable: true, value: true });
+    const m = await load();
+    m.render(m.React.createElement(m.HomePage));
+    m.act(() => m.container.querySelector<HTMLButtonElement>('[aria-label="Get notifications"] button[aria-label="Close"]')!.click());
+    expect(m.text()).not.toContain("Get notifications");
+    expect(JSON.parse(localStorage.getItem("xvs.student.push") ?? "{}")).toEqual({ "a-ebere": "not-now" });
+  });
 });
 
 describe("the link that opens Chrome", () => {

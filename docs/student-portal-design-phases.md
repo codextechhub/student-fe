@@ -476,7 +476,7 @@ FinPro v0.7.74 carries the auto-apply switch, moved in both apps.
 
 - **Offer:** Home offers notifications once to each pupil who has not chosen,
   after sign-in and never on first load; Turn on asks the browser's permission
-  from that tap, Not now puts the offer away. Profile keeps the setting: on,
+  from that tap, its X puts the offer away. Profile keeps the setting: on,
   off, blocked by the browser (only its settings undo that), or not available.
 - **Several pupils, one phone:** the browser holds one subscription and each
   pupil who turns notifications on is remembered with the school for it.
