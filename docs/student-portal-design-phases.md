@@ -485,7 +485,8 @@ FinPro v0.7.74 carries the auto-apply switch, moved in both apps.
   pupil's choice is forgotten when they come off the phone, and carried over
   when the same child signs in again.
 - **iPhone:** only the app added to the Home Screen gets notifications, so
-  there the offer says how to add it first, once per phone.
+  in Safari the notifications offer waits and the "Get the app" card (below)
+  says how to add it.
 - **Service worker:** `public/push-sw.js`, loaded into the generated worker,
   shows the push as sent (the badge is the crest's silhouette) and on a tap
   opens Notices, Results or Fees by the push's kind. When the push names the
@@ -507,6 +508,29 @@ subscription was untouched. The offer at 390px and desktop, and Not now held
 across a reload. Not driven: an iPhone (the install steps are unit-checked
 only) and a click on the system notification itself, which the worker's tests
 cover.
+
+**Get the app, 17 October 2026.** Nothing in the app told a parent how to
+keep it on the phone. Home now carries a "Get the app" card after sign-in
+(never on the sign-in screen) and Profile an "Install the app" row, and both
+show only where the app is not installed: not inside the installed app (its
+display mode, or `navigator.standalone` on an iPhone), not on a device that
+installed it earlier (remembered when the browser reports the install), and
+not where Chrome's `getInstalledRelatedApps()` reports it. Each says one
+thing for the browser in hand: Install, through Chrome's, Edge's or Samsung
+Internet's own prompt (turned down, the browser's menu); Safari's three steps
+on an iPhone, before the notifications offer, which waits for the installed
+app; "open this page in Chrome" or "in Safari" with Copy link inside
+Instagram, Facebook, TikTok and other apps' browsers and in Chrome, Firefox
+or Edge on an iPhone; the browser's menu anywhere else. Not now puts the Home
+card away on that device; the Profile row stays until the app is installed.
+The card names the app by the school's short name from its manifest. Driven
+in Chromium against the built app with the API stood in: a synthetic prompt
+accepted (card and row gone, and still gone after a reload) and turned down,
+Not now, the three installed display modes and a switch to standalone while
+open, and iPhone Safari, Instagram and Chrome on an iPhone by user agent, at
+390px and 1440px. Not yet tried: real installs on a physical iPhone and
+Android phone, on staging. The backend's per-school manifest needs the same
+`related_applications` entry for the browser check to work there.
 
 ### Parked: Messages and Assignments
 

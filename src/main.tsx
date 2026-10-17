@@ -8,10 +8,15 @@ import "@fontsource-variable/geist/index.css";
 import "@fontsource-variable/geist-mono/index.css";
 
 import App from "./App";
+import { captureInstallPrompt } from "./install/install-prompt";
+import { checkRelatedApps } from "./install/installed";
 import { applySchoolApp } from "./lib/school-app";
 import { store } from "./redux/store";
 
-void applySchoolApp();
+// Before React mounts: the browser's install prompt can come first.
+captureInstallPrompt();
+// The browser is asked about the installed app once the school's manifest is on the page.
+void applySchoolApp().then(checkRelatedApps);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

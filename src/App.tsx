@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 
+import { InstallListener } from "@/components/install-offer";
 import { SessionBoot, SignedIn } from "@/components/session/session-gate";
 import { AppShell } from "@/components/shell/app-shell";
 import { UpdateBar } from "@/components/update-bar";
@@ -57,6 +58,7 @@ export default function App() {
         </Routes>
       </SessionBoot>
       <PushListener />
+      <InstallListener />
       <UpdateBar />
       <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>

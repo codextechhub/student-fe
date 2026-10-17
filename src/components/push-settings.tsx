@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Bell, BellOff, Share } from "lucide-react";
+import { Bell, BellOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -29,51 +28,31 @@ const WHAT_THEY_SAY = "a new notice, a result ready to read, a payment confirmed
  * The offer on Home, made once to each pupil on this device.
  *
  * Shown only to a pupil who has not chosen yet, where the school sends
- * notifications and this browser can show them. On an iPhone it says how to
- * add the app to the Home Screen first, because only the added app gets them.
- * Turn on asks the browser's permission there and then; Not now puts the
- * offer away, and Profile keeps the setting.
+ * notifications and this browser can show them. On an iPhone that means the
+ * installed app: in Safari the install card says how to add it, and this
+ * offer waits. Turn on asks the browser's permission there and then; Not now
+ * puts the offer away, and Profile keeps the setting.
  */
 export function PushOffer() {
   const { state, busy, turnOn, notNow } = usePush();
   const offline = useAppSelector((s) => s.connectivity.offline);
   const firstName = useShowingFirstName();
-  const [installPutAway, setInstallPutAway] = useState(() => !offerInstall());
-  if (state !== "undecided" && state !== "install-first") return null;
-  if (state === "install-first" && installPutAway) return null;
+  if (state !== "undecided") return null;
 
   return (
     <section className="flex min-w-0 flex-wrap items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
       <Bell className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
       <div className="min-w-0 flex-1 basis-56">
         <h2 className="text-sm font-semibold text-foreground">Get notifications</h2>
-        {state === "undecided" ? (
-          <p className="mt-0.5 text-xs text-muted-foreground">Be told on this device about {WHAT_THEY_SAY}</p>
-        ) : (
-          <InstallSteps />
-        )}
+        <p className="mt-0.5 text-xs text-muted-foreground">Be told on this device about {WHAT_THEY_SAY}</p>
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (state === "install-first") {
-              // Put away until the app is added; not a choice about notifications.
-              rememberInstallOffered();
-              setInstallPutAway(true);
-            } else {
-              notNow();
-            }
-          }}
-        >
+        <Button variant="ghost" size="sm" onClick={notNow}>
           Not now
         </Button>
-        {state === "undecided" && (
-          <Button size="sm" disabled={busy || offline} onClick={async () => sayTurnOn(await turnOn(), firstName)}>
-            {busy ? "Turning on" : "Turn on"}
-          </Button>
-        )}
+        <Button size="sm" disabled={busy || offline} onClick={async () => sayTurnOn(await turnOn(), firstName)}>
+          {busy ? "Turning on" : "Turn on"}
+        </Button>
       </div>
     </section>
   );
@@ -102,7 +81,7 @@ export function PushSetting() {
           {state === "on" && <p><span className="font-medium text-foreground">On.</span> You&apos;re told about {WHAT_THEY_SAY}</p>}
           {(state === "off" || state === "undecided") && <p><span className="font-medium text-foreground">Off.</span> Turn them on to be told about {WHAT_THEY_SAY}</p>}
           {state === "blocked" && <p><span className="font-medium text-foreground">Blocked.</span> This browser has been told not to show notifications from your school. Allow them in its settings, then come back here.</p>}
-          {state === "install-first" && <InstallSteps />}
+          {state === "install-first" && <p>On an iPhone, notifications come only to the installed app. Install it, then turn them on there.</p>}
           {state === "unavailable" && <p>Notifications aren&apos;t available on this device.</p>}
           {several && state !== "unavailable" && <p className="mt-1">Each pupil on this device chooses for themselves.</p>}
         </div>
@@ -127,33 +106,4 @@ export function PushSetting() {
       </div>
     </section>
   );
-}
-
-function InstallSteps() {
-  return (
-    <p className="mt-0.5 text-xs text-muted-foreground">
-      On an iPhone, notifications come to the app on your Home Screen. Tap{" "}
-      <Share className="inline size-3.5 align-text-bottom" aria-label="Share" />, then <span className="font-medium">Add to Home Screen</span>,
-      and open the app from there.
-    </p>
-  );
-}
-
-const INSTALL_OFFERED_KEY = "xvs.student.push-install-offered";
-
-/** The install steps are offered on Home once per phone, not once per pupil. */
-function offerInstall(): boolean {
-  try {
-    return localStorage.getItem(INSTALL_OFFERED_KEY) !== "1";
-  } catch {
-    return true;
-  }
-}
-
-function rememberInstallOffered() {
-  try {
-    localStorage.setItem(INSTALL_OFFERED_KEY, "1");
-  } catch {
-    // Offered again next time.
-  }
 }

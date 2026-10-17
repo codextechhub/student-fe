@@ -161,7 +161,7 @@ describe("where things stand", () => {
     expect(pushStateFrom({ ...base, support: "unsupported" })).toBe("unavailable");
   });
 
-  it("asks an iPhone to add the app to its Home Screen first", () => {
+  it("waits for the installed app on an iPhone", () => {
     expect(pushStateFrom({ ...base, support: "install-first" })).toBe("install-first");
   });
 

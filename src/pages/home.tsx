@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 
+import { InstallOffer } from "@/components/install-offer";
 import { PageShell } from "@/components/layout/page-shell";
 import { PupilAvatar } from "@/components/pupil-avatar";
 import { PushOffer } from "@/components/push-settings";
@@ -24,8 +25,9 @@ import {
  * Every block is read in one call and arrives with `available`; a block the
  * school could not read shows the sentence it sent, never a zero, and the rest
  * still show. Messages and assignments are not built, so their blocks are not
- * drawn. Links appear only to screens that exist. A pupil not yet asked about
- * notifications is offered them here, once.
+ * drawn. Links appear only to screens that exist. Where the app is not
+ * installed on this device it is offered here, and a pupil not yet asked
+ * about notifications is offered them here, once.
  */
 export function HomePage() {
   const dispatch = useAppDispatch();
@@ -59,6 +61,7 @@ export function HomePage() {
         </section>
       )}
 
+      <InstallOffer />
       <PushOffer />
 
       {isLoading && <div className="h-48 animate-pulse rounded-xl bg-muted" />}

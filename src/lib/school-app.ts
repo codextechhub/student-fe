@@ -18,7 +18,20 @@ import { currentSchoolSlug } from "@/utils/school-host";
  * a crest; a school without one lists this app's own XVS icons under
  * `/student/icons/`, and the XVS touch icon stays.
  */
-type Manifest = { icons?: { src?: string }[] };
+type Manifest = { name?: string; short_name?: string; icons?: { src?: string }[] };
+
+let appName = "";
+const nameListeners = new Set<() => void>();
+
+/** The name under the school's icon (its short name, else its name), or "" before its manifest is read. */
+export function schoolAppName(): string {
+  return appName;
+}
+
+export function subscribeSchoolAppName(listener: () => void): () => void {
+  nameListeners.add(listener);
+  return () => nameListeners.delete(listener);
+}
 
 /** Where this school's manifest is asked for, or "" on an address that names no school. */
 export function schoolManifestUrl(slug: string = currentSchoolSlug()): string {
@@ -35,7 +48,7 @@ export function touchIconFrom(manifest: Manifest, manifestUrl: string): string {
   return resolved.replace(/[^/]+$/, "apple-touch-icon.png");
 }
 
-/** Points the page's manifest and touch icon at this school's own, when it has them. */
+/** Points the page's manifest and touch icon at this school's own, when it has them, and keeps its name. */
 export async function applySchoolApp(): Promise<void> {
   const url = schoolManifestUrl();
   if (!url) return;
@@ -48,6 +61,8 @@ export async function applySchoolApp(): Promise<void> {
     const touch = touchIconFrom(manifest, url);
     const touchLink = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
     if (touch && touchLink) touchLink.href = touch;
+    appName = (manifest.short_name || manifest.name || "").trim();
+    for (const listener of nameListeners) listener();
   } catch {
     // No school manifest to read: the XVS one stays.
   }
