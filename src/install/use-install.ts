@@ -12,8 +12,8 @@ import { browserFacts, installSituation } from "./situation";
  * The install offer's state for this device: whether it shows at all, and
  * which way of installing it describes.
  *
- * Nothing shows once the app is installed (`installed.ts`). Not now puts the
- * Home card away on this device for good; the Profile row stays until the app
+ * Nothing shows once the app is installed (`installed.ts`). Closing the Home
+ * card (its X) puts it away on this device for good; the Profile row stays until the app
  * is installed. Storage that cannot be read reads as not put away.
  */
 
@@ -37,7 +37,7 @@ export function useInstallOffer() {
   const [dismissed, setDismissed] = useState(readDismissed);
   const situation = installSituation(browserFacts(), prompt);
 
-  const notNow = () => {
+  const putAway = () => {
     try {
       localStorage.setItem(DISMISSED_KEY, "1");
     } catch {
@@ -46,7 +46,7 @@ export function useInstallOffer() {
     setDismissed(true);
   };
 
-  return { installed, dismissed, situation, notNow };
+  return { installed, dismissed, situation, putAway };
 }
 
 /**

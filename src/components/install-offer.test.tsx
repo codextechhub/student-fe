@@ -203,10 +203,10 @@ describe("the card", () => {
     expect(localStorage.getItem("xvs.student.installed")).toBe("1");
   });
 
-  it("puts the Home card away with Not now, and keeps the Profile row", async () => {
+  it("puts the Home card away with its X, and keeps the Profile row", async () => {
     const m = await load();
     m.render(both(m));
-    m.act(() => m.button("Not now")!.click());
+    m.act(() => m.container.querySelector<HTMLButtonElement>('[aria-label="Get the app"] button[aria-label="Close"]')!.click());
     expect(m.container.querySelector('[aria-label="Get the app"]')).toBeNull();
     expect(m.container.querySelector('[aria-label="Install the app"]')).not.toBeNull();
     // Still put away the next time the app opens.
@@ -225,7 +225,7 @@ describe("the card", () => {
     expect(m.button("Install app")).toBeUndefined();
   });
 
-  it("sends Instagram's browser to Chrome with the app's address and Copy link", async () => {
+  it("sends Instagram's browser to Chrome with Copy link, and never shows the address as text", async () => {
     setBrowser(UA.instagramAndroid);
     const writeText = vi.fn(async () => {});
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
@@ -233,7 +233,7 @@ describe("the card", () => {
     const m = await load();
     m.render(m.React.createElement(m.offer.InstallOffer));
     expect(m.text()).toContain("To install the app, open this page in Chrome.");
-    expect(m.text()).toContain(`${window.location.origin}/`);
+    expect(m.text()).not.toContain(window.location.origin);
     await m.act(async () => m.button("Copy link")!.click());
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/`);
     expect(toast.success).toHaveBeenCalledWith("Link copied");

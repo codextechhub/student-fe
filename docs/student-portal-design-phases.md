@@ -521,8 +521,9 @@ Internet's own prompt (turned down, the browser's menu); Safari's three steps
 on an iPhone, before the notifications offer, which waits for the installed
 app; "open this page in Chrome" or "in Safari" with Copy link inside
 Instagram, Facebook, TikTok and other apps' browsers and in Chrome, Firefox
-or Edge on an iPhone; the browser's menu anywhere else. Not now puts the Home
-card away on that device; the Profile row stays until the app is installed.
+or Edge on an iPhone; the browser's menu anywhere else. The card's X puts it
+away on that device; the Profile row stays until the app is installed. The
+app's address is never shown as text.
 The card names the app by the school's short name from its manifest. Driven
 in Chromium against the built app with the API stood in: a synthetic prompt
 accepted (card and row gone, and still gone after a reload) and turned down,

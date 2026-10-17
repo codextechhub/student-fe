@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { Copy, Download, ExternalLink, Share, Smartphone, SquarePlus } from "lucide-react";
+import { Copy, Download, ExternalLink, Share, Smartphone, SquarePlus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,33 +17,42 @@ import { useAppName, useInstallOffer } from "@/install/use-install";
  * prompt, Safari's three steps on an iPhone, "open this page in Chrome" or
  * "in Safari" with Copy link in a browser that cannot install (and on Android
  * an Open in Chrome button that hands the page straight to Chrome), and the
- * browser's menu anywhere else. Not now puts the Home card away on this
- * device for good; the Profile row stays until the app is installed.
+ * browser's menu anywhere else. The card's X puts it away on this device for
+ * good; the Profile row stays until the app is installed. The app's address
+ * is never shown as text: Open in Chrome and Copy link carry it.
  *
  * On an iPhone this card comes before the notifications offer, which waits
  * for the installed app, because only that gets notifications there.
  */
 export function InstallOffer() {
-  const { installed, dismissed, situation, notNow } = useInstallOffer();
+  const { installed, dismissed, situation, putAway } = useInstallOffer();
   const appName = useAppName();
   if (installed || dismissed) return null;
 
   return (
     <section
       aria-label="Get the app"
-      className="flex min-w-0 flex-wrap items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4"
+      className="relative flex min-w-0 flex-wrap items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 pr-12"
     >
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="absolute top-2 right-2 text-muted-foreground"
+        aria-label="Close"
+        onClick={putAway}
+      >
+        <X className="size-4" aria-hidden />
+      </Button>
       <Smartphone className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
       <div className="min-w-0 flex-1 basis-56">
         <h2 className="text-sm font-semibold text-foreground">Get the app</h2>
         <InstallHow situation={situation} appName={appName} />
       </div>
-      <div className="flex shrink-0 flex-wrap gap-2">
-        <Button variant="ghost" size="sm" onClick={notNow}>
-          Not now
-        </Button>
-        <InstallAction situation={situation} />
-      </div>
+      {hasAction(situation) && (
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <InstallAction situation={situation} />
+        </div>
+      )}
     </section>
   );
 }
@@ -61,9 +70,11 @@ export function InstallSetting() {
         <div className="min-w-0 flex-1 basis-56">
           <InstallHow situation={situation} appName={appName} />
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <InstallAction situation={situation} />
-        </div>
+        {hasAction(situation) && (
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <InstallAction situation={situation} />
+          </div>
+        )}
       </div>
     </section>
   );
@@ -111,7 +122,6 @@ function InstallHow({ situation, appName }: { situation: InstallSituation; appNa
       return (
         <>
           <Line>To install the app, open this page in Safari.</Line>
-          <Address />
           <Line>{NOTIFICATIONS_LINE}</Line>
         </>
       );
@@ -119,7 +129,6 @@ function InstallHow({ situation, appName }: { situation: InstallSituation; appNa
       return (
         <>
           <Line>To install the app, open this page in Chrome.</Line>
-          <Address />
         </>
       );
     case "menu":
@@ -145,13 +154,13 @@ function Step({ n, icon, children }: { n: number; icon?: ReactNode; children: Re
   );
 }
 
-/** The app's own address, which a parent can also press and hold to copy. */
+/** The app's own address, which Open in Chrome and Copy link hand on. */
 function appAddress(): string {
   return `${window.location.origin}${import.meta.env.BASE_URL}`;
 }
 
-function Address() {
-  return <p className="mt-1 font-mono text-xs break-all text-foreground select-all">{appAddress()}</p>;
+function hasAction(situation: InstallSituation): boolean {
+  return situation === "prompt" || situation === "open-in-safari" || situation === "open-in-chrome";
 }
 
 /**
@@ -188,7 +197,10 @@ function InstallAction({ situation }: { situation: InstallSituation }) {
           variant="outline"
           onClick={async () => {
             if (await copyText(appAddress())) toast.success("Link copied");
-            else toast.error("The link couldn't be copied. Press and hold the address to copy it.");
+            else {
+              const browser = situation === "open-in-safari" ? "Safari" : "Chrome";
+              toast.error(`The link couldn't be copied. Use this browser's menu to open the page in ${browser}.`);
+            }
           }}
         >
           <Copy className="size-4" aria-hidden /> Copy link
