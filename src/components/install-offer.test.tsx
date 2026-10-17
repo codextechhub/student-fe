@@ -182,10 +182,10 @@ describe("the card", () => {
     expect(m.text()).toContain("To install Meridian, use your browser's menu");
   });
 
-  it("falls back to the school's name before the manifest is read", async () => {
+  it("falls back to the school's name, as it shows under the icon, before the manifest is read", async () => {
     const m = await load();
     m.render(m.React.createElement(m.offer.InstallOffer));
-    expect(m.text()).toContain("To install Meridian College");
+    expect(m.text()).toContain("To install Meridian, use your browser's menu");
   });
 
   it("offers Install with Chrome's prompt, and goes for good once accepted", async () => {

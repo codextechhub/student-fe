@@ -558,6 +558,21 @@ are told to open the page in Chrome, with an Open in Chrome button that hands
 the page straight to Chrome, and Copy link beside it. Edge on a computer keeps
 Install. Not yet tried on a phone: the Open in Chrome button itself.
 
+**The school's own name, 17 October 2026.** Every school's installed app
+was called XVS Student on an iPhone: Add to Home Screen reads the page's
+title (or `apple-mobile-web-app-title`), not the manifest, and the title was
+fixed in `index.html`. At start the page now takes the school's full name as
+its title ("Meridian Crest Academy"), which is also what the app switcher
+shows, and puts the label under the icon in `apple-mobile-web-app-title` and
+`application-name`. The owner's rule for that label: the whole name when it
+fits in 12 characters ("Bright Star"), else the first word ("Meridian"),
+never part of a word. The backend's manifest `short_name` follows the same
+rule, so Android and iPhone agree. Both come from the manifest, else from the
+school's public name, and the last ones read are kept per school so the next
+start is named at once, offline too. The sign-in heading is the school's full
+name. An address that names no school stays XVS Student. An iPhone install
+made before this keeps its old label until it is added again.
+
 ### Parked: Messages and Assignments
 
 No module owns them. When the owner calls for them, each starts from its own
