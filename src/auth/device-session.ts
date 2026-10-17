@@ -132,16 +132,20 @@ async function showNobody(dispatch: Dispatch, notice = ""): Promise<void> {
   dispatch(sessionSettled({ status: "signed-out", pupils, active: null, notice }));
 }
 
+/** Why a pupil's sign-in ended, which decides what the next screen says. */
+export type EndReason = "ended" | "password-changed";
+
 /** Takes a pupil whose sign-in has ended off the phone, saying so to whoever looks next. */
-async function forget(account: string): Promise<string> {
+async function forget(account: string, why: EndReason = "ended"): Promise<string> {
   const pupil = (await listPupils()).find((p) => p.account === account);
   dropAccess(account);
   await deletePupil(account);
   await wipePupil(account);
   setPushChoice(account, null);
-  return pupil?.firstName
-    ? `${pupil.firstName} was signed out on this phone. Sign in again to carry on.`
-    : "";
+  if (!pupil?.firstName) return "";
+  return why === "password-changed"
+    ? `${pupil.firstName}'s password was changed, so they were signed out. Sign in with the new password to carry on.`
+    : `${pupil.firstName} was signed out on this phone. Sign in again to carry on.`;
 }
 
 /**
@@ -336,9 +340,9 @@ export const signOutPupil =
  * the next pupil is shown, or the sign-in screen says what happened.
  */
 export const endPupil =
-  (account: string) =>
+  (account: string, why: EndReason = "ended") =>
   async (dispatch: Dispatch, getState: GetState): Promise<void> => {
-    const notice = await forget(account);
+    const notice = await forget(account, why);
     if (getState().session.active !== account) {
       const { status, active } = getState().session;
       dispatch(sessionSettled({ status, pupils: await listPupils(), active }));
@@ -349,6 +353,23 @@ export const endPupil =
       if (opened.ok) return;
     }
     await showNobody(dispatch, notice);
+  };
+
+/**
+ * Takes a pupil off this phone straight after they change their password.
+ *
+ * The change ends the pupil's sign-in on every phone, this one included: each
+ * phone's next refresh is refused, at the latest when the 15-minute access
+ * token runs out. This does it now, so the pupil is not signed out partway
+ * through something later. The sign-out call clears their cookie on this phone;
+ * the other pupils on it stay signed in, and the next screen says to sign in
+ * with the new password.
+ */
+export const signOutAfterPasswordChange =
+  (account: string) =>
+  async (dispatch: Dispatch): Promise<void> => {
+    await authPost("/user/auth/device/sign-out/", { account });
+    await dispatch(endPupil(account, "password-changed"));
   };
 
 /**

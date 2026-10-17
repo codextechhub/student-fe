@@ -2,6 +2,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
 
+import { ChangePassword } from "@/components/change-password";
 import { PageHeader } from "@/components/layout/page-header";
 import { InstallSetting } from "@/components/install-offer";
 import { PageShell } from "@/components/layout/page-shell";
@@ -35,8 +36,9 @@ const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
  * pupil's own phone and personal email can, and the server's refusal for a
  * value it cannot store is shown under its box. The photo can be changed or
  * removed only where the school lets pupils do that. Nothing can be changed
- * offline. Notifications on this phone are turned on and off here too, and
- * the app can be installed from here until it is.
+ * offline. The pupil changes their own password here, notifications on this
+ * phone are turned on and off here too, and the app can be installed from here
+ * until it is.
  */
 export function ProfilePage() {
   const { data: profile, isLoading, isError, refetch } = useProfileQuery();
@@ -68,6 +70,7 @@ export function ProfilePage() {
           </div>
         </>
       )}
+      <ChangePassword />
       <InstallSetting />
       <PushSetting />
     </PageShell>

@@ -389,6 +389,20 @@ the token (and only the showing pupil's, so the switcher shows siblings'
 initials). The switcher's saved name and photo went stale after a change and
 now follow `me/`.
 
+**Password, added 17 October 2026.** My profile has a Password section: the
+current password and the new one twice, each with show/hide, the school's
+rules from `GET /v1/user/auth/password/policy/` beside them, and
+`POST /v1/user/auth/password/change/` with
+`{current_password, password, confirm_password}`, the endpoint school-fe's
+Account security uses. Each refusal sits under its box; Save is off until all
+three are filled and the new two match, and offline. A change ends the pupil's
+sign-in on every phone, this one included (each phone's next refresh is
+refused, within 15 minutes); a sibling on the same phone is untouched. "Sign
+in again now" signs the pupil out here at once and opens the sign-in screen,
+which says why, so the pupil is never left looking at a sibling's profile.
+Driven in the browser at 390px as Amaka Balogun (`LV/2026/0029`) with her
+brother Musa (`LV/2026/0030`) on the same phone, and alone.
+
 ### Phase 4: Timetable and Attendance
 
 - **Timetable:** today's list and "Next", day tabs on a phone, the week grid
