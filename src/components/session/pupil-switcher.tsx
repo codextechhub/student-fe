@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown, LogOut, UserPlus, X } from "lucide-react";
+import { Check, LogOut, UserPlus, X } from "lucide-react";
 import { Dialog } from "radix-ui";
 import { useNavigate } from "react-router";
 
@@ -47,8 +47,6 @@ export function PupilSwitcher() {
       <Dialog.Trigger asChild>
         <button type="button" className="pupil-switcher-trigger" aria-label={`${showing.fullName}. Switch pupil or sign out`}>
           <PupilAvatar name={showing.fullName} photo={showing.photo} size={32} />
-          <span>{showing.firstName}</span>
-          <ChevronDown size={16} aria-hidden="true" />
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>

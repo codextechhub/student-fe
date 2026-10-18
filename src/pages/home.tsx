@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, CheckCircle2, ChevronRight, GraduationCap, Sparkles, Wallet } from "lucide-react";
+import { Bell, CheckCircle2, ChevronRight, Wallet } from "lucide-react";
 import { Link } from "react-router";
 
 import { InstallOffer } from "@/components/install-offer";
@@ -37,20 +37,20 @@ export function HomePage() {
           </div>
         )}
 
-        <section className="home-hero" aria-labelledby="home-welcome">
-          <div className="home-hero-orb" aria-hidden="true" />
-          <p className="home-hero-date"><Sparkles aria-hidden="true" size={15} /> {home ? formatLongDate(home.date) : "Your student space"}</p>
-          <h1 id="home-welcome">Hello, {me?.student.full_name || "there"}.</h1>
-          <p className="home-hero-intro">Here&apos;s your day at a glance. Everything you need, all in one place.</p>
-          {(className || schoolYear) && (
-            <div className="home-hero-chips">
-              {className && <span className="home-glass-chip"><GraduationCap size={16} aria-hidden="true" />{className}</span>}
-              {schoolYear && <span className="home-glass-chip"><CalendarDays size={16} aria-hidden="true" />{schoolYear}</span>}
-            </div>
-          )}
-        </section>
-
-        <InstallOffer />
+        <div className="home-side">
+          <section className="home-hero" aria-labelledby="home-welcome">
+            <div className="home-hero-orb" aria-hidden="true" />
+            <p className="home-hero-date">{home ? formatLongDate(home.date) : "Today"}</p>
+            <h1 id="home-welcome">Hello, {me?.student.first_name || "there"}.</h1>
+            {(className || schoolYear) && (
+              <div className="home-hero-chips">
+                {className && <span className="home-glass-chip">{className}</span>}
+                {schoolYear && <span className="home-glass-chip">{schoolYear}</span>}
+              </div>
+            )}
+          </section>
+          <InstallOffer />
+        </div>
         <div className="home-content">
           {isLoading && !home && <div className="home-loading" role="status" aria-label="Loading home" />}
           {isError && !home && (
