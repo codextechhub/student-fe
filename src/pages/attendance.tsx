@@ -1,206 +1,173 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight, Info } from "lucide-react";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
-import { monthsOf } from "@/lib/attendance-months";
+import { monthsOf, type MonthGrid } from "@/lib/attendance-months";
 import { formatClock, formatDate } from "@/lib/format";
 import { rateLine } from "@/lib/pupil-lines";
-import { cn } from "@/lib/utils";
 import { useAttendanceQuery, type AttendanceDay, type AttendanceNote } from "@/redux/services/portal-api";
 
+import "./attendance.css";
 
-/**
- * The pupil's attendance for a term: the rate and the counts, a calendar per
- * month, and the days worth a note (absent, late and excused, with the reason,
- * the register's note and the arrival time).
- *
- * The current term is shown first; earlier terms are a choice away. A term
- * with no register taken yet says so rather than showing 0%. A day the pupil
- * thinks is wrong is for their class teacher to correct, and the screen says
- * so.
- */
+/** The pupil's term attendance, calendar records, and exceptional-day notes. */
 export function AttendancePage() {
   const [term, setTerm] = useState<number | null>(null);
+  const [monthKey, setMonthKey] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const { data, isLoading, isError, isFetching, refetch } = useAttendanceQuery(term);
   const counts = data?.counts;
   const taken = counts ? counts.present + counts.absent + counts.excused : 0;
+  const months = monthsOf(data?.days ?? []);
+  const todayMonth = data?.today?.date.slice(0, 7);
+  const defaultMonth = months.find((month) => month.key === todayMonth)
+    ?? [...months].reverse().find((month) => month.days.some((day) => day?.state === "MARKED"))
+    ?? months[0];
+  const activeMonth = months.find((month) => month.key === monthKey) ?? defaultMonth;
+  const monthIndex = activeMonth ? months.findIndex((month) => month.key === activeMonth.key) : -1;
+  const selectedDay = activeMonth?.days.find((day) => day?.date === selectedDate)
+    ?? activeMonth?.days.find((day) => day?.date === data?.today?.date)
+    ?? activeMonth?.days.find((day) => day?.state === "MARKED" && ["L", "A", "E"].includes(day.mark ?? ""))
+    ?? null;
+  const selectedNote = data?.notes.find((note) => note.date === selectedDay?.date);
+
+  const chooseTerm = (id: number) => {
+    setTerm(id);
+    setMonthKey(null);
+    setSelectedDate(null);
+  };
+  const chooseMonth = (index: number) => {
+    setMonthKey(months[index].key);
+    setSelectedDate(null);
+  };
 
   return (
-    <PageShell grid className="mx-auto w-full max-w-5xl content-start gap-4 pt-4 lg:px-6">
-      <PageHeader
-        title="My attendance"
-        description={data?.term ? `${data.term.name} · ${data.term.session_name}` : ""}
-        actions={
-          data && data.terms.length > 1 && (
-            <select
-              aria-label="Term"
-              value={data.term?.id ?? ""}
-              onChange={(e) => setTerm(Number(e.target.value))}
-              className="h-9 rounded-md border border-border bg-background px-2 text-base md:text-sm"
-            >
-              {[...data.terms].reverse().map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} {t.session_name}
-                  {t.is_current ? " (this term)" : ""}
-                </option>
-              ))}
-            </select>
-          )
-        }
-      />
-      {isLoading && <div className="h-48 animate-pulse rounded-xl bg-muted" />}
-      {isError && !data && (
-        <p className="rounded-xl border border-border p-4 text-xs text-muted-foreground">
-          Your attendance can&apos;t be shown right now.{" "}
-          <button type="button" className="font-medium text-primary" onClick={() => refetch()}>
-            Try again
-          </button>
-        </p>
-      )}
-      {data && counts && (
-        <div className={cn("grid min-w-0 gap-4", isFetching && "opacity-60")}>
-          <section className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-border p-4">
-            <div className="min-w-0">
-              <p className="font-mono text-3xl font-semibold text-foreground">
-                {counts.rate === null ? "-" : `${Math.round(counts.rate)}%`}
-              </p>
-              <p className="text-xs text-muted-foreground">present this term</p>
-            </div>
-            <div className="min-w-0 flex-1 basis-60 space-y-2">
-              <p className="text-sm text-foreground">{rateLine(counts.rate)}</p>
-              {taken > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  From {taken} {taken === 1 ? "day" : "days"} with a register so far. If a day looks wrong, tell your
-                  class teacher.
-                </p>
-              )}
-              <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <Count label="Present" value={counts.present} />
-                <Count label="Late" value={counts.late} />
-                <Count label="Absent" value={counts.absent} />
-                <Count label="Excused" value={counts.excused} />
-              </dl>
-            </div>
-          </section>
-
-          <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <section className="min-w-0 rounded-xl border border-border p-4">
-              <h2 className="mb-1 text-sm font-semibold text-foreground">Day by day</h2>
-              <Legend />
-              <div className="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-2">
-                {monthsOf(data.days).map((month) => (
-                  <MonthCalendar key={month.key} label={month.label} lead={month.lead} days={month.days} />
-                ))}
+    <PageShell className="attendance-page">
+      <div className="attendance-wrap">
+        <header className="attendance-heading">
+          <div><p>Your school days</p><h1>See how each school day was recorded.</h1></div>
+          {data?.term && <div className="attendance-term-control">
+            <span className="attendance-term-label">School term</span>
+            {data.terms.length > 1 ? <select aria-label="School term" value={data.term.id} onChange={(event) => chooseTerm(Number(event.target.value))}>
+              {[...data.terms].reverse().map((option) => <option key={option.id} value={option.id}>{option.name} · {option.session_name}{option.is_current ? " (this term)" : ""}</option>)}
+            </select> : <span className="attendance-term-current">{data.term.name} · {data.term.session_name}</span>}
+          </div>}
+        </header>
+        {isLoading && !data && <div className="attendance-loading" role="status" aria-label="Loading attendance" />}
+        {isError && !data && <div className="attendance-notice" role="alert">Your attendance can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button></div>}
+        {data && counts && <div className="attendance-layout" aria-busy={isFetching}>
+          <div className="attendance-overview">
+            <section className="attendance-hero" aria-label="Attendance summary">
+              <span className="attendance-hero-label">{counts.rate === null ? "Attendance this term" : "Present this term"}</span>
+              <div className="attendance-hero-main">
+                <div><strong className={counts.rate === null ? "attendance-no-rate" : "attendance-rate"}>{counts.rate === null ? "Not yet" : <>{Math.round(counts.rate)}<small>%</small></>}</strong><p>{counts.rate === null ? "Waiting for the first register" : "of registered school days"}</p></div>
+                <span className="attendance-ring" style={{ "--attendance-rate": `${Math.max(0, Math.min(100, counts.rate ?? 0))}%` } as CSSProperties}><CalendarDays size={20} aria-hidden="true" /></span>
+              </div>
+              <p className="attendance-message">{rateLine(counts.rate)}</p>
+              <span className="attendance-hero-foot">{taken > 0 ? `From ${taken} ${taken === 1 ? "day" : "days"} with a register` : "No registered days yet"}</span>
+            </section>
+            <dl className="attendance-counts">
+              <Count kind="present" glyph="P" label="Present" value={counts.present} />
+              <Count kind="late" glyph="L" label="Late" value={counts.late} />
+              <Count kind="absent" glyph="A" label="Absent" value={counts.absent} />
+              <Count kind="excused" glyph="E" label="Excused" value={counts.excused} />
+            </dl>
+            <p className="attendance-count-note">Late days are included in Present.</p>
+          </div>
+          <div className="attendance-details">
+            <section aria-label="Day by day">
+              <div className="attendance-section-heading is-first"><h2>Day by day</h2><p>Tap a date to see its record</p></div>
+              <div className="attendance-surface attendance-calendar">
+                {activeMonth ? <>
+                  <div className="attendance-calendar-toolbar">
+                    <strong>{activeMonth.label}</strong>
+                    <div className="attendance-month-nav">
+                      <button type="button" aria-label="Previous month" disabled={monthIndex <= 0} onClick={() => chooseMonth(monthIndex - 1)}><ChevronLeft size={18} aria-hidden="true" /></button>
+                      <button type="button" aria-label="Next month" disabled={monthIndex >= months.length - 1} onClick={() => chooseMonth(monthIndex + 1)}><ChevronRight size={18} aria-hidden="true" /></button>
+                    </div>
+                  </div>
+                  <MonthCalendar month={activeMonth} selectedDate={selectedDay?.date} onSelect={setSelectedDate} />
+                  <Legend days={data.days} />
+                  <div className="attendance-day-detail" aria-live="polite"><span className="attendance-detail-icon"><CalendarDays size={18} aria-hidden="true" /></span><div>
+                    {selectedDay ? <><strong>{formatDate(selectedDay.date)} · {lookOf(selectedDay).label}</strong><p>{dayDetail(selectedDay, selectedNote)}</p></> : <><strong>Choose a marked date</strong><p>Tap a school day above to see its record.</p></>}
+                  </div></div>
+                </> : <p className="attendance-calendar-empty">No school days have been added to this term yet.</p>}
               </div>
             </section>
-            <section className="min-w-0 rounded-xl border border-border p-4">
-              <h2 className="mb-2 text-sm font-semibold text-foreground">Days to note</h2>
-              {data.notes.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {taken > 0 ? "No absences or late days this term." : "Nothing yet this term."}
-                </p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {data.notes.map((note) => (
-                    <NoteRow key={note.date} note={note} />
-                  ))}
-                </ul>
-              )}
+            <section aria-label="Days to note">
+              <div className="attendance-section-heading"><h2>Days to note</h2><p>Late, absent and excused days</p></div>
+              <div className="attendance-surface attendance-notes">{data.notes.length > 0 ? <ul>{data.notes.map((note) => <NoteRow key={note.date} note={note} />)}</ul> : <p className="attendance-note-empty">{taken > 0 ? "No absences or late days this term." : "Nothing to note yet. School days will appear here after the register is taken."}</p>}</div>
+              <div className="attendance-teacher-tip"><Info size={17} aria-hidden="true" /><span><strong>Something look wrong?</strong> Tell your class teacher so the school can check the register.</span></div>
             </section>
           </div>
-        </div>
-      )}
+        </div>}
+      </div>
     </PageShell>
   );
 }
 
-function Count({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg bg-muted/50 px-3 py-2">
-      <dt className="text-[11px] text-muted-foreground">{label}</dt>
-      <dd className="font-mono text-base font-semibold text-foreground">{value}</dd>
-    </div>
-  );
+function Count({ kind, glyph, label, value }: { kind: string; glyph: string; label: string; value: number }) {
+  return <div className={`attendance-count is-${kind}`}><span className="attendance-count-icon" aria-hidden="true">{glyph}</span><dt>{label}</dt><dd>{value}</dd></div>;
 }
 
-/** How a day looks, and what it is called, by its state and mark. */
-const DAY_LOOK: Record<string, { label: string; className: string }> = {
-  P: { label: "Present", className: "bg-green-100 text-green-800 font-semibold" },
-  L: { label: "Late", className: "bg-amber-100 text-amber-800 font-semibold" },
-  A: { label: "Absent", className: "bg-red-100 text-red-700 font-semibold" },
-  E: { label: "Excused", className: "bg-sky-100 text-sky-800 font-semibold" },
-  CLOSED: { label: "No school", className: "bg-transparent text-muted-foreground/50" },
-  NOT_TAKEN: { label: "No register yet", className: "border border-dashed border-border text-muted-foreground" },
-  SUSPENDED: { label: "Not on the register", className: "bg-muted text-muted-foreground" },
-  NOT_ON_ROLL: { label: "Before you joined", className: "text-muted-foreground/40" },
+const DAY_LOOK: Record<string, { label: string; className: string; glyph: string }> = {
+  P: { label: "Present", className: "is-present", glyph: "P" },
+  L: { label: "Late", className: "is-late", glyph: "L" },
+  A: { label: "Absent", className: "is-absent", glyph: "A" },
+  E: { label: "Excused", className: "is-excused", glyph: "E" },
+  CLOSED: { label: "No school", className: "is-closed", glyph: "–" },
+  NOT_TAKEN: { label: "No register yet", className: "is-not-taken", glyph: "?" },
+  SUSPENDED: { label: "Not on the register", className: "is-suspended", glyph: "–" },
+  NOT_ON_ROLL: { label: "Before you joined", className: "is-not-on-roll", glyph: "·" },
 };
 
 function lookOf(day: AttendanceDay) {
   return DAY_LOOK[day.state === "MARKED" && day.mark ? day.mark : day.state] ?? DAY_LOOK.NOT_TAKEN;
 }
 
-function Legend() {
-  return (
-    <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-      {(["P", "L", "A", "E", "NOT_TAKEN"] as const).map((key) => (
-        <li key={key} className="flex items-center gap-1.5">
-          <span className={cn("inline-block size-3 rounded-sm", DAY_LOOK[key].className)} />
-          {DAY_LOOK[key].label}
-        </li>
-      ))}
-    </ul>
-  );
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function MonthCalendar({ month, selectedDate, onSelect }: { month: MonthGrid; selectedDate?: string; onSelect: (date: string) => void }) {
+  return <div className="attendance-calendar-grid">
+    <div className="attendance-weekdays">{WEEKDAYS.map((day) => <span key={day}>{day}</span>)}</div>
+    <div className="attendance-days">
+      {Array.from({ length: month.lead }, (_, index) => <span key={`lead-${index}`} aria-hidden="true" />)}
+      {month.days.map((day, index) => {
+        if (!day) return <span key={index} className="attendance-day is-empty" aria-label={`${index + 1} ${month.label}: No school record`}><span>{index + 1}</span></span>;
+        const look = lookOf(day);
+        const label = `${formatDate(day.date)}: ${look.label}${day.closed_reason ? ` (${day.closed_reason})` : ""}`;
+        return <button key={day.date} type="button" title={label} aria-label={label} aria-pressed={selectedDate === day.date} onClick={() => onSelect(day.date)} className={`attendance-day ${look.className}${selectedDate === day.date ? " is-selected" : ""}`}><span>{index + 1}</span><small>{look.glyph}</small></button>;
+      })}
+    </div>
+  </div>;
 }
 
-const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
+function Legend({ days }: { days: AttendanceDay[] }) {
+  const keys = ["P", "L", "A", "E", "CLOSED", "NOT_TAKEN"];
+  if (days.some((day) => day.state === "SUSPENDED")) keys.push("SUSPENDED");
+  if (days.some((day) => day.state === "NOT_ON_ROLL")) keys.push("NOT_ON_ROLL");
+  return <ul className="attendance-legend">{keys.map((key) => <li key={key}><span className={`attendance-legend-glyph ${DAY_LOOK[key].className}`} aria-hidden="true">{DAY_LOOK[key].glyph}</span>{DAY_LOOK[key].label}</li>)}</ul>;
+}
 
-function MonthCalendar({ label, lead, days }: { label: string; lead: number; days: (AttendanceDay | null)[] }) {
-  return (
-    <div className="min-w-0">
-      <p className="mb-2 text-xs font-medium text-foreground">{label}</p>
-      <div className="grid grid-cols-7 gap-1 text-center">
-        {WEEKDAYS.map((d, i) => (
-          <span key={i} className="text-[10px] text-muted-foreground">
-            {d}
-          </span>
-        ))}
-        {Array.from({ length: lead }, (_, i) => (
-          <span key={`lead-${i}`} />
-        ))}
-        {days.map((day, i) => {
-          if (!day) return <span key={i} className="flex aspect-square items-center justify-center text-[11px] text-muted-foreground/30">{i + 1}</span>;
-          const look = lookOf(day);
-          const title = `${formatDate(day.date)}: ${look.label}${day.closed_reason ? ` (${day.closed_reason})` : ""}`;
-          return (
-            <span
-              key={i}
-              title={title}
-              aria-label={title}
-              className={cn("flex aspect-square items-center justify-center rounded-md text-[11px]", look.className)}
-            >
-              {i + 1}
-            </span>
-          );
-        })}
-      </div>
-    </div>
-  );
+function dayDetail(day: AttendanceDay, note?: AttendanceNote) {
+  const detail = [note?.reason_label, note?.arrived_at ? `Arrived ${formatClock(note.arrived_at)}` : day.arrived_at ? `Arrived ${formatClock(day.arrived_at)}` : null, note?.note].filter(Boolean);
+  if (detail.length) return detail.join(" · ");
+  if (day.closed_reason) return `School closed: ${day.closed_reason}`;
+  switch (day.state) {
+    case "MARKED": return `Recorded as ${lookOf(day).label.toLowerCase()}.`;
+    case "CLOSED": return "The school was closed.";
+    case "NOT_TAKEN": return "The register has not been taken for this day.";
+    case "SUSPENDED": return "You were not on the register. Ask your class teacher if that looks wrong.";
+    case "NOT_ON_ROLL": return "This date was before you joined the school.";
+    default: return "No register has been taken for this day.";
+  }
 }
 
 function NoteRow({ note }: { note: AttendanceNote }) {
-  const look = DAY_LOOK[note.mark];
-  const detail = [
-    note.reason_label,
-    note.arrived_at ? `arrived ${formatClock(note.arrived_at)}` : null,
-    note.note || null,
-  ].filter(Boolean);
-  return (
-    <li className="flex min-w-0 items-start gap-3 py-2">
-      <span className={cn("mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px]", look?.className)}>{note.mark_label}</span>
-      <div className="min-w-0">
-        <p className="text-sm text-foreground">{formatDate(note.date)}</p>
-        {detail.length > 0 && <p className="text-xs break-words text-muted-foreground">{detail.join(" · ")}</p>}
-      </div>
-    </li>
-  );
+  const [, month, date] = note.date.split("-");
+  const detail = [note.reason_label, note.arrived_at ? `Arrived ${formatClock(note.arrived_at)}` : null, note.note].filter(Boolean);
+  const look = DAY_LOOK[note.mark] ?? DAY_LOOK.NOT_TAKEN;
+  return <li className="attendance-note">
+    <div className="attendance-note-date"><strong>{Number(date)}</strong><span>{formatDate(note.date).split(" ")[1] ?? month}</span></div>
+    <div className="attendance-note-body"><div><strong>{formatDate(note.date)}</strong><span className={`attendance-note-mark ${look.className}`}>{note.mark_label}</span></div>{detail.length > 0 && <p>{detail.join(" · ")}</p>}</div>
+  </li>;
 }
