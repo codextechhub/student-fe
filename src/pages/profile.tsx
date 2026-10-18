@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from "react";
-import { Info, LockKeyhole, Pencil } from "lucide-react";
+import { Camera, ImagePlus, Info, LockKeyhole, Pencil, Trash2 } from "lucide-react";
+import { Dialog } from "radix-ui";
 import { toast } from "sonner";
 
 import { ChangePassword } from "@/components/change-password";
@@ -47,7 +48,6 @@ export function ProfilePage() {
           <>
             <PhotoCard
               profile={profile}
-              className={[profile.managed_by_school.class_name, profile.managed_by_school.session_name].filter(Boolean).join(" · ")}
               schoolName={me?.school.name ?? ""}
               offline={offline}
             />
@@ -65,8 +65,9 @@ export function ProfilePage() {
   );
 }
 
-function PhotoCard({ profile, className, schoolName, offline }: { profile: Profile; className: string; schoolName: string; offline: boolean }) {
+function PhotoCard({ profile, schoolName, offline }: { profile: Profile; schoolName: string; offline: boolean }) {
   const picker = useRef<HTMLInputElement>(null);
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
   const [upload, { isLoading: uploading }] = useUploadPhotoMutation();
   const [remove, { isLoading: removing }] = useRemovePhotoMutation();
   const name = profile.managed_by_school.full_name;
@@ -92,6 +93,7 @@ function PhotoCard({ profile, className, schoolName, offline }: { profile: Profi
   const drop = async () => {
     try {
       await remove().unwrap();
+      setPhotoMenuOpen(false);
       toast.success("Photo removed");
     } catch (error) {
       toast.error(refusal(error).message);
@@ -100,33 +102,45 @@ function PhotoCard({ profile, className, schoolName, offline }: { profile: Profi
 
   return (
     <section className="profile-hero" aria-label="Pupil identity">
-      <div className="profile-hero-avatar"><PupilAvatar name={name} photo={profile.photo_url} size={104} /></div>
+      <div className="profile-hero-photo">
+        <div className="profile-hero-avatar"><PupilAvatar name={name} photo={profile.photo_url} size={104} /></div>
+        {profile.photo_editable && (
+          <Dialog.Root open={photoMenuOpen} onOpenChange={setPhotoMenuOpen}>
+            <Dialog.Trigger className="profile-camera" type="button" aria-label="Profile photo options" disabled={offline || uploading || removing}>
+              <Camera size={18} aria-hidden="true" />
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay className="profile-photo-overlay" />
+              <Dialog.Content className="profile-photo-dialog" aria-describedby={undefined}>
+                <Dialog.Title>Profile photo</Dialog.Title>
+                <button type="button" onClick={() => { setPhotoMenuOpen(false); picker.current?.click(); }}>
+                  <ImagePlus size={19} aria-hidden="true" /> Choose a photo
+                </button>
+                {profile.photo_url && <button type="button" onClick={() => void drop()} disabled={removing || uploading}>
+                  <Trash2 size={19} aria-hidden="true" /> {removing ? "Removing…" : "Remove photo"}
+                </button>}
+                <Dialog.Close type="button" className="profile-photo-cancel">Cancel</Dialog.Close>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
+        )}
+        {profile.photo_editable && (
+          <input
+            ref={picker}
+            className="profile-photo-input"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            aria-label="Choose a profile photo"
+            onChange={(event) => {
+              void chosen(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+        )}
+      </div>
       <div className="profile-hero-content">
-        <span className="profile-hero-label">Pupil profile</span>
         <h2>{name}</h2>
-        {className && <p className="profile-hero-class">{className}</p>}
-        <span className="profile-hero-id">Admission no. {profile.managed_by_school.admission_number || "None"}</span>
         {schoolName && <p className="profile-hero-school">{schoolName}</p>}
-        {profile.photo_editable ? (
-          <div className="profile-photo-actions">
-            <input
-              ref={picker}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              aria-label="Choose a profile photo"
-              onChange={(event) => {
-                void chosen(event.target.files?.[0]);
-                event.target.value = "";
-              }}
-            />
-            <button type="button" disabled={offline || uploading || removing} onClick={() => picker.current?.click()}>
-              {uploading ? "Uploading…" : "Change photo"}
-            </button>
-            {profile.photo_url && <button type="button" className="is-remove" disabled={offline || removing || uploading} onClick={drop}>
-              {removing ? "Removing…" : "Remove photo"}
-            </button>}
-          </div>
-        ) : <p className="profile-photo-note">Your school manages profile photos.</p>}
       </div>
     </section>
   );

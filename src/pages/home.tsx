@@ -40,7 +40,7 @@ export function HomePage() {
         <section className="home-hero" aria-labelledby="home-welcome">
           <div className="home-hero-orb" aria-hidden="true" />
           <p className="home-hero-date"><Sparkles aria-hidden="true" size={15} /> {home ? formatLongDate(home.date) : "Your student space"}</p>
-          <h1 id="home-welcome">Hello,<br />{me?.student.first_name || "there"}.</h1>
+          <h1 id="home-welcome">Hello, {me?.student.full_name || "there"}.</h1>
           <p className="home-hero-intro">Here&apos;s your day at a glance. Everything you need, all in one place.</p>
           {(className || schoolYear) && (
             <div className="home-hero-chips">

@@ -25,6 +25,12 @@ import { PullToRefresh } from "./pull-to-refresh";
  */
 export function AppShell() {
   const { pathname } = useLocation();
+  const [scrolled, setScrolled] = useState(() => window.scrollY > 8);
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 8);
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
   const dispatch = useAppDispatch();
   const { data: me } = useMeQuery();
   // Keep the switcher's saved name and photo in step with the latest me/.
@@ -41,7 +47,7 @@ export function AppShell() {
 
   return (
     <div className={cn("flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onDesignPage && "bg-[#f5f7fc]")}>
-      <header className={cn("sticky top-0 z-30 flex min-w-0 items-center gap-3 border-b border-border bg-background/95 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 backdrop-blur lg:px-6", onDesignPage && "border-transparent bg-[#f5f7fc]/90")}>
+      <header className={cn("sticky top-0 z-30 flex min-w-0 items-center gap-3 border-b px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 transition-[background-color,backdrop-filter,border-color] duration-200 lg:px-6", onDesignPage ? scrolled ? "border-white/50 bg-[#f5f7fc]/75 backdrop-blur-xl" : "border-transparent bg-[#f5f7fc] bg-[radial-gradient(circle_at_13%_100%,#e9eafe,transparent_28rem)]" : scrolled ? "border-border bg-background/75 backdrop-blur-xl" : "border-border bg-background")}>
         <SchoolMark logo={me?.school.logo_url || null} size={28} animate={false} alt={where} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">{screenTitle}</p>
@@ -103,12 +109,19 @@ function TabBar({ badges }: { badges: Partial<Record<NavItem["key"], number>> })
   // carrying their unread counts so a new notice is not hidden behind it.
   const moreShowing = more.some((item) => item.key === itemFor(pathname)?.key);
   const moreCount = more.reduce((sum, item) => sum + (badges[item.key] ?? 0), 0);
+  const activeIndex = moreShowing ? tabs.length : Math.max(0, tabs.findIndex((item) => item.key === itemFor(pathname)?.key));
+  const tabCount = tabs.length + (more.length > 0 ? 1 : 0);
   return (
     <nav
       aria-label="Screens"
       className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
     >
-      <div className="pointer-events-auto flex w-full max-w-md gap-1 rounded-full border border-white/70 bg-white/70 p-1.5 shadow-[0_10px_30px_-8px_rgba(17,24,39,0.25)] ring-1 ring-black/5 backdrop-blur-xl backdrop-saturate-150">
+      <div className="pointer-events-auto relative flex w-full max-w-md gap-1 rounded-full border border-white/70 bg-white/70 p-1.5 shadow-[0_10px_30px_-8px_rgba(17,24,39,0.25)] ring-1 ring-black/5 backdrop-blur-xl backdrop-saturate-150">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-1.5 left-1.5 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-300 ease-out motion-reduce:transition-none"
+          style={{ width: `calc((100% - 12px - ${(tabCount - 1) * 4}px) / ${tabCount})`, transform: `translateX(calc(${activeIndex * 100}% + ${activeIndex * 4}px))` }}
+        />
         {tabs.map((item) => {
           const Icon = item.icon;
           const count = badges[item.key];
@@ -121,7 +134,7 @@ function TabBar({ badges }: { badges: Partial<Record<NavItem["key"], number>> })
                 cn(
                   TAB,
                   isActive
-                    ? "bg-white font-medium text-primary shadow-sm ring-1 ring-black/5"
+                    ? "font-medium text-primary"
                     : "text-muted-foreground hover:text-foreground",
                 )
               }
@@ -144,7 +157,7 @@ function TabBar({ badges }: { badges: Partial<Record<NavItem["key"], number>> })
               className={cn(
                 TAB,
                 moreShowing
-                  ? "bg-white font-medium text-primary shadow-sm ring-1 ring-black/5"
+                  ? "font-medium text-primary"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >

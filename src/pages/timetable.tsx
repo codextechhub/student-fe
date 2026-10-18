@@ -14,8 +14,7 @@ export function TimetablePage() {
     <PageShell className="timetable-page">
       <div className="timetable-wrap">
         <header className="timetable-heading">
-          <p>Your week, made simple</p>
-          <h1>My timetable</h1>
+          <h1>Your week, made simple</h1>
           {data?.class_name && <span>{data.class_name}</span>}
         </header>
         {isLoading && !data && <div className="timetable-loading" role="status" aria-label="Loading timetable" />}

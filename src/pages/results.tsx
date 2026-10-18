@@ -27,7 +27,8 @@ export function ResultsPage() {
           <p>Your learning story</p>
           <h1>See your progress, one term at a time.</h1>
         </header>
-        <div className="results-tabs" role="tablist" aria-label="Results view">
+        <div className={`results-tabs${tab === "session" ? " is-session" : ""}`} role="tablist" aria-label="Results view">
+          <span className="results-tab-indicator" aria-hidden="true" />
           {(["term", "session"] as const).map((key) => (
             <button
               key={key}
