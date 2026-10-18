@@ -38,8 +38,6 @@ from the live route while the direction is under review.
 
 ## Review boundary
 
-`home-redesign-prototype.html` is an isolated visual prototype with sample
-student data. Its controls indicate which later screens they would open. The
-approved direction is now implemented in `src/pages/home.tsx` against the
+The approved direction is implemented in `src/pages/home.tsx` against the
 existing `home/` response, including unavailable, empty, unpublished, offline,
-and unread states. The prototype itself does not send requests.
+and unread states. The sample-data prototype was removed after implementation.
