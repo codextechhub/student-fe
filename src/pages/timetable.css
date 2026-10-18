@@ -8,7 +8,7 @@
 .timetable-feature { position: relative; isolation: isolate; overflow: hidden; min-width: 0; min-height: 209px; padding: 25px; border-radius: 29px; color: #fff; background: linear-gradient(130deg, #26459c, #3859c3 58%, #758af3); box-shadow: 0 18px 35px #304ea42c; }
 .timetable-feature::before { content: ""; position: absolute; z-index: -1; width: 260px; height: 260px; right: -80px; top: -125px; border-radius: 50%; background: radial-gradient(circle, #b2c4ffa6, #b2c4ff23 60%, transparent 70%); }
 .timetable-feature-orb { position: absolute; z-index: -1; width: 210px; height: 210px; right: -67px; bottom: -130px; border: 1px solid #ffffff55; border-radius: 50%; box-shadow: 0 0 0 35px #ffffff0b, 0 0 0 70px #ffffff0a; }
-.timetable-feature-label { display: flex; align-items: center; gap: 7px; margin: 0; color: #e0e8ff; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }
+.timetable-feature-label { margin: 0; color: #e0e8ff; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }
 .timetable-feature h2 { margin: 22px 0 0; font-size: 26px; line-height: 1.15; font-weight: 800; letter-spacing: -.045em; overflow-wrap: anywhere; }
 .timetable-feature-description { margin: 7px 0 0; color: #e0e8ff; font-size: 12px; line-height: 1.5; }
 .timetable-feature-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }

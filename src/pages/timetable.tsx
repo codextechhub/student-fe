@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, CircleDot, Clock3, MapPin } from "lucide-react";
+import { CalendarDays, Clock3, MapPin } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
 import { formatClock } from "@/lib/format";
@@ -62,7 +62,7 @@ function CurrentLesson({ timetable }: { timetable: Timetable }) {
   return (
     <section className="timetable-feature" aria-labelledby="timetable-feature-title">
       <div className="timetable-feature-orb" aria-hidden="true" />
-      <p className="timetable-feature-label"><CircleDot size={14} aria-hidden="true" />{label}</p>
+      <p className="timetable-feature-label">{label}</p>
       <h2 id="timetable-feature-title">{title}</h2>
       <p className="timetable-feature-description">
         {featured
