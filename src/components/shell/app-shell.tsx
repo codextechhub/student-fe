@@ -18,10 +18,10 @@ import { PullToRefresh } from "./pull-to-refresh";
  * The frame every signed-in screen sits in.
  *
  * At every size the screens are a floating tab bar at the bottom (More once
- * there are too many for it), and the header carries the school's crest and
- * name, the screen's title and the pupil switcher. The offline bar sits under
- * the header whenever the app is showing kept data, and a pull down from the
- * top of a screen reads everything on it again.
+ * there are too many for it), and the header carries the school's crest, the
+ * screen title and the pupil switcher. The offline bar sits under the header
+ * whenever the app is showing kept data, and a pull down from the top of a
+ * screen reads everything on it again.
  */
 export function AppShell() {
   const { pathname } = useLocation();
@@ -37,17 +37,14 @@ export function AppShell() {
   const onDesignPage = pathname === "/" || pathname === "/timetable";
   const badges: Partial<Record<NavItem["key"], number>> = { notices: unread };
   const where = [me?.school.name, me?.show_branch ? me?.branch?.name : null].filter(Boolean).join(" · ");
-  const when = [me?.session?.name, me?.term?.name].filter(Boolean).join(" · ");
+  const screenTitle = current?.key === "timetable" ? "My timetable" : current?.key === "results" ? "My results" : current?.label ?? "";
 
   return (
     <div className={cn("flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onDesignPage && "bg-[#f5f7fc]")}>
       <header className={cn("sticky top-0 z-30 flex min-w-0 items-center gap-3 border-b border-border bg-background/95 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 backdrop-blur lg:px-6", onDesignPage && "border-transparent bg-[#f5f7fc]/90")}>
         <SchoolMark logo={me?.school.logo_url || null} size={28} animate={false} alt={where} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{onDesignPage ? me?.school.name || "Student space" : current?.label ?? ""}</p>
-          <p className={cn("truncate text-xs text-muted-foreground", !onDesignPage && "hidden sm:block")}>
-            {onDesignPage ? "Student space" : [where, when].filter(Boolean).join(" · ")}
-          </p>
+          <p className="truncate text-sm font-semibold text-foreground">{screenTitle}</p>
         </div>
         <PupilSwitcher />
       </header>
