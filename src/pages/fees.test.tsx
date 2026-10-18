@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
     | { state: "ISSUED"; bank_name: string; account_number: string; account_name: string; as_of: string }
     | { state: "NONE"; as_of: string },
   invoices: [] as unknown[],
+  balance: 0,
+  canPay: true,
 }));
 
 vi.mock("@/redux/hooks", () => ({
@@ -17,7 +19,7 @@ vi.mock("@/redux/hooks", () => ({
   }),
 }));
 vi.mock("@/redux/services/portal-api", () => ({
-  useFeesQuery: () => ({ data: { balance: 0, total_billed: 100_000, total_paid: 100_000, can_pay: true, min_part_payment: 0, invoices: mocks.invoices } }),
+  useFeesQuery: () => ({ data: { balance: mocks.balance, total_billed: 100_000, total_paid: 100_000, can_pay: mocks.canPay, min_part_payment: 0, invoices: mocks.invoices } }),
   usePaymentsQuery: () => ({ data: [] }),
   useTransferAccountQuery: () => ({ data: mocks.account }),
   useMeQuery: () => ({ data: { student: { full_name: "Amaka Balogun" } } }),
@@ -35,6 +37,8 @@ beforeEach(() => {
   root = createRoot(container);
   mocks.account = { state: "ISSUED", bank_name: "Wema Bank", account_number: "0123456789", account_name: "TEST-MANAGED-ACCOUNT", as_of: "2026-10-18T00:00:00Z" };
   mocks.invoices = [];
+  mocks.balance = 0;
+  mocks.canPay = true;
 });
 afterEach(() => { act(() => root.unmount()); container.remove(); });
 
@@ -60,5 +64,21 @@ describe("fees account number", () => {
     mocks.account = { state: "NONE", as_of: "2026-10-18T00:00:00Z" };
     render();
     expect(container.textContent).not.toContain("Your account number");
+  });
+
+  it("labels a credit balance even when there are no open bills", () => {
+    mocks.balance = -300_000;
+    render();
+    expect(container.querySelector(".fees-hero-label")?.textContent).toBe("In credit");
+    expect(container.querySelector(".fees-hero-main")?.textContent).toContain("₦3,000.00");
+  });
+
+  it("does not offer payment when the school has turned it off", () => {
+    mocks.canPay = false;
+    mocks.balance = 50_000;
+    mocks.invoices = [{ invoice_ref: 3, number: "IV-3", title: "Third Term", due_date: null, lines: [], total: 100_000, paid: 50_000, balance: 50_000, status: "PARTIAL", status_label: "Part paid" }];
+    render();
+    expect(container.textContent).toContain("Third Term");
+    expect(container.textContent).not.toContain("Pay balance");
   });
 });

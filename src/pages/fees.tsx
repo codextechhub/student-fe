@@ -1,28 +1,17 @@
 import { useState } from "react";
-import { ChevronDown, Info, Receipt as ReceiptIcon } from "lucide-react";
+import { Check, ChevronDown, Clock3, Info, Receipt as ReceiptIcon, Wallet } from "lucide-react";
 import { Link } from "react-router";
 
-import { PageHeader } from "@/components/layout/page-header";
-import { PageShell } from "@/components/layout/page-shell";
 import { TransferAccountCard } from "@/components/fees/transfer-account-card";
+import { PageShell } from "@/components/layout/page-shell";
 import { formatDate, formatNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/redux/hooks";
 import { useFeesQuery, useMeQuery, usePaymentsQuery, useTransferAccountQuery, type Invoice, type Payment } from "@/redux/services/portal-api";
 
-/**
- * The pupil's fees: what was billed, what is paid, each bill with its lines,
- * and every payment with how and by whom it was made.
- *
- * Fees are normally paid by a parent or guardian, and the screen says so
- * first; a pupil pays here only where the school allows it (`can_pay`), and
- * then only a bill with something owing offers Pay. A payment the gateway has
- * not confirmed yet shows as waiting, with no receipt, and is never counted
- * as paid. A payment names who made it only where the server does, and
- * otherwise says how the money arrived (`source_label`), so a family's
- * transfer is never credited to the school. When the school's books cannot be
- * read the screen says so rather than showing a zero balance.
- */
+import "./fees.css";
+
+/** School bills and payments, with only confirmed money counted as paid. */
 export function FeesPage() {
   const { data: fees, isLoading, isError, refetch } = useFeesQuery();
   const { data: payments } = usePaymentsQuery();
@@ -30,182 +19,69 @@ export function FeesPage() {
   const { data: me } = useMeQuery();
   const signedInName = useAppSelector((s) => s.session.pupils.find((p) => p.account === s.session.active)?.fullName);
   const offline = useAppSelector((s) => s.connectivity.offline);
+  const nextDue = fees?.invoices.filter((invoice) => invoice.balance > 0 && invoice.due_date).map((invoice) => invoice.due_date!).sort()[0];
 
   return (
-    <PageShell grid className="mx-auto w-full max-w-5xl content-start gap-4 pt-4 lg:px-6">
-      <PageHeader title="My fees" description="Your bills, what has been paid and every receipt." />
-      {isLoading && <div className="h-48 animate-pulse rounded-xl bg-muted" />}
-      {isError && !fees && (
-        <p className="rounded-xl border border-border p-4 text-xs text-muted-foreground">
-          Your fees can&apos;t be shown right now.{" "}
-          <button type="button" className="font-medium text-primary" onClick={() => refetch()}>
-            Try again
-          </button>
-        </p>
-      )}
-      {account?.state === "ISSUED" && (
-        <TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Your account number" />
-      )}
-      {fees && (
-        <>
-          {fees.can_pay && (
-            <div className="flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-foreground">
-              <Info className="mt-0.5 size-4 shrink-0 text-primary" />
-              <p>
-                <span className="font-semibold">Fees are normally paid by your parent or guardian.</span> If they
-                can&apos;t pay through their own app right now, you can pay here. Card details are entered on the secure
-                gateway, never in this app.
-              </p>
+    <PageShell className="fees-page">
+      <div className="fees-wrap">
+        <header className="fees-heading"><p>Your school account</p><h1>Know what is due, paid and on its way.</h1></header>
+        {isLoading && !fees && <div className="fees-loading" role="status" aria-label="Loading fees" />}
+        {isError && !fees && <div className="fees-notice" role="alert">Your fees can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button></div>}
+        {fees && (
+          <div className="fees-layout">
+            <div className="fees-overview">
+              <section className="fees-hero" aria-label="Fee balance">
+                <span className="fees-hero-label">{fees.balance < 0 ? "In credit" : fees.invoices.length === 0 ? "No bills yet" : fees.balance === 0 ? "All paid" : "Balance to pay"}</span>
+                <div className="fees-hero-main"><div><strong>{formatNaira(Math.abs(fees.balance))}</strong><p>{fees.balance < 0 ? "Ready for your next school bill" : fees.invoices.length === 0 ? "New bills will appear here" : fees.balance === 0 ? "Your school bills are settled" : "Remaining on your school bill"}</p></div><span className="fees-hero-icon"><Wallet aria-hidden="true" size={23} /></span></div>
+                {fees.total_billed > 0 && <><div className="fees-progress-label"><span>Paid so far</span><span>{formatNaira(fees.total_paid)} of {formatNaira(fees.total_billed)}</span></div><div className="fees-progress" aria-hidden="true"><span style={{ width: `${Math.max(0, Math.min(100, (fees.total_paid / fees.total_billed) * 100))}%` }} /></div></>}
+                <span className="fees-hero-note">{nextDue && fees.balance > 0 ? `Due ${formatDate(nextDue)}` : fees.balance < 0 ? "Credit available for your next bill" : fees.balance === 0 && fees.invoices.length > 0 ? "Nothing to pay right now" : "Your account is ready when needed"}</span>
+              </section>
+              <div className="fees-stats"><Stat label="Total billed" value={formatNaira(fees.total_billed)} /><Stat label="Paid so far" value={formatNaira(fees.total_paid)} /></div>
+              {account?.state === "ISSUED" && <section className="fees-account-section"><Heading title="Pay by transfer" description="Your own account number for school fees" /><TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Your account number" /></section>}
+              {fees.can_pay && <div className="fees-guardian"><Info size={17} aria-hidden="true" /><p><strong>Fees are normally paid by your parent or guardian.</strong> If they can&apos;t pay through their own app right now, you can pay here. Card details are entered on the secure gateway.</p></div>}
             </div>
-          )}
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Total label="Billed" value={formatNaira(fees.total_billed)} />
-            <Total label="Paid so far" value={formatNaira(fees.total_paid)} />
-            <Total
-              label={fees.balance < 0 ? "In credit" : "Balance"}
-              value={formatNaira(Math.abs(fees.balance))}
-              note={fees.balance < 0 ? "Used against your next bill." : undefined}
-            />
+            <div className="fees-detail">
+              <section><Heading title="School bills" description="Open a bill to see its full breakdown" first />{fees.invoices.length === 0 ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div> : <ul className="fees-invoices">{fees.invoices.map((invoice, index) => <InvoiceCard key={invoice.invoice_ref} invoice={invoice} openAtFirst={index === 0} canPay={fees.can_pay && !offline} offline={offline} />)}</ul>}</section>
+              <section><Heading title="Payment history" description="Confirmed payments and transfers on their way" /><div className="fees-surface fees-history">{!payments || payments.length === 0 ? <p className="fees-empty">No payments yet.</p> : <ul>{payments.map((payment) => <PaymentRow key={payment.reference} payment={payment} />)}</ul>}</div></section>
+            </div>
           </div>
-
-          {fees.invoices.length === 0 ? (
-            <p className="rounded-xl border border-border p-6 text-center text-sm text-muted-foreground">No bills yet.</p>
-          ) : (
-            <ul className="grid gap-3">
-              {fees.invoices.map((invoice, i) => (
-                <InvoiceCard key={invoice.invoice_ref} invoice={invoice} openAtFirst={i === 0} canPay={fees.can_pay && !offline} offline={offline} />
-              ))}
-            </ul>
-          )}
-
-          <section className="min-w-0 rounded-xl border border-border p-4">
-            <h2 className="mb-2 text-sm font-semibold text-foreground">Payment history</h2>
-            {!payments || payments.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No payments yet.</p>
-            ) : (
-              <ul className="divide-y divide-border">
-                {payments.map((payment) => (
-                  <PaymentRow key={payment.reference} payment={payment} />
-                ))}
-              </ul>
-            )}
-          </section>
-        </>
-      )}
+        )}
+        {!fees && account?.state === "ISSUED" && <section className="fees-account-section"><Heading title="Pay by transfer" description="Your own account number for school fees" /><TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Your account number" /></section>}
+      </div>
     </PageShell>
   );
 }
 
-function Total({ label, value, note }: { label: string; value: string; note?: string }) {
-  return (
-    <div className="min-w-0 rounded-xl border border-border p-3">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className="truncate font-mono text-lg font-semibold text-foreground">{value}</p>
-      {note && <p className="text-[11px] text-muted-foreground">{note}</p>}
-    </div>
-  );
+function Heading({ title, description, first = false }: { title: string; description: string; first?: boolean }) {
+  return <div className={cn("fees-section-heading", first && "is-first")}><h2>{title}</h2><p>{description}</p></div>;
 }
 
-const STATUS_CHIP: Record<string, string> = {
-  PAID: "bg-green-100 text-green-800",
-  PARTIAL: "bg-amber-100 text-amber-800",
-};
+function Stat({ label, value }: { label: string; value: string }) {
+  return <div className="fees-stat"><span>{label}</span><strong>{value}</strong></div>;
+}
 
 function InvoiceCard({ invoice, openAtFirst, canPay, offline }: { invoice: Invoice; openAtFirst: boolean; canPay: boolean; offline: boolean }) {
   const [open, setOpen] = useState(openAtFirst);
   return (
-    <li className="min-w-0 overflow-hidden rounded-xl border border-border">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full min-w-0 items-center gap-3 p-4 text-left hover:bg-accent"
-      >
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{invoice.title}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {[invoice.number, invoice.due_date ? `due ${formatDate(invoice.due_date)}` : null].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium", STATUS_CHIP[invoice.status] ?? "bg-red-100 text-red-700")}>
-          {invoice.status_label}
-        </span>
-        <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+    <li className="fees-invoice fees-surface">
+      <button type="button" aria-expanded={open} aria-controls={`fees-invoice-${invoice.invoice_ref}`} onClick={() => setOpen((value) => !value)} className="fees-invoice-toggle">
+        <span className="fees-invoice-title"><strong>{invoice.title}</strong><small>{[invoice.number, invoice.due_date ? `Due ${formatDate(invoice.due_date)}` : null].filter(Boolean).join(" · ")}</small></span>
+        <span className={cn("fees-invoice-status", invoice.status === "PAID" ? "is-paid" : invoice.status === "PARTIAL" ? "is-partial" : "is-due")}>{invoice.status_label}</span>
+        <ChevronDown className={cn("fees-invoice-chevron", open && "is-open")} size={17} aria-hidden="true" />
       </button>
-      {open && (
-        <div className="border-t border-border p-4">
-          <dl className="space-y-1.5 text-sm">
-            {invoice.lines.map((line, i) => (
-              <div key={i} className="flex justify-between gap-3">
-                <dt className="min-w-0 text-muted-foreground">{line.description}</dt>
-                <dd className="font-mono tabular-nums">{formatNaira(line.amount)}</dd>
-              </div>
-            ))}
-            <div className="flex justify-between gap-3 border-t border-border pt-1.5 font-medium">
-              <dt>Total</dt>
-              <dd className="font-mono tabular-nums">{formatNaira(invoice.total)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-muted-foreground">Paid</dt>
-              <dd className="font-mono tabular-nums">{formatNaira(invoice.paid)}</dd>
-            </div>
-            <div className="flex justify-between gap-3 font-semibold">
-              <dt>Balance</dt>
-              <dd className="font-mono tabular-nums">{formatNaira(invoice.balance)}</dd>
-            </div>
-          </dl>
-          {invoice.balance > 0 ? (
-            canPay ? (
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/50 p-3">
-                <p className="min-w-0 flex-1 basis-56 text-xs text-muted-foreground">
-                  Only pay here if your parent or guardian can&apos;t pay right now.
-                </p>
-                <Link
-                  to={`/fees/pay/${invoice.invoice_ref}`}
-                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  Pay balance
-                </Link>
-              </div>
-            ) : offline ? (
-              <p className="mt-3 text-xs text-muted-foreground">You can pay when you&apos;re back online.</p>
-            ) : null
-          ) : (
-            <p className="mt-3 text-xs font-medium text-green-700">This bill is fully paid. Thank you.</p>
-          )}
-        </div>
-      )}
+      {open && <div className="fees-invoice-detail" id={`fees-invoice-${invoice.invoice_ref}`}><dl>{invoice.lines.map((line, index) => <div className="fees-invoice-line" key={index}><dt>{line.description}</dt><dd>{formatNaira(line.amount)}</dd></div>)}<div className="fees-invoice-line is-total"><dt>Total billed</dt><dd>{formatNaira(invoice.total)}</dd></div><div className="fees-invoice-line"><dt>Paid</dt><dd>{formatNaira(invoice.paid)}</dd></div><div className="fees-invoice-line is-balance"><dt>Balance</dt><dd>{formatNaira(invoice.balance)}</dd></div></dl>
+        {invoice.balance > 0 ? canPay ? <Link className="fees-pay-link" to={`/fees/pay/${invoice.invoice_ref}`}>Pay balance <span aria-hidden="true">→</span></Link> : offline ? <p className="fees-invoice-note">You can pay when you&apos;re back online.</p> : null : <p className="fees-invoice-note is-paid"><Check size={16} aria-hidden="true" />This bill is fully paid. Thank you.</p>}
+      </div>}
     </li>
   );
 }
 
 function PaymentRow({ payment }: { payment: Payment }) {
   const confirmed = payment.status === "CONFIRMED";
-  // The payer where named, else how it arrived; never a guess.
-  const by = payment.payer_name ? `by ${payment.payer_name}` : (payment.source_label ? `· ${payment.source_label}` : "");
-  return (
-    <li className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 py-3">
-      <div className="min-w-0 flex-1 basis-48">
-        <p className="text-sm font-medium text-foreground">
-          {formatNaira(payment.amount)} <span className="font-normal text-muted-foreground">{by}</span>
-        </p>
-        <p className="truncate text-xs text-muted-foreground">
-          {[payment.paid_on ? formatDate(payment.paid_on) : null, confirmed ? payment.method_label : "Waiting for confirmation", payment.receipt_number || payment.reference]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-      </div>
-      <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", confirmed ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800")}>
-        {payment.status_label}
-      </span>
-      {payment.has_receipt && payment.payment_ref ? (
-        <Link to={`/fees/receipts/${payment.payment_ref}`} className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-          <ReceiptIcon className="size-3.5" /> Receipt
-        </Link>
-      ) : (
-        <span className="text-xs text-muted-foreground">No receipt yet</span>
-      )}
-    </li>
-  );
+  const by = payment.payer_name ? `by ${payment.payer_name}` : payment.source_label || "";
+  return <li className="fees-payment">
+    <span className={cn("fees-payment-icon", !confirmed && "is-pending")}>{confirmed ? <Check size={18} aria-hidden="true" /> : <Clock3 size={18} aria-hidden="true" />}</span>
+    <div className="fees-payment-main"><strong>{formatNaira(payment.amount)}</strong><span>{[payment.paid_on ? formatDate(payment.paid_on) : null, confirmed ? payment.method_label : "Waiting for confirmation", by].filter(Boolean).join(" · ")}</span></div>
+    <div className="fees-payment-side"><b className={cn(!confirmed && "is-pending")}>{payment.status_label}</b>{payment.has_receipt && payment.payment_ref ? <Link to={`/fees/receipts/${payment.payment_ref}`}><ReceiptIcon size={13} aria-hidden="true" />Receipt</Link> : <small>No receipt yet</small>}</div>
+  </li>;
 }

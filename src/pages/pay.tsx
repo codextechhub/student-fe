@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Building2, CreditCard, Lock } from "lucide-react";
+import { ArrowLeft, Building2, CreditCard, Lock, Wallet } from "lucide-react";
 import { Link, useParams } from "react-router";
 
-import { PageHeader } from "@/components/layout/page-header";
-import { PageShell } from "@/components/layout/page-shell";
 import { TransferAccountCard } from "@/components/fees/transfer-account-card";
+import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { formatNaira, parseNaira } from "@/lib/format";
+import { formatDate, formatNaira, parseNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { baseApi } from "@/redux/services/base-api";
@@ -23,76 +21,53 @@ import {
   type Invoice,
 } from "@/redux/services/portal-api";
 
-/**
- * Paying one bill, by card or by bank transfer.
- *
- * Card: the whole balance, or a part of at least the school's smallest part
- * payment, then the gateway's own secure page; the app never sees card
- * details. The gateway sends the pupil back to `/fees/paid`, which reads the
- * result from the server, never from the redirect.
- *
- * Bank transfer: the pupil's own account number, the same one every time,
- * which their family can keep and pay into from any bank. No minimum applies,
- * because a transfer cannot be turned away once it lands. While this page is
- * open it watches for money arriving from the server's own clock, says when a
- * transfer is on its way and when it is received, and then reads the fees
- * again rather than working the balance out itself.
- *
- * Nothing here works offline, and a school that does not let pupils pay is
- * told so.
- */
+import "./fees.css";
+import "./pay.css";
+
+/** One bill, paid on the gateway or into the pupil's permanent bank account. */
 export function PayPage() {
   const { invoiceRef } = useParams();
   const { data: fees, isLoading } = useFeesQuery();
   const offline = useAppSelector((s) => s.connectivity.offline);
-  const [method, setMethod] = useState<"card" | "transfer" | null>(null);
-  const invoice = fees?.invoices.find((i) => String(i.invoice_ref) === invoiceRef);
+  const [method, setMethod] = useState<"card" | "transfer">("card");
+  const invoice = fees?.invoices.find((item) => String(item.invoice_ref) === invoiceRef);
 
   return (
-    <PageShell grid className="mx-auto w-full max-w-xl content-start gap-4 pt-4 lg:px-6">
-      <Link to="/fees" className="inline-flex w-fit items-center gap-1 text-xs font-medium text-muted-foreground">
-        <ArrowLeft className="size-4" /> Fees
-      </Link>
-      <PageHeader title={invoice ? `Pay ${invoice.title}` : "Pay"} description={invoice ? `Balance ${formatNaira(invoice.balance)}` : ""} />
-      {isLoading && <div className="h-40 animate-pulse rounded-xl bg-muted" />}
-      {fees && !invoice && <Note>This bill isn&apos;t on your account.</Note>}
-      {fees && invoice && !fees.can_pay && <Note>Your school doesn&apos;t take payments from pupils here. Ask your parent or guardian to pay.</Note>}
-      {fees && invoice && fees.can_pay && invoice.balance <= 0 && <Note>This bill is fully paid. Thank you.</Note>}
-      {offline && <Note>You&apos;re offline. You can pay when you&apos;re back online.</Note>}
-      {fees && invoice && fees.can_pay && invoice.balance > 0 && !offline && (
-        <>
-          <div role="radiogroup" aria-label="How would you like to pay?" className="grid grid-cols-2 gap-3">
-            <MethodButton active={method === "card"} onClick={() => setMethod("card")} icon={<CreditCard className="size-5" />} label="Card" />
-            <MethodButton active={method === "transfer"} onClick={() => setMethod("transfer")} icon={<Building2 className="size-5" />} label="Bank transfer" />
+    <PageShell className="pay-page">
+      <div className="pay-wrap">
+        <Link to="/fees" className="pay-back"><ArrowLeft size={17} aria-hidden="true" />My fees</Link>
+        <header className="pay-heading"><p>{invoice?.title ?? "School bill"}</p><h1>Choose a way to pay your school bill.</h1></header>
+        {isLoading && !fees && <div className="pay-loading" role="status" aria-label="Loading bill" />}
+        {fees && !invoice && <Note>This bill isn&apos;t on your account.</Note>}
+        {fees && invoice && (
+          <div className="pay-layout">
+            <div className="pay-overview">
+              <section className="pay-bill" aria-label="Selected bill"><span className="pay-bill-label">Selected bill</span><h2>{invoice.title}</h2><p>{[invoice.number, "Your school account"].filter(Boolean).join(" · ")}</p><strong>{formatNaira(Math.max(0, invoice.balance))}</strong><div className="pay-bill-chips"><span>{invoice.balance > 0 ? "Balance to pay" : "Fully paid"}</span>{invoice.due_date && invoice.balance > 0 && <span>Due {formatDate(invoice.due_date)}</span>}</div></section>
+              <div className="pay-guardian"><Wallet size={17} aria-hidden="true" /><p><strong>Fees are normally paid by a parent or guardian.</strong> You can pay here if they can&apos;t use their own app right now.</p></div>
+            </div>
+            <div className="pay-detail">
+              {!fees.can_pay ? <Note>Your school doesn&apos;t take payments from pupils here. Ask your parent or guardian to pay.</Note> : invoice.balance <= 0 ? <Note>This bill is fully paid. Thank you.</Note> : offline ? <Note>You&apos;re offline. You can pay when you&apos;re back online.</Note> : <>
+                <div className="pay-section-heading"><h2>How would you like to pay?</h2><p>Choose one method to continue</p></div>
+                <div className="pay-methods" role="radiogroup" aria-label="How would you like to pay?">
+                  <MethodButton active={method === "card"} onClick={() => setMethod("card")} icon={<CreditCard size={19} />} label="Card" description="Secure checkout" />
+                  <MethodButton active={method === "transfer"} onClick={() => setMethod("transfer")} icon={<Building2 size={19} />} label="Bank transfer" description="Pay from any bank" />
+                </div>
+                {method === "card" ? <CardPayment fees={fees} invoice={invoice} /> : <TransferPayment />}
+              </>}
+            </div>
           </div>
-          {method === "card" && <CardPayment fees={fees} invoice={invoice} />}
-          {method === "transfer" && <TransferPayment />}
-        </>
-      )}
+        )}
+      </div>
     </PageShell>
   );
 }
 
 function Note({ children }: { children: React.ReactNode }) {
-  return <p className="rounded-xl border border-border p-4 text-sm text-muted-foreground">{children}</p>;
+  return <div className="pay-note">{children}</div>;
 }
 
-function MethodButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={active}
-      onClick={onClick}
-      className={cn(
-        "flex min-w-0 flex-col items-center gap-2 rounded-xl border p-4 text-sm font-medium",
-        active ? "border-primary bg-primary/5 text-primary" : "border-border text-foreground hover:bg-accent",
-      )}
-    >
-      {icon}
-      {label}
-    </button>
-  );
+function MethodButton({ active, onClick, icon, label, description }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; description?: string }) {
+  return <button type="button" role="radio" aria-checked={active} onClick={onClick} className={cn("pay-method", active && "is-active")}><span className="pay-method-icon">{icon}</span><span><strong>{label}</strong>{description && <small>{description}</small>}</span></button>;
 }
 
 function CardPayment({ fees, invoice }: { fees: Fees; invoice: Invoice }) {
@@ -108,9 +83,7 @@ function CardPayment({ fees, invoice }: { fees: Fees; invoice: Invoice }) {
     if (!typed.trim()) return "Enter an amount.";
     if (partKobo === null) return "Enter an amount in naira, such as 20,000.";
     if (partKobo > invoice.balance) return `You can pay at most the balance, ${formatNaira(invoice.balance)}.`;
-    if (partKobo < invoice.balance && partKobo < fees.min_part_payment) {
-      return `The smallest part payment your school accepts is ${formatNaira(fees.min_part_payment)}.`;
-    }
+    if (partKobo < invoice.balance && partKobo < fees.min_part_payment) return `The smallest part payment your school accepts is ${formatNaira(fees.min_part_payment)}.`;
     return "";
   };
 
@@ -126,40 +99,18 @@ function CardPayment({ fees, invoice }: { fees: Fees; invoice: Invoice }) {
     }
   };
 
-  return (
-    <section className="grid gap-4 rounded-xl border border-border p-4">
-      <div role="radiogroup" aria-label="How much" className="grid grid-cols-2 gap-3">
-        <MethodButton active={mode === "full"} onClick={() => { setMode("full"); setError(""); }} icon={<span className="font-mono text-sm">{formatNaira(invoice.balance)}</span>} label="Pay in full" />
-        <MethodButton active={mode === "part"} onClick={() => { setMode("part"); setError(""); }} icon={<span className="text-xs text-muted-foreground">Choose an amount</span>} label="Part payment" />
-      </div>
-      {mode === "part" && (
-        <label className="block space-y-1.5">
-          <span className="text-xs font-medium text-foreground">Amount to pay (₦)</span>
-          <Input inputMode="decimal" placeholder="e.g. 20,000" value={typed} onChange={(e) => { setTyped(e.target.value); setError(""); }} aria-invalid={!!error} />
-          <span className="block text-[11px] text-muted-foreground">At least {formatNaira(fees.min_part_payment)}, or the whole balance.</span>
-        </label>
-      )}
-      <dl className="space-y-1 rounded-lg bg-muted/50 p-3 text-sm">
-        <div className="flex justify-between gap-3">
-          <dt className="text-muted-foreground">You&apos;ll pay</dt>
-          <dd className="font-mono font-semibold">{amount ? formatNaira(amount) : "-"}</dd>
-        </div>
-        <div className="flex justify-between gap-3">
-          <dt className="text-muted-foreground">Left to pay after</dt>
-          <dd className="font-mono">{amount ? formatNaira(Math.max(0, invoice.balance - amount)) : "-"}</dd>
-        </div>
-      </dl>
-      {error && <p role="alert" className="text-xs font-medium text-destructive">{error}</p>}
-      <p className="flex items-start gap-2 text-[11px] text-muted-foreground">
-        <Lock className="mt-0.5 size-3.5 shrink-0" />
-        You&apos;ll enter your card on the secure payment page, not in this app. You can also choose bank transfer or
-        USSD there.
-      </p>
-      <Button size="lg" onClick={go} loading={isLoading} disabled={isLoading}>
-        Continue to secure payment
-      </Button>
-    </section>
-  );
+  return <section className="pay-card-panel">
+    <h3>How much will you pay?</h3><p className="pay-panel-intro">Start with the full balance, or choose a part payment.</p>
+    <div className="pay-amount-options" role="radiogroup" aria-label="How much">
+      <MethodButton active={mode === "full"} onClick={() => { setMode("full"); setError(""); }} icon={<span className="pay-amount-icon">{formatNaira(invoice.balance)}</span>} label="Pay in full" />
+      <MethodButton active={mode === "part"} onClick={() => { setMode("part"); setError(""); }} icon={<span className="pay-amount-icon">Choose an amount</span>} label="Part payment" />
+    </div>
+    {mode === "part" && <label className="pay-amount-label">Amount to pay<div className="pay-amount-field"><span>₦</span><input inputMode="decimal" placeholder="e.g. 5,000" value={typed} onChange={(event) => { setTyped(event.target.value); setError(""); }} aria-invalid={!!error} aria-describedby="pay-minimum" /></div><small id="pay-minimum">At least {formatNaira(fees.min_part_payment)} for a part payment, or pay the full balance.</small></label>}
+    <dl className="pay-review"><div><dt>You&apos;ll pay</dt><dd>{amount ? formatNaira(amount) : "–"}</dd></div><div><dt>Left to pay after</dt><dd>{amount && amount <= invoice.balance ? formatNaira(Math.max(0, invoice.balance - amount)) : "–"}</dd></div></dl>
+    {error && <p className="pay-error" role="alert">{error}</p>}
+    <Button className="pay-primary-action" onClick={go} loading={isLoading} disabled={isLoading}><Lock size={17} aria-hidden="true" />Continue to secure payment</Button>
+    <p className="pay-secure"><Lock size={15} aria-hidden="true" />Your card details go on the secure gateway page, never in this app. The gateway may offer other methods there.</p>
+  </section>;
 }
 
 /** How often the page asks whether a transfer has arrived. */
@@ -172,63 +123,20 @@ function TransferPayment() {
   const [open, { isLoading: opening }] = useOpenTransferAccountMutation();
   const [openError, setOpenError] = useState("");
 
-  if (isLoading) return <div className="h-40 animate-pulse rounded-xl bg-muted" />;
-  if (isError || !account) {
-    return <Note>{refusal(error).message || "Your account number can't be shown right now."}</Note>;
-  }
+  if (isLoading) return <div className="pay-loading" role="status" aria-label="Loading transfer account" />;
+  if (isError || !account) return <Note>{refusal(error).message || "Your account number can't be shown right now."}</Note>;
   if (account.state === "UNAVAILABLE") return <Note>{account.message}</Note>;
-  if (account.state === "NONE") {
-    return (
-      <section className="grid gap-3 rounded-xl border border-border p-4">
-        <p className="text-sm text-foreground">
-          You don&apos;t have an account number for school fees yet. Get one, and your family can pay into it from any
-          bank, as often as they like.
-        </p>
-        {openError && <p role="alert" className="text-xs text-destructive">{openError}</p>}
-        <Button
-          onClick={async () => {
-            setOpenError("");
-            try {
-              await open().unwrap();
-            } catch (failure) {
-              setOpenError(refusal(failure).message);
-            }
-          }}
-          loading={opening}
-          disabled={opening}
-        >
-          Get my account number
-        </Button>
-      </section>
-    );
-  }
-  return (
-    <div className="grid gap-4">
-      <TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Pay into this account" />
-      <DepositWatch since={account.as_of} />
-    </div>
-  );
+  if (account.state === "NONE") return <section className="pay-card-panel"><h3>Your transfer account</h3><p className="pay-panel-intro">You don&apos;t have an account number for school fees yet. Get one, and your family can pay into it from any bank.</p>{openError && <p className="pay-error" role="alert">{openError}</p>}<Button className="pay-primary-action" onClick={async () => { setOpenError(""); try { await open().unwrap(); } catch (failure) { setOpenError(refusal(failure).message); } }} loading={opening} disabled={opening}>Get my account number</Button></section>;
+
+  return <div className="pay-transfer"><TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Pay into this account" /><p className="pay-transfer-note">Transfer any amount from a bank app. There is no card-payment minimum for a bank transfer.</p><DepositWatch since={account.as_of} /></div>;
 }
 
-/**
- * Watches for transfers that arrive while the page is open.
- *
- * Asks from the moment the account was read, on the server's clock, so a
- * phone set to the wrong time still sees the money. A deposit shows as on its
- * way as soon as the bank tells the provider, and as received once the school
- * books it; then the fees are read again for the true balance.
- */
+/** The server's deposit stream refreshes fees after a confirmed transfer. */
 function DepositWatch({ since }: { since: string }) {
   const dispatch = useAppDispatch();
-  // Checks every few seconds while in view, and at once on coming back to it:
-  // a pupil who left for their bank app to send the money sees it on return.
-  const { data } = useDepositsQuery(since, {
-    pollingInterval: WATCH_EVERY_MS,
-    skipPollingIfUnfocused: true,
-    refetchOnFocus: true,
-  });
+  const { data } = useDepositsQuery(since, { pollingInterval: WATCH_EVERY_MS, skipPollingIfUnfocused: true, refetchOnFocus: true });
   const deposits = data?.deposits ?? [];
-  const confirmed = deposits.filter((d) => d.status === "CONFIRMED").length;
+  const confirmed = deposits.filter((deposit) => deposit.status === "CONFIRMED").length;
   const seen = useRef(0);
 
   useEffect(() => {
@@ -238,35 +146,5 @@ function DepositWatch({ since }: { since: string }) {
     }
   }, [confirmed, dispatch]);
 
-  if (deposits.length === 0) {
-    return (
-      <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground" role="status">
-        <span className="size-2 animate-pulse rounded-full bg-primary" /> Waiting for your transfer. Keep this page open to
-        see it arrive.
-      </p>
-    );
-  }
-  return (
-    <ul className="grid gap-2" role="status">
-      {deposits.map((deposit) => (
-        <li
-          key={deposit.reference}
-          className={cn(
-            "flex flex-wrap items-center justify-between gap-2 rounded-lg p-3 text-sm",
-            deposit.status === "CONFIRMED" ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-900",
-          )}
-        >
-          <span>
-            {formatNaira(deposit.amount)}{" "}
-            {deposit.status === "CONFIRMED" ? "received. Thank you." : "on its way. Waiting for the bank to confirm."}
-          </span>
-          {deposit.has_receipt && deposit.payment_ref && (
-            <Link to={`/fees/receipts/${deposit.payment_ref}`} className="text-xs font-medium underline underline-offset-2">
-              View receipt
-            </Link>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
+  return <section className="pay-watch" aria-label="Transfer activity"><h3>Transfer activity</h3>{deposits.length === 0 ? <p className="pay-watch-message" role="status">Waiting for your transfer. Keep this page open to see it arrive.</p> : <ul role="status">{deposits.map((deposit) => <li key={deposit.reference} className={cn("pay-watch-message", deposit.status === "CONFIRMED" ? "is-received" : "is-pending")}>{formatNaira(deposit.amount)} {deposit.status === "CONFIRMED" ? "received. Thank you." : "on its way. Waiting for the bank to confirm."}{deposit.has_receipt && deposit.payment_ref && <Link to={`/fees/receipts/${deposit.payment_ref}`}>View receipt</Link>}</li>)}</ul>}</section>;
 }
