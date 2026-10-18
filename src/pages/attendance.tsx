@@ -1,10 +1,9 @@
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Info } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
 import { monthsOf, type MonthGrid } from "@/lib/attendance-months";
 import { formatClock, formatDate } from "@/lib/format";
-import { rateLine } from "@/lib/pupil-lines";
 import { useAttendanceQuery, type AttendanceDay, type AttendanceNote } from "@/redux/services/portal-api";
 
 import "./attendance.css";
@@ -44,7 +43,7 @@ export function AttendancePage() {
     <PageShell className="attendance-page">
       <div className="attendance-wrap">
         <header className="attendance-heading">
-          <div><p>Your school days</p><h1>See how each school day was recorded.</h1></div>
+          <div><p>Your school days</p></div>
           {data?.term && <div className="attendance-term-control">
             <span className="attendance-term-label">School term</span>
             {data.terms.length > 1 ? <select aria-label="School term" value={data.term.id} onChange={(event) => chooseTerm(Number(event.target.value))}>
@@ -58,18 +57,14 @@ export function AttendancePage() {
           <div className="attendance-overview">
             <section className="attendance-hero" aria-label="Attendance summary">
               <span className="attendance-hero-label">{counts.rate === null ? "Attendance this term" : "Present this term"}</span>
-              <div className="attendance-hero-main">
-                <div><strong className={counts.rate === null ? "attendance-no-rate" : "attendance-rate"}>{counts.rate === null ? "Not yet" : <>{Math.round(counts.rate)}<small>%</small></>}</strong><p>{counts.rate === null ? "Waiting for the first register" : "of registered school days"}</p></div>
-                <span className="attendance-ring" style={{ "--attendance-rate": `${Math.max(0, Math.min(100, counts.rate ?? 0))}%` } as CSSProperties}><CalendarDays size={20} aria-hidden="true" /></span>
-              </div>
-              <p className="attendance-message">{rateLine(counts.rate)}</p>
+              <strong className={counts.rate === null ? "attendance-no-rate" : "attendance-rate"}>{counts.rate === null ? "Not yet" : <>{Math.round(counts.rate)}<small>%</small></>}</strong>
               <span className="attendance-hero-foot">{taken > 0 ? `From ${taken} ${taken === 1 ? "day" : "days"} with a register` : "No registered days yet"}</span>
             </section>
             <dl className="attendance-counts">
-              <Count kind="present" glyph="P" label="Present" value={counts.present} />
-              <Count kind="late" glyph="L" label="Late" value={counts.late} />
-              <Count kind="absent" glyph="A" label="Absent" value={counts.absent} />
-              <Count kind="excused" glyph="E" label="Excused" value={counts.excused} />
+              <Count label="Present" value={counts.present} />
+              <Count label="Late" value={counts.late} />
+              <Count label="Absent" value={counts.absent} />
+              <Count label="Excused" value={counts.excused} />
             </dl>
             <p className="attendance-count-note">Late days are included in Present.</p>
           </div>
@@ -105,8 +100,8 @@ export function AttendancePage() {
   );
 }
 
-function Count({ kind, glyph, label, value }: { kind: string; glyph: string; label: string; value: number }) {
-  return <div className={`attendance-count is-${kind}`}><span className="attendance-count-icon" aria-hidden="true">{glyph}</span><dt>{label}</dt><dd>{value}</dd></div>;
+function Count({ label, value }: { label: string; value: number }) {
+  return <div className="attendance-count"><dt>{label}</dt><dd>{value}</dd></div>;
 }
 
 const DAY_LOOK: Record<string, { label: string; className: string; glyph: string }> = {

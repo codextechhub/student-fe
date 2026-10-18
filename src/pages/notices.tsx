@@ -42,15 +42,13 @@ export function NoticesPage() {
   return (
     <PageShell className="notices-page">
       <div className="notices-wrap">
-        <header className={cn("notices-heading", openId !== null && "is-hidden-on-detail")}><p>School updates</p><h1>What&apos;s new from your school.</h1></header>
         {isLoading && !first && <div className="notices-loading" role="status" aria-label="Loading notices" />}
         {isError && !first && <div className="notices-error" role="alert">Notices can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button></div>}
         {(first || openId !== null) && <div className="notices-layout">
           <div className={cn("notices-list-panel", openId !== null && "is-hidden-on-detail")}>
             <section className="notices-cover" aria-label="Notice summary">
-              <div className="notices-cover-top"><span>School notices</span><span className="notices-cover-icon"><Bell size={21} aria-hidden="true" /></span></div>
+              <span className="notices-cover-label">School notices</span>
               <h2>{unread > 0 ? `${unread} unread` : "All read"}</h2>
-              <p>{unread > 0 ? "Updates waiting for you" : "You're up to date with school news"}</p>
               {unread > 0 && <button type="button" className="notices-mark-all" onClick={readAll} disabled={markingAll || offline}><Check size={17} aria-hidden="true" />{markingAll ? "Marking…" : "Mark all as read"}</button>}
             </section>
             <div className="notices-section-heading"><h2>Latest notices</h2><span>Newest first</span></div>
@@ -108,9 +106,8 @@ function NoticeDetail({ id }: { id: number }) {
   };
 
   return <article className="notices-detail-card">
-      <div className="notices-detail-accent" />
+    <div className="notices-detail-accent" />
       <div className="notices-detail-inner">
-        <div className="notices-detail-kicker"><Bell size={17} aria-hidden="true" />School notice</div>
         <h2>{notice.title}</h2>
         <div className="notices-detail-flags"><Status unread={notice.unread} />{notice.edited_at && <span className="notices-flag is-edited">Edited</span>}</div>
         <dl className="notices-detail-meta">
