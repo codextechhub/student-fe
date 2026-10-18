@@ -34,10 +34,10 @@ export function AppShell() {
   const { data: noticePage } = useNoticesQuery(1);
   const unread = noticePage?.unreadCount ?? 0;
   const current = itemFor(pathname);
-  const onDesignPage = pathname === "/" || pathname === "/timetable" || pathname === "/results" || pathname === "/attendance" || pathname.startsWith("/fees") || pathname.startsWith("/notices");
+  const onDesignPage = pathname === "/" || pathname === "/timetable" || pathname === "/results" || pathname === "/attendance" || pathname === "/profile" || pathname.startsWith("/fees") || pathname.startsWith("/notices");
   const badges: Partial<Record<NavItem["key"], number>> = { notices: unread };
   const where = [me?.school.name, me?.show_branch ? me?.branch?.name : null].filter(Boolean).join(" · ");
-  const screenTitle = pathname.startsWith("/fees/receipts/") ? "Payment receipt" : pathname.startsWith("/fees/pay/") ? "Pay a bill" : pathname === "/fees/paid" ? "Payment status" : current?.key === "fees" ? "My fees" : current?.key === "attendance" ? "My attendance" : current?.key === "timetable" ? "My timetable" : current?.key === "results" ? "My results" : current?.label ?? "";
+  const screenTitle = pathname.startsWith("/fees/receipts/") ? "Payment receipt" : pathname.startsWith("/fees/pay/") ? "Pay a bill" : pathname === "/fees/paid" ? "Payment status" : current?.key === "fees" ? "My fees" : current?.key === "attendance" ? "My attendance" : current?.key === "timetable" ? "My timetable" : current?.key === "results" ? "My results" : current?.key === "profile" ? "My profile" : current?.label ?? "";
 
   return (
     <div className={cn("flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onDesignPage && "bg-[#f5f7fc]")}>
