@@ -1,12 +1,16 @@
 .attendance-page{min-height:calc(100dvh - 8rem);padding:18px 20px 44px;background:radial-gradient(circle at 12% 0%,#e9eafe,transparent 31rem),#f5f7fc;color:#243453}
 .attendance-wrap{width:min(100%,1060px);margin:0 auto}
-.attendance-heading{display:flex;align-items:end;justify-content:space-between;gap:18px;margin:0 2px 19px}
-.attendance-heading>div:first-child>p{margin:0;color:#4c67cf;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.14em}
-.attendance-heading h1{margin:8px 0 0;color:#263b64;font-size:18px;line-height:1.35;font-weight:700;letter-spacing:-.025em}
-.attendance-term-control{display:grid;gap:6px;flex:none}
-.attendance-term-label{color:#7f8da4;font-size:12px;font-weight:750}
-.attendance-term-control select{min-width:193px;min-height:42px;padding:0 12px;border:1px solid #dde4f1;border-radius:13px;background:white;color:#2e4265;font-size:13px;font-weight:800;cursor:pointer}
-.attendance-term-current{display:flex;align-items:center;min-height:42px;padding:0 13px;border:1px solid #dde4f1;border-radius:13px;background:white;color:#2e4265;font-size:13px;font-weight:800}
+.attendance-toolbar{display:flex;justify-content:flex-end;margin:0 2px 14px}
+.attendance-filter-trigger{position:relative;display:grid;place-items:center;width:40px;height:40px;border:1px solid #cdd8e9;border-radius:11px;background:#ffffffd9;color:#405d91;cursor:pointer}
+.attendance-filter-active{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#4a659d;box-shadow:0 0 0 2px white}
+.attendance-filter-popover{z-index:40;width:min(310px,calc(100vw - 32px));padding:17px;border:1px solid #dbe3f0;border-radius:17px;background:#fff;box-shadow:0 20px 48px #24365629;color:#263b5a}
+.attendance-filter-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
+.attendance-filter-header strong{font-size:16px;font-weight:700}
+.attendance-filter-header button{border:0;background:none;color:#4a659d;font-size:12px;font-weight:700;cursor:pointer}
+.attendance-filter-popover label{display:block;margin-bottom:6px;color:#718097;font-size:11px;font-weight:650}
+.attendance-filter-select{position:relative;display:flex;align-items:center}
+.attendance-filter-select select{width:100%;min-height:42px;padding:8px 34px 8px 11px;appearance:none;border:1px solid #d8e1ef;border-radius:10px;background:#f7f9fc;color:#263b5a;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.attendance-filter-select svg{position:absolute;right:11px;color:#718097;pointer-events:none}
 .attendance-layout{display:grid;gap:22px;align-items:start;min-width:0}
 .attendance-overview,.attendance-details{min-width:0}
 .attendance-hero{position:relative;isolation:isolate;overflow:hidden;min-height:242px;padding:25px;border-radius:29px;background:linear-gradient(127deg,#25469b,#395bc5 60%,#798bf1);box-shadow:0 18px 35px #304ea42c;color:white}
@@ -90,16 +94,11 @@
 .attendance-notice{padding:24px;border:1px solid #e9edf5;border-radius:21px;background:white;color:#53627a;font-size:14px;line-height:1.5}
 .attendance-notice button{border:0;background:none;color:#3e59ca;font:inherit;font-weight:800;cursor:pointer}
 @keyframes attendance-pulse{to{opacity:.48}}
-.attendance-term-control select:focus-visible,.attendance-month-nav button:focus-visible,.attendance-day:focus-visible,.attendance-notice button:focus-visible{outline:3px solid #5975ff;outline-offset:3px}
-@media(min-width:800px){.attendance-heading h1{font-size:23px}.attendance-layout{grid-template-columns:minmax(0,.87fr) minmax(0,1.13fr)}.attendance-section-heading.is-first{margin-top:0}.attendance-hero{min-height:275px;padding:30px}.attendance-calendar{padding:23px}.attendance-notes{padding:0 21px}}
-@media(max-width:600px){.attendance-heading{display:block}.attendance-term-control{margin-top:16px}.attendance-term-control select{width:100%}}
+.attendance-filter-trigger:focus-visible,.attendance-filter-popover :is(button,select):focus-visible,.attendance-month-nav button:focus-visible,.attendance-day:focus-visible,.attendance-notice button:focus-visible{outline:3px solid #5975ff;outline-offset:3px}
+@media(min-width:800px){.attendance-layout{grid-template-columns:minmax(0,.87fr) minmax(0,1.13fr)}.attendance-section-heading.is-first{margin-top:0}.attendance-hero{min-height:275px;padding:30px}.attendance-calendar{padding:23px}.attendance-notes{padding:0 21px}}
 @media(max-width:380px){.attendance-page{padding-right:15px;padding-left:15px}.attendance-hero{padding:21px}.attendance-ring{width:83px;height:83px}.attendance-ring:before{width:61px;height:61px}.attendance-counts{gap:6px}.attendance-count{padding:11px 8px}.attendance-count dd{font-size:19px}.attendance-calendar{padding:13px}.attendance-day{height:43px}}
 @media(prefers-reduced-motion:reduce){.attendance-loading{animation:none}}
 
-.attendance-heading { align-items: center; margin-bottom: 14px; }
-.attendance-heading > div:first-child > p { color: #536787; font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; }
-.attendance-term-control { gap: 4px; }
-.attendance-term-control select, .attendance-term-current { min-height: 36px; border-radius: 10px; }
 .attendance-hero { min-height: 0; padding: 20px 22px; border-radius: 22px; background: linear-gradient(135deg, #2d4778 0%, #4a659d 60%, #6d84ae 100%); box-shadow: 0 18px 42px #1b356d20; }
 .attendance-hero::before { inset: 0; width: auto; height: auto; border-radius: 0; background: radial-gradient(#c2d7ff 1px, transparent 1px) 0 0 / 28px 28px; opacity: .16; -webkit-mask-image: linear-gradient(110deg, transparent 22%, #000 90%); mask-image: linear-gradient(110deg, transparent 22%, #000 90%); }
 .attendance-hero::after { top: -155px; right: -90px; bottom: auto; width: 300px; height: 300px; border-color: #ffffff30; box-shadow: 0 0 0 50px #ffffff0c, 0 0 0 100px #ffffff08; }
@@ -113,5 +112,4 @@
 .attendance-count-note { margin-top: 7px; font-size: 11px; }
 .attendance-section-heading { margin-top: 20px; }
 @media (min-width: 800px) { .attendance-hero { padding: 22px; } }
-@media (max-width: 600px) { .attendance-term-control { margin-top: 10px; } }
 @media (max-width: 380px) { .attendance-hero { padding: 19px; } .attendance-count { padding: 9px 7px; } .attendance-count dd { font-size: 16px; } }
