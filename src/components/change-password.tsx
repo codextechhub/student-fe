@@ -35,7 +35,8 @@ const RULES_FALLBACK =
 type Field = "current_password" | "password" | "confirm_password";
 
 /**
- * The pupil changes their own password, knowing the current one.
+ * The profile shows only the Change password action until the pupil opens
+ * the form. Cancel clears typed passwords and closes it.
  *
  * Every refusal is shown under the box it is about, never as a toast. A
  * mismatch is caught here before anything is sent, and Save stays off until
@@ -55,7 +56,8 @@ export function ChangePassword() {
   const navigate = useNavigate();
   const account = useAppSelector((s) => s.session.active);
   const offline = useAppSelector((s) => s.connectivity.offline);
-  const { data: policy } = usePasswordPolicyQuery();
+  const [open, setOpen] = useState(false);
+  const { data: policy } = usePasswordPolicyQuery(undefined, { skip: !open });
   const [change, { isLoading }] = useChangePasswordMutation();
 
   const [values, setValues] = useState({ current_password: "", password: "", confirm_password: "" });
@@ -71,6 +73,13 @@ export function ChangePassword() {
     setValues((v) => ({ ...v, [field]: value }));
     setErrors((e) => ({ ...e, [field]: undefined, form: undefined }));
     setChanged(false);
+  };
+
+  const close = () => {
+    setValues({ current_password: "", password: "", confirm_password: "" });
+    setErrors({});
+    setChanged(false);
+    setOpen(false);
   };
 
   const submit = async (event: FormEvent) => {
@@ -96,15 +105,16 @@ export function ChangePassword() {
   const rules = policy?.requirements ?? [];
 
   return (
-    <section aria-labelledby="password-heading" className="min-w-0 rounded-xl border border-border p-4">
-      <h2 id="password-heading" className="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
-        <KeyRound className="size-4 text-muted-foreground" /> Password
-      </h2>
-      <p className="text-xs text-muted-foreground">
-        Change it if anyone else might know it. You need the password you use now.
-      </p>
+    <section aria-labelledby="password-heading" className="profile-surface profile-card profile-password">
+      <div className="profile-card-top">
+        <div className="profile-card-heading">
+          <span className="profile-card-icon"><KeyRound size={19} aria-hidden="true" /></span>
+          <div><h2 id="password-heading">Password</h2><p>Keep your account secure</p></div>
+        </div>
+        {!open && <button type="button" className="profile-edit-button" onClick={() => setOpen(true)}>Change password</button>}
+      </div>
 
-      <form onSubmit={submit} noValidate className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {open && <form id="profile-password-form" onSubmit={submit} noValidate className="profile-password-form">
         <div className="min-w-0 space-y-4">
           <Box
             id="current_password"
@@ -147,7 +157,7 @@ export function ChangePassword() {
         </div>
 
         {errors.form && (
-          <p role="alert" className="text-xs font-medium text-destructive lg:col-span-2">
+          <p role="alert" className="profile-password-wide text-xs font-medium text-destructive">
             {errors.form}
           </p>
         )}
@@ -155,7 +165,7 @@ export function ChangePassword() {
         {changed && (
           <div
             role="status"
-            className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-900 lg:col-span-2"
+            className="profile-password-wide flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-900"
           >
             <CircleCheck className="mt-0.5 size-4 shrink-0" />
             <div className="min-w-0 space-y-2">
@@ -169,17 +179,18 @@ export function ChangePassword() {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 lg:col-span-2">
+        <div className="profile-password-wide flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             {offline
               ? "You can change your password when you're back online."
               : "Saving signs you out everywhere, this phone included."}
           </p>
-          <Button type="submit" size="sm" disabled={!canSave} loading={isLoading}>
-            Save password
-          </Button>
+          <div className="profile-password-actions">
+            <Button type="button" variant="outline" size="sm" onClick={close} disabled={isLoading}>Cancel</Button>
+            <Button type="submit" size="sm" disabled={!canSave} loading={isLoading}>Save password</Button>
+          </div>
         </div>
-      </form>
+      </form>}
     </section>
   );
 }
@@ -206,6 +217,7 @@ function Box({
       </label>
       <PasswordInput
         id={id}
+        autoFocus={id === "current_password"}
         autoComplete={autoComplete}
         value={value}
         onChange={(e) => onChange(e.target.value)}

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Bell, Share, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,8 +28,8 @@ const WHAT_THEY_SAY = "a new notice, a result ready to read, a payment confirmed
  * The offer on Home, made once to each pupil on this device.
  *
  * Shown only to a pupil who has not chosen yet, where the school sends
- * notifications and this browser can show them. On an iPhone it says how to
- * add the app to the Home Screen first, because only the added app gets them.
+ * notifications and this browser can show them. On an iPhone the install card
+ * comes first, because only the added app can receive notifications.
  * Turn on asks the browser's permission there and then; Not now puts the
  * offer away, and Profile keeps the setting.
  */
@@ -38,31 +37,20 @@ export function PushOffer() {
   const { state, busy, turnOn, notNow } = usePush();
   const offline = useAppSelector((s) => s.connectivity.offline);
   const firstName = useShowingFirstName();
-  const [installPutAway, setInstallPutAway] = useState(() => !offerInstall());
-  if (state !== "undecided" && state !== "install-first") return null;
-  if (state === "install-first" && installPutAway) return null;
+  if (state !== "undecided") return null;
 
   return (
-    <section className="relative flex min-w-0 flex-wrap items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 pr-12">
-      <Button variant="ghost" size="icon-sm" className="absolute top-2 right-2 text-muted-foreground" aria-label="Close" onClick={() => {
-        if (state === "install-first") { rememberInstallOffered(); setInstallPutAway(true); }
-        else notNow();
-      }}><X className="size-4" aria-hidden /></Button>
+    <section aria-label="Get notifications" className="relative flex min-w-0 flex-wrap items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 pr-12">
+      <Button variant="ghost" size="icon-sm" className="absolute top-2 right-2 text-muted-foreground" aria-label="Close" onClick={notNow}><X className="size-4" aria-hidden /></Button>
       <Bell className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
       <div className="min-w-0 flex-1 basis-56">
         <h2 className="text-sm font-semibold text-foreground">Get notifications</h2>
-        {state === "undecided" ? (
-          <p className="mt-0.5 text-xs text-muted-foreground">Be told on this device about {WHAT_THEY_SAY}</p>
-        ) : (
-          <InstallSteps />
-        )}
+        <p className="mt-0.5 text-xs text-muted-foreground">Be told on this device about {WHAT_THEY_SAY}</p>
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
-        {state === "undecided" && (
-          <Button size="sm" disabled={busy || offline} onClick={async () => sayTurnOn(await turnOn(), firstName)}>
-            {busy ? "Turning on" : "Turn on"}
-          </Button>
-        )}
+        <Button size="sm" disabled={busy || offline} onClick={async () => sayTurnOn(await turnOn(), firstName)}>
+          {busy ? "Turning on" : "Turn on"}
+        </Button>
       </div>
     </section>
   );
@@ -127,23 +115,4 @@ function InstallSteps() {
       and open the app from there.
     </p>
   );
-}
-
-const INSTALL_OFFERED_KEY = "xvs.student.push-install-offered";
-
-/** The install steps are offered on Home once per phone, not once per pupil. */
-function offerInstall(): boolean {
-  try {
-    return localStorage.getItem(INSTALL_OFFERED_KEY) !== "1";
-  } catch {
-    return true;
-  }
-}
-
-function rememberInstallOffered() {
-  try {
-    localStorage.setItem(INSTALL_OFFERED_KEY, "1");
-  } catch {
-    // Offered again next time.
-  }
 }

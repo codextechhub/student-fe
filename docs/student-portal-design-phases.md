@@ -389,9 +389,10 @@ the token (and only the showing pupil's, so the switcher shows siblings'
 initials). The switcher's saved name and photo went stale after a change and
 now follow `me/`.
 
-**Password, added 17 October 2026.** My profile has a Password section: the
-current password and the new one twice, each with show/hide, the school's
-rules from `GET /v1/user/auth/password/policy/` beside them, and
+**Password, added 17 October 2026.** My profile has a compact Password card.
+Change password opens the form with the current password and the new one twice,
+each with show/hide; Cancel clears typed passwords and closes it. The school's
+rules from `GET /v1/user/auth/password/policy/` appear beside the fields, and
 `POST /v1/user/auth/password/change/` with
 `{current_password, password, confirm_password}`, the endpoint school-fe's
 Account security uses. Each refusal sits under its box; Save is off until all

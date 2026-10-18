@@ -50,7 +50,10 @@ afterEach(() => {
   container.remove();
 });
 
-const render = () => act(() => root.render(<ChangePassword />));
+const render = (expand = true) => {
+  act(() => root.render(<ChangePassword />));
+  if (expand) act(() => button("Change password").click());
+};
 const box = (id: string) => container.querySelector<HTMLInputElement>(`#${id}`)!;
 const errorUnder = (id: string) => container.querySelector(`#${id}-error`)?.textContent ?? "";
 const button = (label: string) => [...container.querySelectorAll("button")].find((b) => b.textContent?.includes(label))!;
@@ -74,6 +77,25 @@ const refused = (error: Record<string, unknown>) =>
   });
 
 describe("changing a pupil's password", () => {
+  it("shows a Change password button before any password fields", () => {
+    render(false);
+    expect(button("Change password")).toBeDefined();
+    expect(container.querySelector("#current_password")).toBeNull();
+    expect(container.querySelector("#new_password")).toBeNull();
+    expect(container.querySelector("#confirm_password")).toBeNull();
+    act(() => button("Change password").click());
+    expect(box("current_password")).not.toBeNull();
+  });
+
+  it("closes the form and clears typed passwords when cancelled", () => {
+    render();
+    type("current_password", "Ebere@Lagoon2026");
+    act(() => button("Cancel").click());
+    expect(container.querySelector("#current_password")).toBeNull();
+    act(() => button("Change password").click());
+    expect(box("current_password").value).toBe("");
+  });
+
   it("sends exactly the current password and the new one twice", async () => {
     render();
     fill("Ebere@Lagoon2026", "Bello#Garden2027");
