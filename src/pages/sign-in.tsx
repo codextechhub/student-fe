@@ -5,9 +5,9 @@ import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
 import { signInPupil } from "@/auth/device-session";
 import { PupilAvatar } from "@/components/pupil-avatar";
 import { SchoolMark } from "@/components/school-mark";
+import { useSchoolName } from "@/lib/use-school-name";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { noticeCleared } from "@/redux/features/session-slice";
-import { useSchoolNameQuery } from "@/redux/services/school-api";
 import { schoolLogoUrl } from "@/utils/school-brand";
 import { currentSchoolSlug } from "@/utils/school-host";
 
@@ -26,7 +26,7 @@ export function SignInPage() {
   const adding = addAsked && pupils.length > 0;
   const showing = pupils.find((pupil) => pupil.account === active);
   const slug = currentSchoolSlug();
-  const { data: schoolName } = useSchoolNameQuery(slug, { skip: !slug });
+  const schoolName = useSchoolName();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);

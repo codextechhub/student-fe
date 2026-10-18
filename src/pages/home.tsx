@@ -1,6 +1,7 @@
 import { Bell, CalendarDays, CheckCircle2, ChevronRight, GraduationCap, Sparkles, Wallet } from "lucide-react";
 import { Link } from "react-router";
 
+import { InstallOffer } from "@/components/install-offer";
 import { PageShell } from "@/components/layout/page-shell";
 import { PushOffer } from "@/components/push-settings";
 import { formatClock, formatDate, formatLongDate, formatNaira, formatTimestampDate } from "@/lib/format";
@@ -49,6 +50,7 @@ export function HomePage() {
           )}
         </section>
 
+        <InstallOffer />
         <div className="home-content">
           {isLoading && !home && <div className="home-loading" role="status" aria-label="Loading home" />}
           {isError && !home && (

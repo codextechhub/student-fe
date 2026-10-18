@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Share } from "lucide-react";
+import { Bell, Share, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,11 @@ export function PushOffer() {
   if (state === "install-first" && installPutAway) return null;
 
   return (
-    <section className="flex min-w-0 flex-wrap items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+    <section className="relative flex min-w-0 flex-wrap items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 pr-12">
+      <Button variant="ghost" size="icon-sm" className="absolute top-2 right-2 text-muted-foreground" aria-label="Close" onClick={() => {
+        if (state === "install-first") { rememberInstallOffered(); setInstallPutAway(true); }
+        else notNow();
+      }}><X className="size-4" aria-hidden /></Button>
       <Bell className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
       <div className="min-w-0 flex-1 basis-56">
         <h2 className="text-sm font-semibold text-foreground">Get notifications</h2>
@@ -54,21 +58,6 @@ export function PushOffer() {
         )}
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (state === "install-first") {
-              // Put away until the app is added; not a choice about notifications.
-              rememberInstallOffered();
-              setInstallPutAway(true);
-            } else {
-              notNow();
-            }
-          }}
-        >
-          Not now
-        </Button>
         {state === "undecided" && (
           <Button size="sm" disabled={busy || offline} onClick={async () => sayTurnOn(await turnOn(), firstName)}>
             {busy ? "Turning on" : "Turn on"}

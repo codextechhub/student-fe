@@ -389,6 +389,20 @@ the token (and only the showing pupil's, so the switcher shows siblings'
 initials). The switcher's saved name and photo went stale after a change and
 now follow `me/`.
 
+**Password, added 17 October 2026.** My profile has a Password section: the
+current password and the new one twice, each with show/hide, the school's
+rules from `GET /v1/user/auth/password/policy/` beside them, and
+`POST /v1/user/auth/password/change/` with
+`{current_password, password, confirm_password}`, the endpoint school-fe's
+Account security uses. Each refusal sits under its box; Save is off until all
+three are filled and the new two match, and offline. A change ends the pupil's
+sign-in on every phone, this one included (each phone's next refresh is
+refused, within 15 minutes); a sibling on the same phone is untouched. "Sign
+in again now" signs the pupil out here at once and opens the sign-in screen,
+which says why, so the pupil is never left looking at a sibling's profile.
+Driven in the browser at 390px as Amaka Balogun (`LV/2026/0029`) with her
+brother Musa (`LV/2026/0030`) on the same phone, and alone.
+
 ### Phase 4: Timetable and Attendance
 
 - **Timetable:** today's list and "Next", day tabs on a phone, the week grid
@@ -476,7 +490,7 @@ FinPro v0.7.74 carries the auto-apply switch, moved in both apps.
 
 - **Offer:** Home offers notifications once to each pupil who has not chosen,
   after sign-in and never on first load; Turn on asks the browser's permission
-  from that tap, Not now puts the offer away. Profile keeps the setting: on,
+  from that tap, its X puts the offer away. Profile keeps the setting: on,
   off, blocked by the browser (only its settings undo that), or not available.
 - **Several pupils, one phone:** the browser holds one subscription and each
   pupil who turns notifications on is remembered with the school for it.
@@ -485,7 +499,8 @@ FinPro v0.7.74 carries the auto-apply switch, moved in both apps.
   pupil's choice is forgotten when they come off the phone, and carried over
   when the same child signs in again.
 - **iPhone:** only the app added to the Home Screen gets notifications, so
-  there the offer says how to add it first, once per phone.
+  in Safari the notifications offer waits and the "Get the app" card (below)
+  says how to add it.
 - **Service worker:** `public/push-sw.js`, loaded into the generated worker,
   shows the push as sent (the badge is the crest's silhouette) and on a tap
   opens Notices, Results or Fees by the push's kind. When the push names the
@@ -507,6 +522,56 @@ subscription was untouched. The offer at 390px and desktop, and Not now held
 across a reload. Not driven: an iPhone (the install steps are unit-checked
 only) and a click on the system notification itself, which the worker's tests
 cover.
+
+**Get the app, 17 October 2026.** Nothing in the app told a parent how to
+keep it on the phone. Home now carries a "Get the app" card after sign-in
+(never on the sign-in screen) and Profile an "Install the app" row, and both
+show only where the app is not installed: not inside the installed app (its
+display mode, or `navigator.standalone` on an iPhone), not on a device that
+installed it earlier (remembered when the browser reports the install), and
+not where Chrome's `getInstalledRelatedApps()` reports it. Each says one
+thing for the browser in hand: Install, through Chrome's, Edge's or Samsung
+Internet's own prompt (turned down, the browser's menu); Safari's three steps
+on an iPhone, before the notifications offer, which waits for the installed
+app; "open this page in Chrome" or "in Safari" with Copy link inside
+Instagram, Facebook, TikTok and other apps' browsers and in Chrome, Firefox
+or Edge on an iPhone; the browser's menu anywhere else. The card's X puts it
+away on that device; the Profile row stays until the app is installed. The
+app's address is never shown as text.
+The card names the app by the school's short name from its manifest. Driven
+in Chromium against the built app with the API stood in: a synthetic prompt
+accepted (card and row gone, and still gone after a reload) and turned down,
+Not now, the three installed display modes and a switch to standalone while
+open, and iPhone Safari, Instagram and Chrome on an iPhone by user agent, at
+390px and 1440px. Not yet tried: real installs on a physical iPhone and
+Android phone, on staging. The backend's per-school manifest needs the same
+`related_applications` entry for the browser check to work there.
+
+**Install only through Chrome on Android, 17 October 2026.** Tried on a
+Samsung phone, Samsung Internet's own install set off Play Protect: "built
+for an older version of Android ... may put your device at risk". The browser
+builds the small Android app an install makes, and Samsung Internet builds it
+for an old Android; Chrome's is current, so it installs quietly. The card now
+offers Install only in Chrome on Android. Samsung Internet, Edge, Opera and
+the phone makers' browsers (Xiaomi, Tecno and Infinix's Phoenix, Oppo, vivo)
+are told to open the page in Chrome, with an Open in Chrome button that hands
+the page straight to Chrome, and Copy link beside it. Edge on a computer keeps
+Install. Not yet tried on a phone: the Open in Chrome button itself.
+
+**The school's own name, 17 October 2026.** Every school's installed app
+was called XVS Student on an iPhone: Add to Home Screen reads the page's
+title (or `apple-mobile-web-app-title`), not the manifest, and the title was
+fixed in `index.html`. At start the page now takes the school's full name as
+its title ("Meridian Crest Academy"), which is also what the app switcher
+shows, and puts the label under the icon in `apple-mobile-web-app-title` and
+`application-name`. The owner's rule for that label: the whole name when it
+fits in 12 characters ("Bright Star"), else the first word ("Meridian"),
+never part of a word. The backend's manifest `short_name` follows the same
+rule, so Android and iPhone agree. Both come from the manifest, else from the
+school's public name, and the last ones read are kept per school so the next
+start is named at once, offline too. The sign-in heading is the school's full
+name. An address that names no school stays XVS Student. An iPhone install
+made before this keeps its old label until it is added again.
 
 ### Parked: Messages and Assignments
 

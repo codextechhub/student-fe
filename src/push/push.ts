@@ -1,5 +1,7 @@
 import type { ThunkDispatch, UnknownAction } from "@reduxjs/toolkit";
 
+import { runningInstalled } from "@/install/installed";
+import { browserFacts, isAppleMobile } from "@/install/situation";
 import { pushApi, type DeviceSubscription } from "@/redux/services/push-api";
 
 import { pushChoiceFor, setPushChoice } from "./push-choice";
@@ -16,7 +18,7 @@ import { pushChoiceFor, setPushChoice } from "./push-choice";
  *
  * The permission prompt comes only from a tap (iPhone refuses any other), and
  * only after a pupil has signed in. An iPhone shows notifications only to the
- * app added to its Home Screen, so there the app first says how to add it.
+ * app added to its Home Screen, so there they wait for the installed app.
  */
 
 type Dispatch = ThunkDispatch<unknown, unknown, UnknownAction>;
@@ -35,13 +37,7 @@ export type PushSupport = "ready" | "install-first" | "unsupported";
 /** Whether this browser can show the school's notifications, and what stands in the way. */
 export function pushSupport(): PushSupport {
   if (typeof window === "undefined" || typeof navigator === "undefined") return "unsupported";
-  const iPhone =
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const installed =
-    window.matchMedia?.("(display-mode: standalone)").matches === true ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true;
-  if (iPhone && !installed) return "install-first";
+  if (isAppleMobile(browserFacts()) && !runningInstalled()) return "install-first";
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
     return "unsupported";
   }

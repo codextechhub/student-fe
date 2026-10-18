@@ -2,6 +2,8 @@ import { useRef, useState, type FormEvent } from "react";
 import { Info, LockKeyhole, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
+import { ChangePassword } from "@/components/change-password";
+import { InstallSetting } from "@/components/install-offer";
 import { PageShell } from "@/components/layout/page-shell";
 import { PupilAvatar } from "@/components/pupil-avatar";
 import { PushSetting } from "@/components/push-settings";
@@ -55,6 +57,8 @@ export function ProfilePage() {
             </div>
           </>
         )}
+        <ChangePassword />
+        <InstallSetting />
         <PushSetting />
       </div>
     </PageShell>

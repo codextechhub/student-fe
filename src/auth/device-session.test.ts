@@ -10,7 +10,15 @@ import { baseApi } from "@/redux/services/base-api";
 import { accessFor, dropAccess } from "./access-tokens";
 import { pushChoiceFor, setPushChoice } from "@/push/push-choice";
 
-import { bootSession, HANDOVER_KEY, showPupilFromPush, signInPupil, signOutPupil, switchPupil } from "./device-session";
+import {
+  bootSession,
+  HANDOVER_KEY,
+  showPupilFromPush,
+  signInPupil,
+  signOutAfterPasswordChange,
+  signOutPupil,
+  switchPupil,
+} from "./device-session";
 import { deletePupil, listPupils, putPupil, resetPupilsStoreForTests, setActiveAccount } from "./pupils-store";
 import { routeFetch } from "./test-fetch";
 
@@ -255,6 +263,39 @@ describe("switching and signing out", () => {
     await store.dispatch(bootSession());
     await store.dispatch(signOutPupil("a-ebere"));
     expect(store.getState().session.status).toBe("signed-out");
+  });
+});
+
+describe("after a password change", () => {
+  it("takes the pupil off this phone, leaves their sibling signed in, and says why", async () => {
+    const { calls } = api();
+    await putPupil(pupil("a-ebere"));
+    await putPupil(pupil("a-femi"));
+    await setActiveAccount("a-ebere");
+    await keepAnswer("a-ebere", "/portal/student/results/", { mine: "ebere" });
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    await store.dispatch(signOutAfterPasswordChange("a-ebere"));
+    const session = store.getState().session;
+    expect(session.active).toBe("a-femi");
+    expect(session.pupils.map((p) => p.account)).toEqual(["a-femi"]);
+    expect(session.notice).toBe(
+      "Ebere's password was changed, so they were signed out. Sign in with the new password to carry on.",
+    );
+    expect(accessFor("a-ebere")).toBe("");
+    expect(await keptAnswer("a-ebere", "/portal/student/results/")).toBeNull();
+    expect(calls.find((c) => c.key === "POST /user/auth/device/sign-out/")?.body).toEqual({ account: "a-ebere" });
+  });
+
+  it("with nobody else on the phone, opens the sign-in screen saying to use the new password", async () => {
+    api();
+    await putPupil(pupil("a-ebere"));
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    await store.dispatch(signOutAfterPasswordChange("a-ebere"));
+    const session = store.getState().session;
+    expect(session.status).toBe("signed-out");
+    expect(session.notice).toContain("Sign in with the new password");
   });
 });
 
