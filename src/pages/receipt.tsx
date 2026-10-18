@@ -34,23 +34,20 @@ export function ReceiptPage() {
     <PageShell className="receipt-page">
       <div className="receipt-wrap">
         <Link to="/fees" className="receipt-back"><ArrowLeft size={17} aria-hidden="true" />My fees</Link>
-        <header className="receipt-heading"><p>Your payment record</p><h1>Everything you need to verify this payment.</h1></header>
         {isLoading && !receipt && <div className="receipt-loading" role="status" aria-label="Loading receipt" />}
         {(!validRef || isError) && !receipt && <Unavailable />}
         {receipt && (
           <div className="receipt-layout">
             <div className="receipt-overview">
               <section className="receipt-summary" aria-label="Confirmed payment">
-                <div className="receipt-summary-top"><span>Payment received</span><span className="receipt-success-icon"><Check size={22} aria-hidden="true" /></span></div>
+                <span className="receipt-summary-label">Payment received</span>
                 <strong className="receipt-summary-amount">{formatNaira(receipt.amount)}</strong>
-                <p>Your payment is confirmed.</p>
                 <div className="receipt-summary-bottom"><span className="receipt-status">Received</span><span>{formatDate(receipt.paid_on)}</span></div>
               </section>
               <button type="button" className="receipt-download" onClick={download} disabled={isFetching}>
                 <Download size={18} aria-hidden="true" />{isFetching ? "Preparing PDF…" : "Download PDF receipt"}
               </button>
               {pdfError && <p role="alert" className="receipt-pdf-error">{pdfError}</p>}
-              <Link to="/fees" className="receipt-secondary">Back to My fees</Link>
             </div>
             <ReceiptDocument receipt={receipt} />
           </div>
