@@ -13,6 +13,9 @@ import "./fees.css";
 
 /** School bills and payments, with only confirmed money counted as paid. */
 export function FeesPage() {
+  const [billYear, setBillYear] = useState("all");
+  const [billStatus, setBillStatus] = useState("all");
+  const [paymentYear, setPaymentYear] = useState("all");
   const { data: fees, isLoading, isError, refetch } = useFeesQuery();
   const { data: payments } = usePaymentsQuery();
   const { data: account } = useTransferAccountQuery();
@@ -20,11 +23,14 @@ export function FeesPage() {
   const signedInName = useAppSelector((s) => s.session.pupils.find((p) => p.account === s.session.active)?.fullName);
   const offline = useAppSelector((s) => s.connectivity.offline);
   const nextDue = fees?.invoices.filter((invoice) => invoice.balance > 0 && invoice.due_date).map((invoice) => invoice.due_date!).sort()[0];
+  const billYears = [...new Set((fees?.invoices ?? []).map((invoice) => (invoice.invoice_date ?? invoice.due_date)?.slice(0, 4)).filter((year): year is string => !!year))].sort().reverse();
+  const paymentYears = [...new Set((payments ?? []).map((payment) => payment.paid_on?.slice(0, 4)).filter((year): year is string => !!year))].sort().reverse();
+  const visibleBills = fees?.invoices.filter((invoice) => (billYear === "all" || (invoice.invoice_date ?? invoice.due_date)?.startsWith(billYear)) && (billStatus === "all" || (billStatus === "due" ? invoice.balance > 0 : invoice.balance <= 0))) ?? [];
+  const visiblePayments = payments?.filter((payment) => paymentYear === "all" || payment.paid_on?.startsWith(paymentYear)) ?? [];
 
   return (
     <PageShell className="fees-page">
       <div className="fees-wrap">
-        <header className="fees-heading"><p>Your school account</p><h1>Know what is due, paid and on its way.</h1></header>
         {isLoading && !fees && <div className="fees-loading" role="status" aria-label="Loading fees" />}
         {isError && !fees && <div className="fees-notice" role="alert">Your fees can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button></div>}
         {fees && (
@@ -41,8 +47,14 @@ export function FeesPage() {
               {fees.can_pay && <div className="fees-guardian"><Info size={17} aria-hidden="true" /><p><strong>Fees are normally paid by your parent or guardian.</strong> If they can&apos;t pay through their own app right now, you can pay here. Card details are entered on the secure gateway.</p></div>}
             </div>
             <div className="fees-detail">
-              <section><Heading title="School bills" description="Open a bill to see its full breakdown" first />{fees.invoices.length === 0 ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div> : <ul className="fees-invoices">{fees.invoices.map((invoice, index) => <InvoiceCard key={invoice.invoice_ref} invoice={invoice} openAtFirst={index === 0} canPay={fees.can_pay && !offline} offline={offline} />)}</ul>}</section>
-              <section><Heading title="Payment history" description="Confirmed payments and transfers on their way" /><div className="fees-surface fees-history">{!payments || payments.length === 0 ? <p className="fees-empty">No payments yet.</p> : <ul>{payments.map((payment) => <PaymentRow key={payment.reference} payment={payment} />)}</ul>}</div></section>
+              <section><Heading title="School bills" description="Open a bill to see its full breakdown" first />
+                {fees.invoices.length > 0 && <div className="fees-filters"><label>Calendar year<select value={billYear} onChange={(event) => setBillYear(event.target.value)}><option value="all">All years</option>{billYears.map((year) => <option key={year} value={year}>{year}</option>)}</select></label><label>Status<select value={billStatus} onChange={(event) => setBillStatus(event.target.value)}><option value="all">All bills</option><option value="due">Balance due</option><option value="paid">Fully paid</option></select></label></div>}
+                {fees.invoices.length === 0 ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div> : visibleBills.length === 0 ? <div className="fees-surface fees-empty">No bills match these filters.</div> : <ul className="fees-invoices">{visibleBills.map((invoice, index) => <InvoiceCard key={invoice.invoice_ref} invoice={invoice} openAtFirst={index === 0} canPay={fees.can_pay && !offline} offline={offline} />)}</ul>}
+              </section>
+              <section><Heading title="Payment history" description="Confirmed payments and transfers on their way" />
+                {!!payments?.length && <div className="fees-filters"><label>Calendar year<select value={paymentYear} onChange={(event) => setPaymentYear(event.target.value)}><option value="all">All years</option>{paymentYears.map((year) => <option key={year} value={year}>{year}</option>)}</select></label></div>}
+                <div className="fees-surface fees-history">{!payments || payments.length === 0 ? <p className="fees-empty">No payments yet.</p> : visiblePayments.length === 0 ? <p className="fees-empty">No payments match this year.</p> : <ul>{visiblePayments.map((payment) => <PaymentRow key={payment.reference} payment={payment} />)}</ul>}</div>
+              </section>
             </div>
           </div>
         )}

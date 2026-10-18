@@ -1,11 +1,12 @@
 .fees-page { min-height: calc(100dvh - 8rem); padding: 18px 20px 44px; background: radial-gradient(circle at 12% 0%, #e9eafe, transparent 28rem), #f5f7fc; color: #1b2945; }
 .fees-wrap { width: min(100%, 1080px); margin: 0 auto; }
-.fees-heading { margin: 10px 2px 20px; }
-.fees-heading p { margin: 0; color: #4c67cf; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; }
-.fees-heading h1 { margin: 9px 0 0; color: #263b64; font-size: 18px; line-height: 1.35; font-weight: 700; letter-spacing: -.025em; }
+.fees-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: -2px 0 13px; }
+.fees-filters label { display: grid; gap: 5px; color: #77849b; font-size: 12px; font-weight: 700; }
+.fees-filters select { min-height: 38px; padding: 5px 10px; border: 1px solid #cdd8e9; border-radius: 10px; background: #fff; color: #2b3d5d; font: inherit; font-size: 13px; cursor: pointer; }
+.fees-filters select:focus-visible { outline: 3px solid #7895c5; outline-offset: 2px; }
 .fees-layout { display: grid; gap: 24px; min-width: 0; }
 .fees-overview, .fees-detail { min-width: 0; }
-.fees-hero { position: relative; isolation: isolate; overflow: hidden; min-height: 244px; padding: 25px; border-radius: 29px; color: white; background: linear-gradient(128deg, #26459c, #395ac5 58%, #768af2); box-shadow: 0 18px 35px #304ea42c; }
+.fees-hero { position: relative; isolation: isolate; overflow: hidden; padding: 25px; border-radius: 29px; color: white; background: linear-gradient(128deg, #26459c, #395ac5 58%, #768af2); box-shadow: 0 18px 35px #304ea42c; }
 .fees-hero::before { content: ""; position: absolute; z-index: -1; width: 270px; height: 270px; right: -82px; top: -121px; border-radius: 50%; background: radial-gradient(circle, #b2c4ffa6, #b2c4ff23 60%, transparent 70%); }
 .fees-hero::after { content: ""; position: absolute; z-index: -1; width: 210px; height: 210px; right: -64px; bottom: -130px; border: 1px solid #ffffff55; border-radius: 50%; box-shadow: 0 0 0 35px #ffffff0b, 0 0 0 70px #ffffff0a; }
 .fees-hero-label { color: #e0e8ff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }
@@ -84,6 +85,6 @@
 .student-transfer-bank { margin: 11px 0 0; color: #5e6e85; font-size: 12px; }
 .student-transfer-hint { margin: 14px 0 0; padding: 11px 12px; border-radius: 12px; background: #f6f8fc; color: #6d7b91; font-size: 12px; line-height: 1.5; }
 .fees-invoice-toggle:focus-visible, .fees-pay-link:focus-visible, .fees-payment-side a:focus-visible, .student-transfer-number:focus-visible { outline: 3px solid #5975ff; outline-offset: 3px; }
-@media (min-width: 760px) { .fees-heading h1 { font-size: 23px; } .fees-layout { grid-template-columns: minmax(0, .92fr) minmax(360px, 1.08fr); align-items: start; } .fees-section-heading.is-first { margin-top: 0; } .fees-hero { min-height: 288px; padding: 31px; } }
+@media (min-width: 760px) { .fees-layout { grid-template-columns: minmax(0, .92fr) minmax(360px, 1.08fr); align-items: start; } .fees-section-heading.is-first { margin-top: 0; } .fees-hero { padding: 31px; } }
 @media (max-width: 370px) { .fees-page { padding-right: 15px; padding-left: 15px; } .fees-hero { padding: 21px; } .fees-payment { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 7px; } .fees-payment-icon { width: 34px; height: 34px; } .fees-payment-main strong { font-size: 13px; } .student-transfer-number { padding: 10px; } }
 @media (prefers-reduced-motion: reduce) { .fees-loading { animation: none; } .fees-invoice-chevron { transition: none; } }

@@ -43,7 +43,8 @@ export function ReportCardPage() {
           </section>
         )}
         {released && <>
-          <div className="report-view-switch print-hide" role="group" aria-label="Report card layout">
+          <div className={`report-view-switch print-hide${view === "paper" ? " is-paper" : ""}`} role="group" aria-label="Report card layout">
+            <span className="report-view-indicator" aria-hidden="true" />
             <button type="button" aria-pressed={view === "read"} onClick={() => setView("read")}>Phone view</button>
             <button type="button" aria-pressed={view === "paper"} onClick={() => setView("paper")}>Printable A4</button>
           </div>

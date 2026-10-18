@@ -136,7 +136,7 @@ describe("opening the app", () => {
     const session = store.getState().session;
     expect(session.active).toBe("a-ebere");
     expect(session.pupils.map((p) => p.account)).toEqual(["a-ebere"]);
-    expect(session.notice).toContain("Femi was signed out on this phone");
+    expect(session.notice).toContain("Femi was signed out on this device");
   });
 
   it("with no signal, opens the pupil already on the phone on their offline copy and signs nobody out", async () => {

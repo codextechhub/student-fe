@@ -42,7 +42,7 @@ export function PayPage() {
         {fees && invoice && (
           <div className="pay-layout">
             <div className="pay-overview">
-              <section className="pay-bill" aria-label="Selected bill"><span className="pay-bill-label">Selected bill</span><h2>{invoice.title}</h2><p>{[invoice.number, "Your school account"].filter(Boolean).join(" · ")}</p><strong>{formatNaira(Math.max(0, invoice.balance))}</strong><div className="pay-bill-chips"><span>{invoice.balance > 0 ? "Balance to pay" : "Fully paid"}</span>{invoice.due_date && invoice.balance > 0 && <span>Due {formatDate(invoice.due_date)}</span>}</div></section>
+              <section className="pay-bill" aria-label="Selected bill"><span className="pay-bill-label">Selected bill</span><h2>{invoice.title}</h2>{invoice.number && <p>{invoice.number}</p>}<strong>{formatNaira(Math.max(0, invoice.balance))}</strong><div className="pay-bill-chips"><span>{invoice.balance > 0 ? "Balance to pay" : "Fully paid"}</span>{invoice.due_date && invoice.balance > 0 && <span>Due {formatDate(invoice.due_date)}</span>}</div></section>
               <div className="pay-guardian"><Wallet size={17} aria-hidden="true" /><p><strong>Fees are normally paid by a parent or guardian.</strong> You can pay here if they can&apos;t use their own app right now.</p></div>
             </div>
             <div className="pay-detail">

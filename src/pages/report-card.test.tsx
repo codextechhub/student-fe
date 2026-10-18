@@ -57,6 +57,7 @@ describe("report card reader", () => {
     expect(container.querySelector(".report-paper.is-hidden-screen")).not.toBeNull();
     act(() => (container.querySelector('button[aria-pressed="false"]') as HTMLButtonElement).click());
     expect(container.querySelector(".report-paper.is-hidden-screen")).toBeNull();
+    expect(container.querySelector(".report-view-switch.is-paper .report-view-indicator")).not.toBeNull();
   });
 
   it("never renders a held card or offers its PDF", () => {

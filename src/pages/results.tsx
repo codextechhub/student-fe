@@ -23,10 +23,7 @@ export function ResultsPage() {
   return (
     <PageShell className="results-page">
       <div className="results-wrap">
-        <header className="results-heading">
-          <p>Your learning story</p>
-          <h1>See your progress, one term at a time.</h1>
-        </header>
+        <p className="results-kicker">Your learning story</p>
         <div className={`results-tabs${tab === "session" ? " is-session" : ""}`} role="tablist" aria-label="Results view">
           <span className="results-tab-indicator" aria-hidden="true" />
           {(["term", "session"] as const).map((key) => (
@@ -109,18 +106,28 @@ function TermTab() {
   if (!data) return null;
   if (data.state === "not_published") return <Notice>No results have been published for you yet.</Notice>;
 
+  const sessions = [...new Set(data.terms.map((item) => item.session))].reverse();
+  const selectedSession = data.term?.session ?? sessions[0];
+  const sessionTerms = data.terms.filter((item) => item.session === selectedSession);
+
   return (
     <div className={cn("results-content", isFetching && "is-fetching")}>
       <div className="results-filter">
-        {data.terms.length > 1 ? (
-          <label>Choose a term
-            <select value={data.term?.id ?? ""} onChange={(event) => setTerm(Number(event.target.value))}>
-              {[...data.terms].reverse().map((item) => (
-                <option key={item.id} value={item.id}>{item.name} · {item.session}{item.state === "withheld" ? " (held)" : ""}</option>
-              ))}
+        <div className="results-filter-controls">
+          {sessions.length > 1 && <label>School year
+            <select value={selectedSession} onChange={(event) => {
+              const latest = [...data.terms].reverse().find((item) => item.session === event.target.value);
+              if (latest) setTerm(latest.id);
+            }}>
+              {sessions.map((name) => <option key={name} value={name}>{name}</option>)}
             </select>
-          </label>
-        ) : <strong>{data.term?.name} · {data.term?.session}</strong>}
+          </label>}
+          {sessionTerms.length > 1 ? <label>Term
+            <select value={data.term?.id ?? ""} onChange={(event) => setTerm(Number(event.target.value))}>
+              {[...sessionTerms].reverse().map((item) => <option key={item.id} value={item.id}>{item.name}{item.state === "withheld" ? " (held)" : ""}</option>)}
+            </select>
+          </label> : <strong>{data.term?.name} · {data.term?.session}</strong>}
+        </div>
         {data.state === "released" && <span className="results-released">Released</span>}
       </div>
       {data.state === "withheld" ? <Notice>{data.message}</Notice> : <ReleasedTerm result={data} />}

@@ -145,7 +145,7 @@ async function forget(account: string, why: EndReason = "ended"): Promise<string
   if (!pupil?.firstName) return "";
   return why === "password-changed"
     ? `${pupil.firstName}'s password was changed, so they were signed out. Sign in with the new password to carry on.`
-    : `${pupil.firstName} was signed out on this phone. Sign in again to carry on.`;
+    : `${pupil.firstName} was signed out on this device. Sign in again to carry on.`;
 }
 
 /**

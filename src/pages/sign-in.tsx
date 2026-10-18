@@ -61,10 +61,10 @@ export function SignInPage() {
           <div className="signin-welcome-copy">
             {schoolName && <p className="signin-school-name">{schoolName}</p>}
             <h1>{adding ? "Make room for one more." : <>Your school day <span>starts here.</span></>}</h1>
-            <p>{adding ? `Add another pupil to this phone. ${showing?.firstName ?? "The current pupil"} stays signed in.` : "Classes, results, attendance and fees in one clear place."}</p>
+            <p>{adding ? `Add another pupil to this device. ${showing?.firstName ?? "The current pupil"} stays signed in.` : "Classes, results, attendance and fees in one clear place."}</p>
             {adding && showing && <span className="signin-showing"><PupilAvatar name={showing.fullName} photo={showing.photo} size={29} />{showing.firstName}<ChevronDown size={15} aria-hidden="true" /></span>}
           </div>
-          <p className="signin-welcome-foot"><LockKeyhole size={17} aria-hidden="true" />One phone can hold more than one pupil</p>
+          <p className="signin-welcome-foot"><LockKeyhole size={17} aria-hidden="true" />One device can hold more than one pupil</p>
         </section>
 
         <section className="signin-area" aria-label={adding ? "Add another pupil" : "Sign in"}>
@@ -74,7 +74,7 @@ export function SignInPage() {
             {!adding && <p className="signin-card-intro">Your student account, in the same school space.</p>}
             {adding && <>
               <p className="signin-card-intro">They&apos;ll be signed in alongside {showing?.firstName ?? "the current pupil"}. You can switch between pupils any time.</p>
-              {showing && <div className="signin-existing"><PupilAvatar name={showing.fullName} photo={showing.photo} size={39} /><div><span>Already on this phone</span><strong>{showing.fullName}</strong></div></div>}
+              {showing && <div className="signin-existing"><PupilAvatar name={showing.fullName} photo={showing.photo} size={39} /><div><span>Already on this device</span><strong>{showing.fullName}</strong></div></div>}
             </>}
             {notice && !error && <div className="signin-notice" role="status"><span>{notice}</span><button type="button" onClick={() => dispatch(noticeCleared())}>Dismiss</button></div>}
             {!slug ? (

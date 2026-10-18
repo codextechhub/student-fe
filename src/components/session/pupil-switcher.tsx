@@ -52,7 +52,7 @@ export function PupilSwitcher() {
       <Dialog.Portal>
         <Dialog.Overlay className="pupil-switcher-overlay" />
         <Dialog.Content aria-describedby={undefined} className="pupil-switcher-sheet">
-          <Dialog.Title>Signed in on this phone</Dialog.Title>
+          <Dialog.Title>Signed in on this device</Dialog.Title>
           <Dialog.Close className="pupil-switcher-close" aria-label="Close pupil switcher" disabled={busy}><X size={17} aria-hidden="true" /></Dialog.Close>
           <ul className="pupil-switcher-list">
             {pupils.map((pupil) => (
@@ -69,7 +69,7 @@ export function PupilSwitcher() {
           {message && <p className="pupil-switcher-error" role="alert">{message}</p>}
           <div className="pupil-switcher-actions">
             <button type="button" disabled={busy} onClick={() => { setOpen(false); navigate("/sign-in?add=1"); }}><UserPlus size={18} aria-hidden="true" />Add another pupil</button>
-            <button type="button" className="is-signout" disabled={busy} onClick={signOut}><LogOut size={18} aria-hidden="true" />Sign {showing.firstName} out of this phone</button>
+            <button type="button" className="is-signout" disabled={busy} onClick={signOut}><LogOut size={18} aria-hidden="true" />Sign {showing.firstName} out of this device</button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

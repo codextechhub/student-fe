@@ -5,10 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   term: {} as Record<string, unknown>,
+  requestedTerm: null as number | null,
 }));
 
 vi.mock("@/redux/services/portal-api", () => ({
-  useResultsQuery: () => ({ data: mocks.term, isLoading: false, isError: false, isFetching: false }),
+  useResultsQuery: (term: number | null) => { mocks.requestedTerm = term; return { data: mocks.term, isLoading: false, isError: false, isFetching: false }; },
   useSessionResultsQuery: () => ({ data: undefined, isLoading: true, isError: false }),
 }));
 
@@ -22,6 +23,7 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
+  mocks.requestedTerm = null;
 });
 afterEach(() => { act(() => root.unmount()); container.remove(); });
 
@@ -50,5 +52,20 @@ describe("results release state", () => {
     expect(container.querySelector('a[href="/results/card/7"]')).not.toBeNull();
     expect(container.textContent).not.toContain("Position");
     expect(container.textContent).not.toContain("Class average");
+  });
+
+  it("lets a pupil choose an older school year from published terms", () => {
+    mocks.term = {
+      state: "released", term, terms: [
+        { id: 2, name: "First Term", session: "2023/24", state: "released" },
+        { id: 7, name: "Third Term", session: "2025/26", state: "released" },
+      ],
+      summary: { overall_average: "78", subjects: 0 }, subjects: [],
+    };
+    render();
+    const year = container.querySelector('.results-filter-controls select') as HTMLSelectElement;
+    expect(year.options.length).toBe(2);
+    act(() => { year.value = "2023/24"; year.dispatchEvent(new Event("change", { bubbles: true })); });
+    expect(mocks.requestedTerm).toBe(2);
   });
 });

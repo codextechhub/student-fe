@@ -81,4 +81,19 @@ describe("fees account number", () => {
     expect(container.textContent).toContain("Third Term");
     expect(container.textContent).not.toContain("Pay balance");
   });
+
+  it("filters bills by year and balance without changing the account total", () => {
+    mocks.invoices = [
+      { invoice_ref: 1, number: "IV-1", title: "Old paid bill", invoice_date: "2024-09-01", due_date: null, lines: [], total: 50_000, paid: 50_000, balance: 0, status: "PAID", status_label: "Paid" },
+      { invoice_ref: 2, number: "IV-2", title: "Current unpaid bill", invoice_date: "2026-09-01", due_date: null, lines: [], total: 50_000, paid: 0, balance: 50_000, status: "DUE", status_label: "Due" },
+    ];
+    render();
+    const [year, status] = container.querySelectorAll<HTMLSelectElement>(".fees-filters select");
+    act(() => { year.value = "2024"; year.dispatchEvent(new Event("change", { bubbles: true })); });
+    expect(container.querySelector(".fees-invoices")?.textContent).toContain("Old paid bill");
+    expect(container.querySelector(".fees-invoices")?.textContent).not.toContain("Current unpaid bill");
+    act(() => { status.value = "due"; status.dispatchEvent(new Event("change", { bubbles: true })); });
+    expect(container.textContent).toContain("No bills match these filters.");
+    expect(container.querySelector(".fees-stats")?.textContent).toContain("₦1,000.00");
+  });
 });

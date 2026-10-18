@@ -24,9 +24,9 @@ export const MISMATCH_MESSAGE = "The new passwords don't match.";
  * in on the same phone is not touched.
  */
 export const SIGNED_OUT_EVERYWHERE_MESSAGE =
-  "You're now signed out on every phone and computer, this one included. " +
+  "You're now signed out on every device, this one included. " +
   "Each will ask for your new password within 15 minutes. " +
-  "Anyone else signed in on this phone stays signed in.";
+  "Anyone else signed in on this device stays signed in.";
 
 /** The policy in one sentence, for while the school's own list loads or can't be read. */
 const RULES_FALLBACK =
@@ -183,7 +183,7 @@ export function ChangePassword() {
           <p className="text-xs text-muted-foreground">
             {offline
               ? "You can change your password when you're back online."
-              : "Saving signs you out everywhere, this phone included."}
+              : "Saving signs you out everywhere, this device included."}
           </p>
           <div className="profile-password-actions">
             <Button type="button" variant="outline" size="sm" onClick={close} disabled={isLoading}>Cancel</Button>

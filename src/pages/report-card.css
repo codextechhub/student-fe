@@ -5,3 +5,10 @@
 @media print{.report-page{min-height:0;padding:0!important;background:white!important}.report-wrap{width:100%;max-width:none}.report-paper,.report-paper.is-hidden-screen{display:block!important;max-width:none;overflow:visible;border:0;box-shadow:none}.report-paper .report-card{min-width:0}}
 
 @media(min-width:760px){.report-heading h1{font-size:23px}}
+
+.report-view-switch { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 296px); border-color: #bdcbe3; background: #e3ebf7; box-shadow: inset 0 1px 3px #344a7a17; }
+.report-view-indicator { position: absolute; top: 5px; bottom: 5px; left: 5px; width: calc((100% - 15px) / 2); border-radius: 10px; background: white; box-shadow: 0 3px 11px #26385924; transition: transform .28s ease; }
+.report-view-switch.is-paper .report-view-indicator { transform: translateX(calc(100% + 5px)); }
+.report-view-switch button { position: relative; min-width: 0; }
+.report-view-switch button[aria-pressed=true] { background: transparent; color: #3353b4; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .report-view-indicator { transition: none; } }

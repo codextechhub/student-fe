@@ -75,7 +75,7 @@ export function PushSetting() {
     <section className="profile-surface profile-notifications">
       <div className="profile-card-heading">
         <span className="profile-card-icon"><Bell size={19} aria-hidden="true" /></span>
-        <div><h2>Notifications on this device</h2><p>A setting for {firstName} on this phone</p></div>
+        <div><h2>Notifications on this device</h2><p>A setting for {firstName} on this device</p></div>
       </div>
       <div className="profile-notification-body">
         <div>

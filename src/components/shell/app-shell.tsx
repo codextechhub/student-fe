@@ -13,6 +13,7 @@ import { useMeQuery, useNoticesQuery } from "@/redux/services/portal-api";
 import { itemFor, NAV, splitTabs, type NavItem } from "./nav";
 import { OfflineBar } from "./offline-bar";
 import { PullToRefresh } from "./pull-to-refresh";
+import "./app-shell.css";
 
 /**
  * The frame every signed-in screen sits in.
@@ -40,18 +41,17 @@ export function AppShell() {
   const { data: noticePage } = useNoticesQuery(1);
   const unread = noticePage?.unreadCount ?? 0;
   const current = itemFor(pathname);
-  const onBrandPage = pathname === "/" || pathname === "/timetable";
-  const onDesignPage = pathname === "/" || pathname === "/timetable" || pathname === "/results" || pathname === "/attendance" || pathname === "/profile" || pathname.startsWith("/fees") || pathname.startsWith("/notices");
+  const onDesignPage = pathname === "/" || pathname === "/timetable" || pathname.startsWith("/results") || pathname === "/attendance" || pathname === "/profile" || pathname.startsWith("/fees") || pathname.startsWith("/notices");
   const badges: Partial<Record<NavItem["key"], number>> = { notices: unread };
   const where = [me?.school.name, me?.show_branch ? me?.branch?.name : null].filter(Boolean).join(" · ");
   const screenTitle = pathname.startsWith("/results/card/") ? "Report card" : pathname.startsWith("/fees/receipts/") ? "Payment receipt" : pathname.startsWith("/fees/pay/") ? "Pay a bill" : pathname === "/fees/paid" ? "Payment status" : current?.key === "fees" ? "My fees" : current?.key === "attendance" ? "My attendance" : current?.key === "timetable" ? "My timetable" : current?.key === "results" ? "My results" : current?.key === "profile" ? "My profile" : current?.label ?? "";
 
   return (
-    <div className={cn("flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onBrandPage ? "bg-[#f7f9fc]" : onDesignPage && "bg-[#f5f7fc]")}>
-      <header className={cn("sticky top-0 z-30 flex min-w-0 items-center gap-3 border-b px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 transition-[background-color,backdrop-filter,border-color] duration-200 lg:px-6", onBrandPage && "min-h-[58px] sm:min-h-[66px]", onBrandPage ? scrolled ? "border-[#dbe0eb] bg-[#f7f9fc]/75 backdrop-blur-xl" : "border-[#dbe0eb] bg-[#f7f9fc]" : onDesignPage ? scrolled ? "border-white/50 bg-[#f5f7fc]/75 backdrop-blur-xl" : "border-transparent bg-[#f5f7fc] bg-[radial-gradient(circle_at_13%_100%,#e9eafe,transparent_28rem)]" : scrolled ? "border-border bg-background/75 backdrop-blur-xl" : "border-border bg-background")}>
-        <SchoolMark logo={me?.school.logo_url || null} size={onBrandPage ? 34 : 28} animate={false} alt={where} className={onBrandPage ? "max-h-7 sm:max-h-[34px]" : undefined} />
+    <div className={cn("app-shell flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onDesignPage && "app-shell--design")}>
+      <header className={cn("sticky top-0 z-30 flex min-h-[58px] min-w-0 items-center gap-3 border-b px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 transition-[background-color,backdrop-filter,border-color] duration-200 sm:min-h-[66px] lg:px-6", onDesignPage ? scrolled ? "border-[#dbe0eb] bg-[#f5f7fc]/70 backdrop-blur-xl backdrop-saturate-150" : "border-transparent bg-transparent" : scrolled ? "border-border bg-background/75 backdrop-blur-xl" : "border-border bg-background")}>
+        <SchoolMark logo={me?.school.logo_url || null} size={onDesignPage ? 34 : 28} animate={false} alt={where} className={onDesignPage ? "max-h-7 sm:max-h-[34px]" : undefined} />
         <div className="min-w-0 flex-1">
-          <p className={cn("truncate font-semibold text-foreground", onBrandPage ? "text-base" : "text-sm")}>{screenTitle}</p>
+          <p className={cn("truncate font-semibold text-foreground", onDesignPage ? "text-base" : "text-sm")}>{screenTitle}</p>
         </div>
         <PupilSwitcher />
       </header>

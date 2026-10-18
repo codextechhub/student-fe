@@ -34,10 +34,6 @@ export function ProfilePage() {
   return (
     <PageShell className="profile-page">
       <div className="profile-wrap">
-        <header className="profile-heading">
-          <p>Your school record</p>
-          <h1>See your details and keep your contact information current.</h1>
-        </header>
         {isLoading && !profile && <div className="profile-loading" role="status" aria-label="Loading profile" />}
         {isError && !profile && (
           <div className="profile-error" role="alert">
