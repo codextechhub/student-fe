@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Check, ChevronDown, Clock3, Info, Receipt as ReceiptIcon, Wallet } from "lucide-react";
+import { Check, ChevronDown, Clock3, Info, Receipt as ReceiptIcon, SlidersHorizontal } from "lucide-react";
+import { Popover } from "radix-ui";
 import { Link } from "react-router";
 
 import { TransferAccountCard } from "@/components/fees/transfer-account-card";
@@ -38,8 +39,8 @@ export function FeesPage() {
             <div className="fees-overview">
               <section className="fees-hero" aria-label="Fee balance">
                 <span className="fees-hero-label">{fees.balance < 0 ? "In credit" : fees.invoices.length === 0 ? "No bills yet" : fees.balance === 0 ? "All paid" : "Balance to pay"}</span>
-                <div className="fees-hero-main"><div><strong>{formatNaira(Math.abs(fees.balance))}</strong><p>{fees.balance < 0 ? "Ready for your next school bill" : fees.invoices.length === 0 ? "New bills will appear here" : fees.balance === 0 ? "Your school bills are settled" : "Remaining on your school bill"}</p></div><span className="fees-hero-icon"><Wallet aria-hidden="true" size={23} /></span></div>
-                {fees.total_billed > 0 && <><div className="fees-progress-label"><span>Paid so far</span><span>{formatNaira(fees.total_paid)} of {formatNaira(fees.total_billed)}</span></div><div className="fees-progress" aria-hidden="true"><span style={{ width: `${Math.max(0, Math.min(100, (fees.total_paid / fees.total_billed) * 100))}%` }} /></div></>}
+                <strong className="fees-hero-value">{formatNaira(Math.abs(fees.balance))}</strong>
+                {fees.total_billed > 0 && fees.balance > 0 && <><div className="fees-progress-label"><span>Paid so far</span><span>{formatNaira(fees.total_paid)} of {formatNaira(fees.total_billed)}</span></div><div className="fees-progress" aria-hidden="true"><span style={{ width: `${Math.max(0, Math.min(100, (fees.total_paid / fees.total_billed) * 100))}%` }} /></div></>}
                 <span className="fees-hero-note">{nextDue && fees.balance > 0 ? `Due ${formatDate(nextDue)}` : fees.balance < 0 ? "Credit available for your next bill" : fees.balance === 0 && fees.invoices.length > 0 ? "Nothing to pay right now" : "Your account is ready when needed"}</span>
               </section>
               <div className="fees-stats"><Stat label="Total billed" value={formatNaira(fees.total_billed)} /><Stat label="Paid so far" value={formatNaira(fees.total_paid)} /></div>
@@ -47,12 +48,12 @@ export function FeesPage() {
               {fees.can_pay && <div className="fees-guardian"><Info size={17} aria-hidden="true" /><p><strong>Fees are normally paid by your parent or guardian.</strong> If they can&apos;t pay through their own app right now, you can pay here. Card details are entered on the secure gateway.</p></div>}
             </div>
             <div className="fees-detail">
-              <section><Heading title="School bills" description="Open a bill to see its full breakdown" first />
-                {fees.invoices.length > 0 && <div className="fees-filters"><label>Calendar year<select value={billYear} onChange={(event) => setBillYear(event.target.value)}><option value="all">All years</option>{billYears.map((year) => <option key={year} value={year}>{year}</option>)}</select></label><label>Status<select value={billStatus} onChange={(event) => setBillStatus(event.target.value)}><option value="all">All bills</option><option value="due">Balance due</option><option value="paid">Fully paid</option></select></label></div>}
+              <section><div className="fees-detail-top"><Heading title="School bills" description="Open a bill to see its full breakdown" first />
+                {(fees.invoices.length > 0 || !!payments?.length) && <Popover.Root><Popover.Trigger asChild><button type="button" className="fees-filter-trigger" aria-label="Filter fees"><SlidersHorizontal size={18} aria-hidden="true" />{(billYear !== "all" || billStatus !== "all" || paymentYear !== "all") && <span className="fees-filter-active" aria-hidden="true" />}</button></Popover.Trigger><Popover.Portal><Popover.Content align="end" sideOffset={8} className="fees-filter-popover"><div className="fees-filter-header"><strong>Filter fees</strong><Popover.Close aria-label="Close filters">Done</Popover.Close></div><fieldset><legend>Bills</legend><label>Calendar year<span><select value={billYear} onChange={(event) => setBillYear(event.target.value)}><option value="all">All years</option>{billYears.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown size={15} aria-hidden="true" /></span></label><label>Status<span><select value={billStatus} onChange={(event) => setBillStatus(event.target.value)}><option value="all">All bills</option><option value="due">Balance due</option><option value="paid">Fully paid</option></select><ChevronDown size={15} aria-hidden="true" /></span></label></fieldset><fieldset><legend>Payment history</legend><label>Calendar year<span><select value={paymentYear} onChange={(event) => setPaymentYear(event.target.value)}><option value="all">All years</option>{paymentYears.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown size={15} aria-hidden="true" /></span></label></fieldset><button type="button" className="fees-filter-reset" onClick={() => { setBillYear("all"); setBillStatus("all"); setPaymentYear("all"); }}>Clear filters</button></Popover.Content></Popover.Portal></Popover.Root>}
+              </div>
                 {fees.invoices.length === 0 ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div> : visibleBills.length === 0 ? <div className="fees-surface fees-empty">No bills match these filters.</div> : <ul className="fees-invoices">{visibleBills.map((invoice, index) => <InvoiceCard key={invoice.invoice_ref} invoice={invoice} openAtFirst={index === 0} canPay={fees.can_pay && !offline} offline={offline} />)}</ul>}
               </section>
               <section><Heading title="Payment history" description="Confirmed payments and transfers on their way" />
-                {!!payments?.length && <div className="fees-filters"><label>Calendar year<select value={paymentYear} onChange={(event) => setPaymentYear(event.target.value)}><option value="all">All years</option>{paymentYears.map((year) => <option key={year} value={year}>{year}</option>)}</select></label></div>}
                 <div className="fees-surface fees-history">{!payments || payments.length === 0 ? <p className="fees-empty">No payments yet.</p> : visiblePayments.length === 0 ? <p className="fees-empty">No payments match this year.</p> : <ul>{visiblePayments.map((payment) => <PaymentRow key={payment.reference} payment={payment} />)}</ul>}</div>
               </section>
             </div>

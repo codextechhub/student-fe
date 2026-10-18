@@ -26,6 +26,6 @@ describe("timetable week navigation", () => {
     expect(container.textContent).toContain("Showing the current published weekly pattern");
     expect(container.querySelector(".timetable-lesson-badge.is-now")).toBeNull();
     expect(container.textContent).toContain("Mathematics");
-    expect(container.querySelector('input[aria-label="Jump to a date"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Choose a timetable date"]')).not.toBeNull();
   });
 });

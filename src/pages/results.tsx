@@ -60,24 +60,11 @@ function Loading() {
   return <div className="results-loading" role="status" aria-label="Loading results" />;
 }
 
-function ResultHero({ label, value, description, chips }: { label: string; value: string; description: string; chips: ReactNode[] }) {
-  const numeric = Number.parseFloat(value);
-  const hasNumber = Number.isFinite(numeric);
-  const rounded = hasNumber ? Math.round(numeric) : null;
+function ResultHero({ label, value, chips }: { label: string; value: string; chips: ReactNode[] }) {
   return (
     <section className="results-hero" aria-label={label}>
       <span className="results-hero-label">{label}</span>
-      <div className="results-hero-main">
-        <div>
-          <strong>{value}</strong>
-          <p>{description}</p>
-        </div>
-        {rounded !== null && (
-          <div className="results-ring" style={{ "--ring-value": `${Math.max(0, Math.min(100, numeric))}%` } as React.CSSProperties} aria-hidden="true">
-            <span>{rounded}</span>
-          </div>
-        )}
-      </div>
+      <strong className="results-hero-value">{value}</strong>
       {chips.length > 0 && <div className="results-hero-chips">{chips.map((chip, index) => <span className="results-glass-chip" key={index}>{chip}</span>)}</div>}
     </section>
   );
@@ -91,7 +78,7 @@ function CardLink({ termId, annual = false }: { termId: number; annual?: boolean
   return (
     <Link className="results-card-link" to={`/results/card/${termId}`}>
       <FileText size={19} aria-hidden="true" />
-      <span><strong>View {annual ? "annual" : "term"} report card</strong><small>{annual ? "All terms together" : "The full school-issued record"}</small></span>
+      <span><strong>View {annual ? "annual" : "term"} report card</strong></span>
       <ChevronRight size={20} aria-hidden="true" />
     </Link>
   );
@@ -145,8 +132,7 @@ function ReleasedTerm({ result }: { result: TermResult }) {
         <ResultHero
           label={`${result.term?.name ?? "Term"} average`}
           value={percent(summary?.overall_average)}
-          description="Your overall score this term"
-          chips={[result.term?.session && `${result.term.session} school year`, result.class_name].filter(Boolean)}
+          chips={[result.class_name].filter(Boolean)}
         />
         <div className="results-stats">
           {summary?.position_label && <Stat label="Position" value={position?.[0] ?? summary.position_label} sub={position?.[1] ? `of ${position[1]} in ${result.class_name ?? "the class"}` : undefined} />}
@@ -210,7 +196,6 @@ function SessionView({ session, teachers }: { session: SessionResults; teachers:
           <ResultHero
             label="Year average"
             value={cumulative ? percent(cumulative.annual_average) : "–"}
-            description={cumulative ? "Across all released terms" : "When the last term is out"}
             chips={[cumulative?.promotion, `${termsReleasedLine(session)}${session.terms_total ? " terms" : ""} released`].filter(Boolean)}
           />
           {(cumulative?.annual_position_label || cumulative?.class_average) && <div className="results-stats">

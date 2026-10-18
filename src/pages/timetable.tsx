@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin } from "lucide-react";
+import { Popover } from "radix-ui";
 
 import { PageShell } from "@/components/layout/page-shell";
+import { Calendar } from "@/components/ui/calendar";
 import { formatClock } from "@/lib/format";
 import { useTimetableQuery, type Timetable, type TimetableCell, type TodayPeriod } from "@/redux/services/portal-api";
 
@@ -11,6 +13,7 @@ import "./timetable.css";
 export function TimetablePage() {
   const { data, isLoading, isError, refetch } = useTimetableQuery();
   const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()));
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const selectedWeek = weekStart(selectedDate);
   const currentWeek = weekStart(localDate(new Date()));
   const isCurrentWeek = selectedWeek.getTime() === currentWeek.getTime();
@@ -39,7 +42,10 @@ export function TimetablePage() {
               <div className="timetable-week-actions">
                 {!isCurrentWeek && <button type="button" onClick={() => setSelectedDate(localDate(new Date()))}>Today</button>}
                 <button type="button" aria-label="Previous week" onClick={() => shiftWeek(-1)}><ChevronLeft size={17} aria-hidden="true" /></button>
-                <label className="timetable-date-picker"><CalendarDays size={17} aria-hidden="true" /><span>Jump to date</span><input type="date" value={selectedDate} aria-label="Jump to a date" onChange={(event) => event.target.value && setSelectedDate(event.target.value)} /></label>
+                <Popover.Root open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <Popover.Trigger asChild><button type="button" aria-label="Choose a timetable date"><CalendarDays size={17} aria-hidden="true" /><span>Choose date</span></button></Popover.Trigger>
+                  <Popover.Portal><Popover.Content align="end" sideOffset={8} className="timetable-calendar-popover"><Calendar selected={selectedDate} onSelect={(date) => { setSelectedDate(date); setCalendarOpen(false); }} /></Popover.Content></Popover.Portal>
+                </Popover.Root>
                 <button type="button" aria-label="Next week" onClick={() => shiftWeek(1)}><ChevronRight size={17} aria-hidden="true" /></button>
               </div>
             </div>

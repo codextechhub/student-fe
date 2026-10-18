@@ -10,7 +10,6 @@ export function ReportCardReader({ card, report, onReportChange }: { card: Repor
   const findFact = (pattern: RegExp) => card.facts.find((item) => pattern.test(item.label))?.value || "";
   const name = findFact(/^(name|student|pupil)/i);
   const className = findFact(/^class/i);
-  const admission = findFact(/admission/i);
   const termAverage = card.totals.find((line) => /average/i.test(line.label) && !/class/i.test(line.label))?.value;
   const heroAverage = annual ? cumulative?.annual_average : termAverage;
   const stats: CardLine[] = annual
@@ -25,7 +24,7 @@ export function ReportCardReader({ card, report, onReportChange }: { card: Repor
     <section className="report-hero" aria-label="Report summary">
       <div className="report-hero-top"><span>School report card</span><span className="report-released">Released</span></div>
       <h2>{name || "Your report card"}</h2>
-      {(className || admission) && <p className="report-hero-class">{[className, admission && "Admission no. " + admission].filter(Boolean).join(" · ")}</p>}
+      {className && <p className="report-hero-class">{className}</p>}
       <div className="report-hero-bottom"><span className="report-hero-term">{annual ? "Full session" : card.term_line}</span>{heroAverage && <div className="report-hero-metric"><strong>{heroAverage}</strong><span>{annual ? "Annual average" : "Term average"}</span></div>}</div>
     </section>
     {stats.length > 0 && <dl className="report-stats">{stats.map((line) => <div className="report-stat" key={line.label}><dt>{line.label}</dt><dd>{line.value}</dd></div>)}</dl>}

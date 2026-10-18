@@ -28,12 +28,7 @@ export function ReportCardPage() {
   return (
     <PageShell className="report-page">
       <div className="report-wrap">
-        <Link to="/results" className="report-back print-hide"><ArrowLeft size={17} aria-hidden="true" />Results</Link>
-        <header className="report-heading print-hide">
-          <div><p>Official school record</p><h1>{annual ? "See the full year at a glance." : released ? "A clear view of your term report." : "Your report card"}</h1></div>
-          {released && <button type="button" className="report-download" onClick={() => window.print()}><Download size={17} aria-hidden="true" />Download PDF</button>}
-        </header>
-        {released && <p className="report-download-note print-hide">Choose “Save as PDF” in the print dialog to keep a copy.</p>}
+        <div className="report-topline print-hide"><Link to="/results" className="report-back"><ArrowLeft size={17} aria-hidden="true" />Results</Link>{released && <button type="button" className="report-download" onClick={() => window.print()}><Download size={17} aria-hidden="true" />Download PDF</button>}</div>
         {isLoading && !card && <div className="report-loading print-hide" role="status" aria-label="Loading report card" />}
         {(!isLoading || !validId || isError) && !released && (
           <section className="report-unavailable print-hide" role="status">

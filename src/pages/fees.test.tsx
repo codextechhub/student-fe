@@ -70,7 +70,7 @@ describe("fees account number", () => {
     mocks.balance = -300_000;
     render();
     expect(container.querySelector(".fees-hero-label")?.textContent).toBe("In credit");
-    expect(container.querySelector(".fees-hero-main")?.textContent).toContain("₦3,000.00");
+    expect(container.querySelector(".fees-hero-value")?.textContent).toContain("₦3,000.00");
   });
 
   it("does not offer payment when the school has turned it off", () => {
@@ -88,7 +88,8 @@ describe("fees account number", () => {
       { invoice_ref: 2, number: "IV-2", title: "Current unpaid bill", invoice_date: "2026-09-01", due_date: null, lines: [], total: 50_000, paid: 0, balance: 50_000, status: "DUE", status_label: "Due" },
     ];
     render();
-    const [year, status] = container.querySelectorAll<HTMLSelectElement>(".fees-filters select");
+    act(() => (container.querySelector('button[aria-label="Filter fees"]') as HTMLButtonElement).click());
+    const [year, status] = document.querySelectorAll<HTMLSelectElement>(".fees-filter-popover select");
     act(() => { year.value = "2024"; year.dispatchEvent(new Event("change", { bubbles: true })); });
     expect(container.querySelector(".fees-invoices")?.textContent).toContain("Old paid bill");
     expect(container.querySelector(".fees-invoices")?.textContent).not.toContain("Current unpaid bill");
