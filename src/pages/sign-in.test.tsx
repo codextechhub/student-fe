@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   session: { status: "signed-out", notice: "", pupils: [] as { account: string; firstName: string; fullName: string; photo: string }[], active: "" },
 }));
 vi.mock("@/redux/hooks", () => ({ useAppDispatch: () => vi.fn(), useAppSelector: (selector: (state: unknown) => unknown) => selector({ session: mocks.session }) }));
-vi.mock("@/redux/services/school-api", () => ({ useSchoolNameQuery: () => ({ data: "Lagoon View School" }) }));
+vi.mock("@/redux/services/school-api", () => ({ useSchoolNameQuery: () => ({ data: "Lagoon View Academy" }) }));
 vi.mock("@/utils/school-host", () => ({ currentSchoolSlug: () => "lagoon-view" }));
 vi.mock("@/utils/school-brand", () => ({ schoolLogoUrl: () => "" }));
 vi.mock("@/components/school-mark", () => ({ SchoolMark: () => <span>School crest</span> }));
@@ -32,6 +32,13 @@ function render(path = "/sign-in") {
 }
 
 describe("student sign-in redesign", () => {
+  it("shows the school name exactly once without a student-app label", () => {
+    render();
+    expect(container.querySelector(".signin-school-name")?.textContent).toBe("Lagoon View Academy");
+    expect(container.textContent?.match(/Lagoon View Academy/g)).toHaveLength(1);
+    expect(container.textContent).not.toContain("Student app");
+  });
+
   it("keeps the form concise and lets the pupil reveal then hide the password", () => {
     render();
     expect(container.textContent).not.toContain("Use your admission number or your email to continue.");

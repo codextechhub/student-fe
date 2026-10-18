@@ -58,14 +58,10 @@ export function SignInPage() {
     <main className="signin-page">
       <div className="signin-stage">
         <section className="signin-welcome" aria-label="Welcome">
-          <div className="signin-brand">
-            <span className="signin-crest"><SchoolMark logo={slug ? schoolLogoUrl(slug) : null} size={39} animate={false} alt={schoolName || "School crest"} /></span>
-            <span><strong>{schoolName || "Student app"}</strong><small>Student app</small></span>
-          </div>
           <div className="signin-welcome-copy">
-            <p className="signin-kicker">Your school, on your phone</p>
-            <h1>{adding ? "Make room for one more." : "Your school day starts here."}</h1>
-            <p>{adding ? `Add another pupil to this phone. ${showing?.firstName ?? "The current pupil"} stays signed in.` : "Classes, results, attendance and fees in one calm place."}</p>
+            {schoolName && <p className="signin-school-name">{schoolName}</p>}
+            <h1>{adding ? "Make room for one more." : <>Your school day <span>starts here.</span></>}</h1>
+            <p>{adding ? `Add another pupil to this phone. ${showing?.firstName ?? "The current pupil"} stays signed in.` : "Classes, results, attendance and fees in one clear place."}</p>
             {adding && showing && <span className="signin-showing"><PupilAvatar name={showing.fullName} photo={showing.photo} size={29} />{showing.firstName}<ChevronDown size={15} aria-hidden="true" /></span>}
           </div>
           <p className="signin-welcome-foot"><LockKeyhole size={17} aria-hidden="true" />One phone can hold more than one pupil</p>
@@ -73,8 +69,9 @@ export function SignInPage() {
 
         <section className="signin-area" aria-label={adding ? "Add another pupil" : "Sign in"}>
           <div className="signin-card">
-            <p className="signin-card-kicker">{adding ? "Shared phone" : "Welcome back"}</p>
-            <h2>{adding ? "Add another pupil" : "Sign in"}</h2>
+            <div className="signin-form-mark"><SchoolMark logo={slug ? schoolLogoUrl(slug) : null} size={48} animate={false} alt={schoolName || "School crest"} /></div>
+            <h2>{adding ? "Add another pupil" : "Sign in to your school"}</h2>
+            {!adding && <p className="signin-card-intro">Your student account, in the same school space.</p>}
             {adding && <>
               <p className="signin-card-intro">They&apos;ll be signed in alongside {showing?.firstName ?? "the current pupil"}. You can switch between pupils any time.</p>
               {showing && <div className="signin-existing"><PupilAvatar name={showing.fullName} photo={showing.photo} size={39} /><div><span>Already on this phone</span><strong>{showing.fullName}</strong></div></div>}
