@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f7fc" />
+  <title>Student home · design prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { font-family: "DM Sans", sans-serif; color: #1b2945; background: #f5f7fc; font-synthesis: none; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button { font: inherit; }
+    button:focus-visible { outline: 3px solid #5975ff; outline-offset: 3px; }
+    .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .icon { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; fill: none; flex: none; }
+    .app { min-height: 100dvh; padding-bottom: 116px; overflow: hidden; background: radial-gradient(circle at 12% 0%, #e9eafe 0, transparent 27rem), #f5f7fc; }
+    .topbar { width: min(100%, 1160px); margin: auto; display: flex; align-items: center; padding: 23px 24px 16px; gap: 11px; }
+    .crest { display: grid; place-items: center; width: 41px; height: 41px; border-radius: 14px; background: #243f82; color: #fff; font-family: Manrope, sans-serif; font-size: 14px; font-weight: 800; letter-spacing: -.06em; box-shadow: 0 7px 16px #24408526; }
+    .brand { flex: 1; min-width: 0; }
+    .brand strong { display: block; font: 800 13px/1.2 Manrope, sans-serif; letter-spacing: -.025em; }
+    .brand span { display: block; margin-top: 3px; color: #78849b; font-size: 11px; }
+    .avatar { display: grid; place-items: center; width: 39px; height: 39px; border: 2px solid #fff; border-radius: 50%; color: #37508b; background: #dce6ff; font-weight: 800; font-size: 13px; box-shadow: 0 3px 12px #1f315020; }
+    .page { width: min(100%, 1160px); margin: auto; padding: 3px 20px 40px; display: grid; gap: 22px; }
+    .hero { position: relative; isolation: isolate; overflow: hidden; min-height: 252px; border-radius: 31px; padding: 26px 27px 22px; color: white; background: linear-gradient(130deg,#26459c 0%,#304fbb 47%,#657cf1 100%); box-shadow: 0 20px 35px #304ea42c; }
+    .hero::before { content: ""; position: absolute; z-index: -1; width: 300px; height: 300px; right: -96px; top: -122px; border-radius: 50%; background: radial-gradient(circle at 36% 38%,#bbccffbd,#a5adfa37 48%,transparent 70%); }
+    .hero::after { content: ""; position: absolute; z-index: -1; width: 235px; height: 235px; right: -82px; bottom: -140px; border: 1px solid #ffffff47; border-radius: 50%; box-shadow: 0 0 0 34px #ffffff0a,0 0 0 72px #ffffff0b; }
+    .eyebrow { display: flex; align-items: center; gap: 7px; color: #dce5ff; text-transform: uppercase; font-size: 10px; font-weight: 800; letter-spacing: .13em; }
+    .eyebrow .icon { width: 14px; height: 14px; }
+    h1,h2,h3,p { margin: 0; }
+    h1,h2,h3 { font-family: Manrope, sans-serif; }
+    .hero h1 { margin-top: 13px; font-size: clamp(28px,5vw,37px); line-height: 1.15; letter-spacing: -.05em; font-weight: 800; }
+    .hero p { max-width: 330px; margin-top: 8px; color: #e0e8ff; font-size: 13px; line-height: 1.5; }
+    .hero-bottom { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 27px; }
+    .glass-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 35px; padding: 0 12px; border: 1px solid #ffffff59; border-radius: 15px; background: linear-gradient(145deg,#ffffff4d,#ffffff1e); box-shadow: inset 0 1px #ffffff62,0 5px 20px #132e7620; backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); color: #fff; font-size: 11px; font-weight: 700; }
+    .glass-chip .icon { width: 15px; height: 15px; }
+    .content { display: grid; gap: 21px; }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 10px; margin-bottom: 13px; }
+    .section-heading h2 { font-size: 19px; line-height: 1.2; font-weight: 800; letter-spacing: -.045em; }
+    .section-heading p { margin-top: 3px; color: #8b96a9; font-size: 11px; font-weight: 600; }
+    .text-link { border: 0; padding: 6px 0; background: none; color: #4663d9; font-weight: 800; font-size: 11px; white-space: nowrap; cursor: pointer; }
+    .text-link .icon { width: 14px; height: 14px; vertical-align: -3px; margin-left: 2px; }
+    .schedule-card, .insight-card, .notice-card { background: #fff; border: 1px solid #ebeff6; box-shadow: 0 8px 26px #2638590c; }
+    .schedule-card { padding: 6px 17px; border-radius: 26px; }
+    .class-row { position: relative; display: grid; grid-template-columns: 43px 3px minmax(0,1fr) auto; align-items: center; gap: 12px; min-height: 71px; }
+    .class-row + .class-row { border-top: 1px solid #f1f3f8; }
+    .class-time { color: #8995aa; font: 700 11px/1.25 Manrope,sans-serif; }
+    .class-time span { display: block; margin-top: 3px; color: #a8b0c0; font-weight: 500; }
+    .line { width: 2px; height: 100%; justify-self: center; background: #e7ecf5; }
+    .line::after { content: ""; position: absolute; top: 50%; left: 55px; width: 9px; height: 9px; transform: translate(-50%,-50%); border-radius: 50%; background: #c8d1e1; border: 2px solid #fff; }
+    .class-row.current .line { background: #96aafa; }
+    .class-row.current .line::after { width: 12px; height: 12px; background: #4b69e8; box-shadow: 0 0 0 3px #e6ebff; }
+    .class-row.current .class-time { color: #4663d9; }
+    .class-detail { min-width: 0; }
+    .class-detail strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 12px/1.3 Manrope,sans-serif; letter-spacing: -.02em; }
+    .class-detail span { display: block; margin-top: 3px; color: #8c98aa; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .status { padding: 6px 9px; border-radius: 9px; background: #eef2ff; color: #4a65d5; font-size: 10px; font-weight: 800; }
+    .status.next { background: #ecf8f3; color: #278160; }
+    .insights { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 11px; }
+    .insight-card { position: relative; min-height: 152px; border-radius: 23px; padding: 17px; overflow: hidden; text-align: left; cursor: pointer; }
+    .insight-card:hover,.notice-card:hover { border-color: #bfcaff; transform: translateY(-2px); box-shadow: 0 12px 30px #26385916; }
+    .insight-card,.notice-card { transition: transform .2s,border-color .2s,box-shadow .2s; }
+    .insight-card .tile-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 12px; background: #e9f8f2; color: #2d9a73; }
+    .insight-card.fees .tile-icon { background: #fff2e8; color: #e59845; }
+    .insight-card .tile-icon .icon { width: 18px; height: 18px; }
+    .insight-card .label { display: block; margin-top: 15px; color: #69758b; font-size: 11px; font-weight: 700; }
+    .insight-card .value { display: block; margin-top: 4px; font: 800 25px/1.15 Manrope,sans-serif; letter-spacing: -.055em; color: #223153; white-space: nowrap; }
+    .insight-card .sub { display: block; margin-top: 7px; font-size: 10px; font-weight: 700; color: #2a9973; }
+    .insight-card.fees .sub { color: #c88740; }
+    .insight-card .go { position: absolute; right: 16px; top: 20px; color: #a8b3c7; width: 15px; height: 15px; }
+    .notice-card { width: 100%; border-radius: 23px; padding: 17px; display: flex; gap: 13px; text-align: left; cursor: pointer; }
+    .notice-icon { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 13px; background: #f0ecff; color: #8262db; }
+    .notice-body { min-width: 0; flex: 1; }
+    .notice-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .notice-top strong { font: 800 12px Manrope,sans-serif; }
+    .notice-top span { color: #9ca7b7; font-size: 10px; white-space: nowrap; }
+    .notice-body p { margin-top: 5px; color: #6e7b91; font-size: 11px; line-height: 1.45; }
+    .notice-body .unread { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; background: #6d6aff; vertical-align: 1px; }
+    .bottom-nav { position: fixed; z-index: 5; bottom: max(14px,env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; width: min(calc(100% - 30px),445px); padding: 6px; border: 1px solid #ffffffdf; border-radius: 27px; background: #ffffffbd; box-shadow: 0 13px 38px #273f6f2b,inset 0 1px #fff; backdrop-filter: blur(24px) saturate(170%); -webkit-backdrop-filter: blur(24px) saturate(170%); }
+    .nav-item { display: grid; place-items: center; align-content: center; gap: 3px; flex: 1; min-width: 0; height: 56px; padding: 5px 2px; border: 0; border-radius: 21px; background: transparent; color: #7d8ca6; font-size: 9px; font-weight: 800; cursor: pointer; }
+    .nav-item.active { color: #4260d6; background: #fff; box-shadow: 0 3px 12px #314b771c,inset 0 0 0 1px #edf0f9; }
+    .nav-item .icon { width: 20px; height: 20px; }
+    .toast { position: fixed; z-index: 9; left: 50%; bottom: 100px; transform: translate(-50%,12px); opacity: 0; pointer-events: none; background: #23345b; color: #fff; border-radius: 12px; padding: 10px 14px; font-size: 12px; box-shadow: 0 12px 24px #1c2d4c36; transition: opacity .2s,transform .2s; white-space: nowrap; }
+    .toast.show { transform: translate(-50%,0); opacity: 1; }
+    .prototype-tag { display: none; position: fixed; top: 10px; right: 12px; z-index: 10; padding: 5px 8px; border-radius: 8px; color: #67738b; background: #ffffffc9; font-size: 9px; font-weight: 800; letter-spacing: .04em; }
+    @media (min-width: 760px) { .prototype-tag { display: block; } .topbar { padding: 30px 42px 18px; } .page { padding: 12px 42px 50px; grid-template-columns: minmax(0,1fr) minmax(340px, .93fr); align-items: start; gap: 24px; } .hero { min-height: 460px; padding: 36px; } .hero h1 { margin-top: 30px; font-size: 49px; } .hero p { font-size: 15px; } .hero-bottom { margin-top: 50px; } .content { gap: 27px; } .schedule-card { padding: 9px 20px; } .class-row { min-height: 77px; } .insight-card { min-height: 160px; } }
+    @media (max-width: 360px) { .hero { padding: 23px; } .glass-chip { padding: 0 9px; font-size: 10px; } .class-row { gap: 9px; grid-template-columns: 39px 3px minmax(0,1fr) auto; } .line::after { left: 49px; } .insight-card { padding: 14px; } .insight-card .value { font-size: 21px; } }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <svg class="sprite" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol>
+    <symbol id="spark" viewBox="0 0 24 24"><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2ZM19 17l.6 2.4L22 20l-2.4.6L19 23l-.6-2.4L16 20l2.4-.6L19 17Z"/></symbol>
+    <symbol id="chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="wallet" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="15" rx="3"/><path d="M3 10h18M7 6V4h12"/><path d="M16 15h2"/></symbol>
+    <symbol id="bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></symbol>
+    <symbol id="home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V10Z"/><path d="M9 21v-7h6v7"/></symbol>
+    <symbol id="award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="m8.5 12-2 9 5.5-3 5.5 3-2-9"/></symbol>
+    <symbol id="more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+  </svg>
+  <div class="app">
+    <div class="prototype-tag">HOME CONCEPT · SAMPLE DATA</div>
+    <header class="topbar">
+      <div class="crest" aria-hidden="true">LV</div>
+      <div class="brand"><strong>Lagoon View School</strong><span>Student space</span></div>
+      <div class="avatar" aria-label="Adaeze Adeyemi">AA</div>
+    </header>
+    <main class="page">
+      <section class="hero" aria-labelledby="welcome">
+        <div class="eyebrow"><svg class="icon"><use href="#spark"/></svg> Wednesday, 14 October 2026</div>
+        <h1 id="welcome">Good morning,<br>Adaeze.</h1>
+        <p>Here’s your day at a glance. Everything you need, all in one place.</p>
+        <div class="hero-bottom"><div class="glass-chip"><svg class="icon"><use href="#award"/></svg> JSS 1 A</div><div class="glass-chip"><svg class="icon"><use href="#calendar"/></svg> First Term · 2026/27</div></div>
+      </section>
+      <div class="content">
+        <section aria-labelledby="schedule-heading">
+          <div class="section-heading"><div><h2 id="schedule-heading">Today’s classes</h2><p>Your schedule, at a glance</p></div><button class="text-link" data-message="Full timetable comes next in the redesign">View all <svg class="icon"><use href="#chevron"/></svg></button></div>
+          <div class="schedule-card">
+            <div class="class-row current"><div class="class-time">08:00<span>08:40</span></div><div class="line"></div><div class="class-detail"><strong>Mathematics</strong><span>Mr. Adekunle · Room 12</span></div><span class="status">Now</span></div>
+            <div class="class-row"><div class="class-time">08:45<span>09:25</span></div><div class="line"></div><div class="class-detail"><strong>Basic Science</strong><span>Ms. Okoro · Science Lab</span></div><span class="status next">Next</span></div>
+            <div class="class-row"><div class="class-time">09:30<span>10:10</span></div><div class="line"></div><div class="class-detail"><strong>English Language</strong><span>Mrs. Bello · Room 12</span></div></div>
+          </div>
+        </section>
+        <section aria-labelledby="overview-heading"><div class="section-heading"><div><h2 id="overview-heading">Your overview</h2><p>The things that matter today</p></div></div>
+          <div class="insights"><button class="insight-card" data-message="Attendance screen comes later"><span class="tile-icon"><svg class="icon"><use href="#check"/></svg></span><svg class="icon go"><use href="#chevron"/></svg><span class="label">Attendance</span><span class="value">94%</span><span class="sub">Present today</span></button><button class="insight-card fees" data-message="Fees screen comes later"><span class="tile-icon"><svg class="icon"><use href="#wallet"/></svg></span><svg class="icon go"><use href="#chevron"/></svg><span class="label">Fee balance</span><span class="value">₦11,687</span><span class="sub">Payment due</span></button></div>
+        </section>
+        <section aria-labelledby="notice-heading"><div class="section-heading"><div><h2 id="notice-heading">From your school</h2><p>Latest announcement</p></div><button class="text-link" data-message="Notices screen comes later">See all <svg class="icon"><use href="#chevron"/></svg></button></div>
+          <button class="notice-card" data-message="Notice details come later"><span class="notice-icon"><svg class="icon"><use href="#bell"/></svg></span><span class="notice-body"><span class="notice-top"><strong><span class="unread"></span>Mid-term break reminder</strong><span>Yesterday</span></span><p>School closes for the mid-term break on Thursday. Please check the full notice for details.</p></span></button>
+        </section>
+      </div>
+    </main>
+    <nav class="bottom-nav" aria-label="Prototype navigation"><button class="nav-item active" aria-current="page"><svg class="icon"><use href="#home"/></svg>Home</button><button class="nav-item" data-message="Timetable is the next screen to review"><svg class="icon"><use href="#calendar"/></svg>Timetable</button><button class="nav-item" data-message="Results screen comes later"><svg class="icon"><use href="#award"/></svg>Results</button><button class="nav-item" data-message="Fees screen comes later"><svg class="icon"><use href="#wallet"/></svg>Fees</button><button class="nav-item" data-message="More menu comes later"><svg class="icon"><use href="#more"/></svg>More</button></nav>
+    <div class="toast" role="status" aria-live="polite"></div>
+  </div>
+  <script>
+    const toast = document.querySelector('.toast');
+    let toastTimer;
+    document.querySelectorAll('[data-message]').forEach(button => button.addEventListener('click', () => {
+      toast.textContent = button.dataset.message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+    }));
+  </script>
+</body>
+</html>

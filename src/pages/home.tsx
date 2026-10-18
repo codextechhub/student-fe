@@ -1,212 +1,178 @@
-import type { ReactNode } from "react";
+import { Bell, CalendarDays, CheckCircle2, ChevronRight, GraduationCap, Sparkles, Wallet } from "lucide-react";
 import { Link } from "react-router";
 
 import { PageShell } from "@/components/layout/page-shell";
-import { PupilAvatar } from "@/components/pupil-avatar";
 import { PushOffer } from "@/components/push-settings";
-import { TodayPeriods } from "@/components/today-periods";
-import { formatDate, formatLongDate, formatNaira, formatTimestampDate } from "@/lib/format";
+import { formatClock, formatDate, formatLongDate, formatNaira, formatTimestampDate } from "@/lib/format";
 import { classLine, rateLine, todayLine } from "@/lib/pupil-lines";
-import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { noticeCleared } from "@/redux/features/session-slice";
 import {
   useHomeQuery,
   useMeQuery,
   type Home,
+  type TodayPeriod,
   type Unavailable,
 } from "@/redux/services/portal-api";
 
-/**
- * The pupil's home: who they are, today's classes, today's attendance and the
- * term's rate, the fee balance, and the newest notice.
- *
- * Every block is read in one call and arrives with `available`; a block the
- * school could not read shows the sentence it sent, never a zero, and the rest
- * still show. Messages and assignments are not built, so their blocks are not
- * drawn. Links appear only to screens that exist. A pupil not yet asked about
- * notifications is offered them here, once.
- */
+import "./home.css";
+
+/** The home design uses the existing per-pupil reads and keeps each block's unavailable state. */
 export function HomePage() {
   const dispatch = useAppDispatch();
   const notice = useAppSelector((s) => s.session.notice);
   const { data: me } = useMeQuery();
   const { data: home, isLoading, isError, refetch } = useHomeQuery();
+  const className = me ? classLine(me) : "";
+  const schoolYear = [me?.term?.name, me?.session?.name].filter(Boolean).join(" · ");
 
   return (
-    <PageShell grid className="mx-auto w-full max-w-5xl content-start gap-4 pt-4 lg:px-6">
-      {notice && (
-        <div
-          role="status"
-          className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
-        >
-          <span className="min-w-0 flex-1">{notice}</span>
-          <button type="button" className="font-medium" onClick={() => dispatch(noticeCleared())}>
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {me && (
-        <section className="flex min-w-0 items-center gap-3 rounded-xl border border-border p-4">
-          <PupilAvatar name={me.student.full_name} photo={me.student.photo_url} size={48} />
-          <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold text-foreground">Hi, {me.student.first_name}</h1>
-            <p className="truncate text-xs text-muted-foreground">
-              {[classLine(me), home ? formatLongDate(home.date) : ""].filter(Boolean).join(" · ")}
-            </p>
+    <PageShell className="home-page">
+      <div className="home-layout">
+        {notice && (
+          <div role="status" className="home-session-notice">
+            <span>{notice}</span>
+            <button type="button" onClick={() => dispatch(noticeCleared())}>Dismiss</button>
           </div>
+        )}
+
+        <section className="home-hero" aria-labelledby="home-welcome">
+          <div className="home-hero-orb" aria-hidden="true" />
+          <p className="home-hero-date"><Sparkles aria-hidden="true" size={15} /> {home ? formatLongDate(home.date) : "Your student space"}</p>
+          <h1 id="home-welcome">Hello,<br />{me?.student.first_name || "there"}.</h1>
+          <p className="home-hero-intro">Here&apos;s your day at a glance. Everything you need, all in one place.</p>
+          {(className || schoolYear) && (
+            <div className="home-hero-chips">
+              {className && <span className="home-glass-chip"><GraduationCap size={16} aria-hidden="true" />{className}</span>}
+              {schoolYear && <span className="home-glass-chip"><CalendarDays size={16} aria-hidden="true" />{schoolYear}</span>}
+            </div>
+          )}
         </section>
-      )}
 
-      <PushOffer />
-
-      {isLoading && <div className="h-48 animate-pulse rounded-xl bg-muted" />}
-      {isError && !home && (
-        <p className="rounded-xl border border-border p-4 text-xs text-muted-foreground">
-          Your home screen can&apos;t be shown right now.{" "}
-          <button type="button" className="font-medium text-primary" onClick={() => refetch()}>
-            Try again
-          </button>
-        </p>
-      )}
-
-      {home && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          <TodayCard block={home.today} />
-          <div className="grid min-w-0 content-start gap-4">
-            <AttendanceCard block={home.attendance} />
-            <FeesCard block={home.fees} />
-            <LatestNoticeCard block={home.notices} />
-          </div>
+        <div className="home-content">
+          {isLoading && !home && <div className="home-loading" role="status" aria-label="Loading home" />}
+          {isError && !home && (
+            <div className="home-surface home-error" role="alert">
+              Your home screen can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button>
+            </div>
+          )}
+          {home && (
+            <>
+              <TodaySection block={home.today} />
+              <section aria-labelledby="home-overview-title">
+                <SectionHeading title="Your overview" subtitle="The things that matter today" id="home-overview-title" />
+                <div className="home-insights">
+                  <AttendanceCard block={home.attendance} />
+                  <FeesCard block={home.fees} />
+                </div>
+              </section>
+              <NoticeSection block={home.notices} />
+            </>
+          )}
+          <PushOffer />
         </div>
-      )}
+      </div>
     </PageShell>
   );
 }
 
-function Card({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
+function SectionHeading({ title, subtitle, id, href, linkLabel }: { title: string; subtitle: string; id: string; href?: string; linkLabel?: string }) {
   return (
-    <section className={cn("min-w-0 rounded-xl border border-border p-4", className)}>
-      <h2 className="mb-3 text-sm font-semibold text-foreground">{title}</h2>
-      {children}
-    </section>
+    <div className="home-section-heading">
+      <div><h2 id={id}>{title}</h2><p>{subtitle}</p></div>
+      {href && linkLabel && <Link to={href} className="home-section-link">{linkLabel}<ChevronRight size={15} aria-hidden="true" /></Link>}
+    </div>
   );
 }
 
 function UnavailableLine({ block }: { block: Unavailable }) {
-  return <p className="text-xs text-muted-foreground">{block.message}</p>;
+  return <p className="home-empty">{block.message}</p>;
 }
 
-function TodayCard({ block }: { block: Home["today"] }) {
-  if (!block.available) {
-    return (
-      <Card title="Today's classes">
-        <UnavailableLine block={block} />
-      </Card>
-    );
-  }
+function shownPeriods(periods: TodayPeriod[]): TodayPeriod[] {
+  const remaining = periods.filter((period) => period.state !== "done");
+  return remaining.length ? remaining.slice(0, 3) : periods.slice(-3);
+}
+
+function TodaySection({ block }: { block: Home["today"] }) {
+  const hasPeriods = block.available && block.published && block.periods.length > 0;
   return (
-    <Card title="Today's classes">
-      {block.published ? (
-        <TodayPeriods periods={block.periods} />
-      ) : (
-        <p className="text-xs text-muted-foreground">Your class timetable hasn&apos;t been published yet.</p>
-      )}
-      {block.published && block.periods.length > 0 && (
-        <Link to="/timetable" className="mt-3 inline-block text-xs font-medium text-primary">
-          Full timetable
-        </Link>
-      )}
-    </Card>
+    <section aria-labelledby="home-today-title">
+      <SectionHeading title="Today's classes" subtitle="Your schedule, at a glance" id="home-today-title" href={hasPeriods ? "/timetable" : undefined} linkLabel="View all" />
+      <div className="home-surface home-schedule">
+        {!block.available ? <UnavailableLine block={block} /> : !block.published ? (
+          <p className="home-empty">Your class timetable hasn&apos;t been published yet.</p>
+        ) : !hasPeriods ? (
+          <p className="home-empty">No classes today.</p>
+        ) : (
+          <ol>
+            {shownPeriods(block.periods).map((period) => (
+              <li key={`${period.start_time}-${period.label}`} className={`home-period home-period--${period.state}`}>
+                <div className="home-period-time"><span>{formatClock(period.start_time)}</span><span>{formatClock(period.end_time)}</span></div>
+                <span className="home-period-line" aria-hidden="true" />
+                <div className="home-period-detail">
+                  <strong>{period.kind === "BREAK" ? period.label : period.subject || "Free period"}</strong>
+                  <span>{period.kind === "BREAK" ? "Break" : [period.teacher, period.room].filter(Boolean).join(" · ") || "Class period"}</span>
+                </div>
+                {(period.state === "now" || period.state === "next") && <span className={`home-period-badge home-period-badge--${period.state}`}>{period.state === "now" ? "Now" : "Next"}</span>}
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </section>
   );
 }
 
 function AttendanceCard({ block }: { block: Home["attendance"] }) {
+  const detail = block.available ? todayLine(block.today) || rateLine(block.rate) : block.message;
+  const value = block.available && block.rate !== null ? `${Math.round(block.rate)}%` : "—";
   return (
-    <Card title="Attendance">
-      {!block.available ? (
-        <UnavailableLine block={block} />
-      ) : (
-        <div className="space-y-1">
-          {todayLine(block.today) && <p className="text-sm text-foreground">{todayLine(block.today)}</p>}
-          <p className="text-xs text-muted-foreground">{rateLine(block.rate)}</p>
-          <Link to="/attendance" className="inline-block pt-2 text-xs font-medium text-primary">
-            Day by day
-          </Link>
-        </div>
-      )}
-    </Card>
+    <Link to="/attendance" className="home-surface home-insight home-insight--attendance" aria-label={`Attendance. ${value}. ${detail}`}>
+      <span className="home-insight-icon"><CheckCircle2 size={19} aria-hidden="true" /></span><ChevronRight className="home-insight-arrow" size={17} aria-hidden="true" />
+      <span className="home-insight-label">Attendance</span>
+      <strong className="home-insight-value">{value}</strong>
+      <span className="home-insight-sub">{detail}</span>
+    </Link>
   );
 }
 
-const FEE_CHIP: Record<string, { label: string; className: string }> = {
-  OWING: { label: "Owing", className: "bg-amber-100 text-amber-800" },
-  CLEAR: { label: "Paid up", className: "bg-green-100 text-green-800" },
-  IN_CREDIT: { label: "In credit", className: "bg-green-100 text-green-800" },
+const FEE_STATUS: Record<"OWING" | "CLEAR" | "IN_CREDIT", string> = {
+  OWING: "Owing", CLEAR: "Paid up", IN_CREDIT: "In credit",
 };
 
 function FeesCard({ block }: { block: Home["fees"] }) {
-  if (!block.available) {
-    return (
-      <Card title="Fee balance">
-        <UnavailableLine block={block} />
-      </Card>
-    );
-  }
-  const chip = FEE_CHIP[block.status];
-  const invoice = block.open_invoice;
+  const detail = !block.available ? block.message : [
+    FEE_STATUS[block.status],
+    block.open_invoice?.due_date ? `Due ${formatDate(block.open_invoice.due_date)}` : "",
+    block.open_invoice_count > 1 ? `${block.open_invoice_count} open bills` : "",
+  ].filter(Boolean).join(" · ");
   return (
-    <Card title="Fee balance">
-      <div className="flex min-w-0 items-center gap-2">
-        <p className="min-w-0 truncate font-mono text-lg font-semibold text-foreground">
-          {formatNaira(Math.abs(block.balance))}
-        </p>
-        {chip && <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium", chip.className)}>{chip.label}</span>}
-      </div>
-      {invoice && (
-        <p className="mt-1 text-xs text-muted-foreground">
-          {[invoice.title, invoice.due_date ? `due ${formatDate(invoice.due_date)}` : ""].filter(Boolean).join(" · ")}
-          {block.open_invoice_count > 1 && ` and ${block.open_invoice_count - 1} more`}
-        </p>
-      )}
-      <Link to="/fees" className="inline-block pt-2 text-xs font-medium text-primary">
-        View fees
-      </Link>
-    </Card>
+    <Link to="/fees" className="home-surface home-insight home-insight--fees" aria-label={`Fee balance. ${block.available ? `${formatNaira(Math.abs(block.balance))}. ` : ""}${detail}`}>
+      <span className="home-insight-icon"><Wallet size={19} aria-hidden="true" /></span><ChevronRight className="home-insight-arrow" size={17} aria-hidden="true" />
+      <span className="home-insight-label">Fee balance</span>
+      <strong className="home-insight-value">{block.available ? formatNaira(Math.abs(block.balance)) : "—"}</strong>
+      <span className="home-insight-sub">{detail}</span>
+    </Link>
   );
 }
 
-function LatestNoticeCard({ block }: { block: Home["notices"] }) {
-  if (!block.available) {
-    return (
-      <Card title="Latest notice">
-        <UnavailableLine block={block} />
-      </Card>
-    );
-  }
-  const latest = block.latest;
-  if (!latest) {
-    return (
-      <Card title="Latest notice">
-        <p className="text-xs text-muted-foreground">No notices yet.</p>
-      </Card>
-    );
-  }
+function NoticeSection({ block }: { block: Home["notices"] }) {
+  const latest = block.available ? block.latest : null;
   return (
-    <Link
-      to={`/notices/${latest.id}`}
-      className="block min-w-0 rounded-xl border border-border p-4 hover:bg-accent"
-    >
-      <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">Latest notice</span>
-        <span className="shrink-0">{formatTimestampDate(latest.published_at)}</span>
-      </div>
-      <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-        {latest.unread && <span className="size-2 shrink-0 rounded-full bg-primary" aria-label="Unread" />}
-        <span className="truncate">{latest.title}</span>
-      </p>
-      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{latest.body}</p>
-    </Link>
+    <section aria-labelledby="home-notice-title">
+      <SectionHeading title="From your school" subtitle="Latest announcement" id="home-notice-title" href={block.available ? "/notices" : undefined} linkLabel="See all" />
+      {!block.available ? <div className="home-surface home-notice"><UnavailableLine block={block} /></div> : !latest ? (
+        <div className="home-surface home-notice"><p className="home-empty">No notices yet.</p></div>
+      ) : (
+        <Link to={`/notices/${latest.id}`} className="home-surface home-notice home-notice-link">
+          <span className="home-notice-icon"><Bell size={19} aria-hidden="true" /></span>
+          <span className="home-notice-body">
+            <span className="home-notice-top"><strong>{latest.unread && <span className="home-unread-dot" aria-label="Unread" />}{latest.title}</strong><time dateTime={latest.published_at}>{formatTimestampDate(latest.published_at)}</time></span>
+            <span className="home-notice-excerpt">{latest.body}</span>
+          </span>
+        </Link>
+      )}
+    </section>
   );
 }
