@@ -11,10 +11,11 @@ const mocks = vi.hoisted(() => ({
   canPay: true,
   start: vi.fn(),
   offline: false,
+  transfer: { state: "ISSUED", bank_name: "Wema Bank", account_number: "0123456789", account_name: "TEST-MANAGED-ACCOUNT", as_of: "2026-10-18T00:00:00Z" },
 }));
 
 vi.mock("@/redux/hooks", () => ({
-  useAppSelector: (pick: (s: unknown) => unknown) => pick({ connectivity: { offline: mocks.offline } }),
+  useAppSelector: (pick: (s: unknown) => unknown) => pick({ connectivity: { offline: mocks.offline }, session: { active: "amaka", pupils: [{ account: "amaka", fullName: "Amaka Balogun" }] } }),
   useAppDispatch: () => vi.fn(),
 }));
 vi.mock("@/redux/services/portal-api", () => ({
@@ -27,7 +28,8 @@ vi.mock("@/redux/services/portal-api", () => ({
     },
   }),
   useStartPaymentMutation: () => [mocks.start, { isLoading: false }],
-  useTransferAccountQuery: () => ({ isLoading: true }),
+  useTransferAccountQuery: () => ({ data: mocks.transfer, isLoading: false }),
+  useMeQuery: () => ({ data: { student: { full_name: "Amaka Balogun" } } }),
   useOpenTransferAccountMutation: () => [vi.fn(), { isLoading: false }],
   useDepositsQuery: () => ({ data: undefined }),
 }));
@@ -112,5 +114,15 @@ describe("paying a bill by card", () => {
     render();
     expect(container.textContent).toContain("You're offline");
     expect(container.querySelector("[role=radio]")).toBeNull();
+  });
+});
+
+describe("paying by bank transfer", () => {
+  it("identifies the pupil prominently and keeps the bank account label separate", () => {
+    render();
+    choose("Bank transfer");
+    expect(container.textContent).toContain("Amaka Balogun's account");
+    expect(container.textContent).toContain("0123456789");
+    expect(container.textContent).toContain("Bank account name: TEST-MANAGED-ACCOUNT");
   });
 });

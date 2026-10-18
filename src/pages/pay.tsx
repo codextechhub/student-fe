@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Building2, Check, Copy, CreditCard, Lock } from "lucide-react";
+import { ArrowLeft, Building2, CreditCard, Lock } from "lucide-react";
 import { Link, useParams } from "react-router";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
+import { TransferAccountCard } from "@/components/fees/transfer-account-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatNaira, parseNaira } from "@/lib/format";
@@ -14,6 +15,7 @@ import {
   refusal,
   useDepositsQuery,
   useFeesQuery,
+  useMeQuery,
   useOpenTransferAccountMutation,
   useStartPaymentMutation,
   useTransferAccountQuery,
@@ -165,6 +167,8 @@ const WATCH_EVERY_MS = 5_000;
 
 function TransferPayment() {
   const { data: account, isLoading, isError, error } = useTransferAccountQuery();
+  const { data: me } = useMeQuery();
+  const signedInName = useAppSelector((s) => s.session.pupils.find((p) => p.account === s.session.active)?.fullName);
   const [open, { isLoading: opening }] = useOpenTransferAccountMutation();
   const [openError, setOpenError] = useState("");
 
@@ -199,42 +203,10 @@ function TransferPayment() {
     );
   }
   return (
-    <section className="grid gap-4 rounded-xl border border-border p-4">
-      <div className="grid gap-1 text-center">
-        <p className="text-xs text-muted-foreground">Pay into this account</p>
-        <p className="text-base font-semibold text-foreground">{account.account_name}</p>
-        <CopyNumber number={account.account_number} />
-        <p className="text-sm text-muted-foreground">{account.bank_name}</p>
-      </div>
-      <p className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-        This number is yours and stays the same, so it can be saved. Any amount sent to it is applied to your fees;
-        anything over what you owe waits as credit for your next bill.
-      </p>
+    <div className="grid gap-4">
+      <TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Pay into this account" />
       <DepositWatch since={account.as_of} />
-    </section>
-  );
-}
-
-function CopyNumber({ number }: { number: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(number);
-          setCopied(true);
-          window.setTimeout(() => setCopied(false), 2000);
-        } catch {
-          setCopied(false);
-        }
-      }}
-      className="mx-auto inline-flex items-center gap-2 rounded-lg px-3 py-1 font-mono text-2xl font-semibold tracking-wider text-foreground hover:bg-accent"
-      aria-label={`Account number ${number}. Copy`}
-    >
-      {number}
-      {copied ? <Check className="size-4 text-green-700" /> : <Copy className="size-4 text-muted-foreground" />}
-    </button>
+    </div>
   );
 }
 

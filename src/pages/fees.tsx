@@ -4,10 +4,11 @@ import { Link } from "react-router";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
+import { TransferAccountCard } from "@/components/fees/transfer-account-card";
 import { formatDate, formatNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/redux/hooks";
-import { useFeesQuery, usePaymentsQuery, type Invoice, type Payment } from "@/redux/services/portal-api";
+import { useFeesQuery, useMeQuery, usePaymentsQuery, useTransferAccountQuery, type Invoice, type Payment } from "@/redux/services/portal-api";
 
 /**
  * The pupil's fees: what was billed, what is paid, each bill with its lines,
@@ -25,6 +26,9 @@ import { useFeesQuery, usePaymentsQuery, type Invoice, type Payment } from "@/re
 export function FeesPage() {
   const { data: fees, isLoading, isError, refetch } = useFeesQuery();
   const { data: payments } = usePaymentsQuery();
+  const { data: account } = useTransferAccountQuery();
+  const { data: me } = useMeQuery();
+  const signedInName = useAppSelector((s) => s.session.pupils.find((p) => p.account === s.session.active)?.fullName);
   const offline = useAppSelector((s) => s.connectivity.offline);
 
   return (
@@ -38,6 +42,9 @@ export function FeesPage() {
             Try again
           </button>
         </p>
+      )}
+      {account?.state === "ISSUED" && (
+        <TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Your account number" />
       )}
       {fees && (
         <>
