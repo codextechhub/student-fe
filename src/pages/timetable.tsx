@@ -12,13 +12,19 @@ import "./timetable.css";
 /** A published school week: current lesson, one selected day's full list, and a desktop week summary. */
 export function TimetablePage() {
   const { data, isLoading, isError, refetch } = useTimetableQuery();
-  const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()));
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const selectedWeek = weekStart(selectedDate);
-  const currentWeek = weekStart(localDate(new Date()));
+  const todayDate = data?.today?.date ?? localDate(new Date());
+  const firstSchoolDay = data?.days[0];
+  const defaultDate = data?.days.some((day) => day.is_today) || !firstSchoolDay
+    ? todayDate
+    : dateKey(addDays(weekStart(todayDate), firstSchoolDay.day_of_week - 1));
+  const activeDate = selectedDate ?? defaultDate;
+  const selectedWeek = weekStart(activeDate);
+  const currentWeek = weekStart(todayDate);
   const isCurrentWeek = selectedWeek.getTime() === currentWeek.getTime();
   const range = `${shortDate(selectedWeek)} – ${shortDate(addDays(selectedWeek, 6))}`;
-  const shiftWeek = (weeks: number) => setSelectedDate(dateKey(addDays(selectedWeek, weeks * 7)));
+  const shiftWeek = (weeks: number) => setSelectedDate(dateKey(addDays(dateFromKey(activeDate), weeks * 7)));
 
   return (
     <PageShell className="timetable-page">
@@ -40,11 +46,11 @@ export function TimetablePage() {
             <div className="timetable-week-nav" aria-label="Timetable week">
               <div><strong>{isCurrentWeek ? "This week" : "Week of " + shortDate(selectedWeek)}</strong><span>{range}</span></div>
               <div className="timetable-week-actions">
-                {!isCurrentWeek && <button type="button" onClick={() => setSelectedDate(localDate(new Date()))}>Today</button>}
+                {!isCurrentWeek && <button type="button" onClick={() => setSelectedDate(todayDate)}>Today</button>}
                 <button type="button" aria-label="Previous week" onClick={() => shiftWeek(-1)}><ChevronLeft size={17} aria-hidden="true" /></button>
                 <Popover.Root open={calendarOpen} onOpenChange={setCalendarOpen}>
                   <Popover.Trigger asChild><button type="button" aria-label="Choose a timetable date"><CalendarDays size={17} aria-hidden="true" /><span>Choose date</span></button></Popover.Trigger>
-                  <Popover.Portal><Popover.Content align="end" sideOffset={8} className="timetable-calendar-popover"><Calendar selected={selectedDate} onSelect={(date) => { setSelectedDate(date); setCalendarOpen(false); }} /></Popover.Content></Popover.Portal>
+                  <Popover.Portal><Popover.Content align="end" sideOffset={8} className="timetable-calendar-popover"><Calendar selected={activeDate} onSelect={(date) => { setSelectedDate(date); setCalendarOpen(false); }} /></Popover.Content></Popover.Portal>
                 </Popover.Root>
                 <button type="button" aria-label="Next week" onClick={() => shiftWeek(1)}><ChevronRight size={17} aria-hidden="true" /></button>
               </div>
@@ -52,8 +58,8 @@ export function TimetablePage() {
             {!isCurrentWeek && <p className="timetable-week-note">Showing the current published weekly pattern. School changes will appear when published.</p>}
             <div className="timetable-layout">
               <CurrentLesson timetable={data} isCurrentWeek={isCurrentWeek} selectedWeek={selectedWeek} />
-              <DaySchedule timetable={data} isCurrentWeek={isCurrentWeek} selectedWeek={selectedWeek} />
-              <WeekSummary timetable={data} isCurrentWeek={isCurrentWeek} selectedWeek={selectedWeek} />
+              <DaySchedule timetable={data} isCurrentWeek={isCurrentWeek} selectedWeek={selectedWeek} selectedDate={activeDate} onSelectDate={setSelectedDate} />
+              <WeekSummary timetable={data} isCurrentWeek={isCurrentWeek} selectedWeek={selectedWeek} selectedDate={activeDate} />
             </div>
           </>
         )}
@@ -68,9 +74,12 @@ function localDate(date: Date): string {
 
 function dateKey(date: Date): string { return date.toISOString().slice(0, 10); }
 function addDays(date: Date, days: number): Date { return new Date(date.getTime() + days * 86400000); }
-function weekStart(date: string): Date {
+function dateFromKey(date: string): Date {
   const [year, month, day] = date.split("-").map(Number);
-  const value = new Date(Date.UTC(year, month - 1, day));
+  return new Date(Date.UTC(year, month - 1, day));
+}
+function weekStart(date: string): Date {
+  const value = dateFromKey(date);
   return addDays(value, -((value.getUTCDay() + 6) % 7));
 }
 function shortDate(date: Date): string { return new Intl.DateTimeFormat("en-NG", { day: "numeric", month: "short", timeZone: "UTC" }).format(date); }
@@ -112,11 +121,10 @@ function CurrentLesson({ timetable, isCurrentWeek, selectedWeek }: { timetable: 
   );
 }
 
-function DaySchedule({ timetable, isCurrentWeek, selectedWeek }: { timetable: Timetable; isCurrentWeek: boolean; selectedWeek: Date }) {
-  const todayIndex = timetable.days.findIndex((day) => day.is_today);
-  const [chosen, setChosen] = useState(() => Math.max(0, todayIndex));
-  const selected = Math.min(chosen, timetable.days.length - 1);
-  const day = timetable.days[selected];
+function DaySchedule({ timetable, isCurrentWeek, selectedWeek, selectedDate, onSelectDate }: { timetable: Timetable; isCurrentWeek: boolean; selectedWeek: Date; selectedDate: string; onSelectDate: (date: string) => void }) {
+  const selectedDayNumber = ((dateFromKey(selectedDate).getUTCDay() + 6) % 7) + 1;
+  const day = timetable.days.find((item) => item.day_of_week === selectedDayNumber);
+  const dayName = new Intl.DateTimeFormat("en-NG", { weekday: "long", timeZone: "UTC" }).format(dateFromKey(selectedDate));
   const todayStates = timetable.today?.periods ?? [];
 
   return (
@@ -125,21 +133,21 @@ function DaySchedule({ timetable, isCurrentWeek, selectedWeek }: { timetable: Ti
       {timetable.days.length > 0 ? (
         <>
           <div className="timetable-day-strip" role="group" aria-label="Choose a school day">
-            {timetable.days.map((item, index) => (
+            {timetable.days.map((item) => (
               <button
                 key={item.day_of_week}
                 type="button"
-                className={`timetable-day-button${selected === index ? " is-selected" : ""}`}
-                aria-pressed={selected === index}
-                onClick={() => setChosen(index)}
+                className={`timetable-day-button${item.day_of_week === selectedDayNumber ? " is-selected" : ""}`}
+                aria-pressed={item.day_of_week === selectedDayNumber}
+                onClick={() => onSelectDate(dateKey(addDays(selectedWeek, item.day_of_week - 1)))}
               >
                 <span>{item.day_label.slice(0, 3)}</span>
                 <strong>{isCurrentWeek && item.is_today ? "Today" : shortDate(addDays(selectedWeek, item.day_of_week - 1))}</strong>
               </button>
             ))}
           </div>
-          <div className="timetable-day-heading"><h3>{day.day_label}&apos;s classes</h3><span>{day.cells.length} {day.cells.length === 1 ? "period" : "periods"}</span></div>
-          {day.cells.length ? (
+          <div className="timetable-day-heading"><h3>{dayName} · {shortDate(dateFromKey(selectedDate))}</h3><span>{day ? `${day.cells.length} ${day.cells.length === 1 ? "period" : "periods"}` : "No school day"}</span></div>
+          {day?.cells.length ? (
             <ol className="timetable-lessons">
               {day.cells.map((cell) => {
                 const state = isCurrentWeek && day.is_today ? todayStates.find((period) => period.start_time === cell.start_time && period.kind === cell.kind)?.state : undefined;
@@ -153,21 +161,21 @@ function DaySchedule({ timetable, isCurrentWeek, selectedWeek }: { timetable: Ti
                 );
               })}
             </ol>
-          ) : <p className="timetable-empty">No classes on {day.day_label}.</p>}
+          ) : <p className="timetable-empty">No classes on {dayName}.</p>}
         </>
       ) : <p className="timetable-empty">No school days are in this timetable yet.</p>}
     </section>
   );
 }
 
-function WeekSummary({ timetable, isCurrentWeek, selectedWeek }: { timetable: Timetable; isCurrentWeek: boolean; selectedWeek: Date }) {
+function WeekSummary({ timetable, isCurrentWeek, selectedWeek, selectedDate }: { timetable: Timetable; isCurrentWeek: boolean; selectedWeek: Date; selectedDate: string }) {
   if (timetable.days.length === 0) return null;
   return (
     <section className="timetable-panel timetable-summary" aria-labelledby="timetable-summary-title">
       <div className="timetable-panel-heading"><h2 id="timetable-summary-title">Week at a glance</h2><span>Choose a day above for the full list</span></div>
       <div className="timetable-summary-grid">
         {timetable.days.map((day) => (
-          <div key={day.day_of_week} className={`timetable-summary-day${day.is_today ? " is-today" : ""}`}>
+          <div key={day.day_of_week} className={`timetable-summary-day${isCurrentWeek && day.is_today ? " is-today" : ""}${dateKey(addDays(selectedWeek, day.day_of_week - 1)) === selectedDate ? " is-selected" : ""}`}>
             <strong>{day.day_label} · {shortDate(addDays(selectedWeek, day.day_of_week - 1))}{isCurrentWeek && day.is_today ? " · Today" : ""}</strong>
             {day.cells.filter((cell) => cell.kind !== "BREAK").length ? (
               <ul>{day.cells.filter((cell) => cell.kind !== "BREAK").slice(0, 3).map((cell) => <li key={`${cell.start_time}-${cell.label}`}>{cellTitle(cell)}</li>)}</ul>

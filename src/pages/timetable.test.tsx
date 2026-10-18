@@ -6,7 +6,10 @@ vi.mock("@/redux/services/portal-api", () => ({
   useTimetableQuery: () => ({ data: {
     published: true,
     class_name: "JSS1 A",
-    days: [{ day_of_week: 1, day_label: "Monday", is_today: true, cells: [{ start_time: "08:00", end_time: "08:40", kind: "LESSON", label: "Mathematics", subject: "Mathematics" }] }],
+    days: [
+      { day_of_week: 1, day_label: "Monday", is_today: true, cells: [{ start_time: "08:00", end_time: "08:40", kind: "LESSON", label: "Mathematics", subject: "Mathematics" }] },
+      { day_of_week: 2, day_label: "Tuesday", is_today: false, cells: [{ start_time: "09:00", end_time: "09:40", kind: "LESSON", label: "English", subject: "English" }] },
+    ],
     today: { date: "2026-10-19", periods: [{ start_time: "08:00", end_time: "08:40", kind: "LESSON", label: "Mathematics", subject: "Mathematics", state: "now" }] },
   }, isLoading: false, isError: false }),
 }));
@@ -27,5 +30,19 @@ describe("timetable week navigation", () => {
     expect(container.querySelector(".timetable-lesson-badge.is-now")).toBeNull();
     expect(container.textContent).toContain("Mathematics");
     expect(container.querySelector('button[aria-label="Choose a timetable date"]')).not.toBeNull();
+  });
+
+  it("opens the chosen calendar day and keeps that day selected across weeks", () => {
+    act(() => root.render(<TimetablePage />));
+    act(() => (container.querySelector('button[aria-label="Choose a timetable date"]') as HTMLButtonElement).click());
+    act(() => (document.querySelector('button[aria-label="Tuesday, 20 October 2026"]') as HTMLButtonElement).click());
+    expect(container.querySelector(".timetable-day-button.is-selected")?.textContent).toContain("Tue");
+    expect(container.querySelector(".timetable-day-heading")?.textContent).toContain("Tuesday · 20 Oct");
+    expect(container.querySelector(".timetable-lessons")?.textContent).toContain("English");
+    expect(container.querySelector(".timetable-lessons")?.textContent).not.toContain("Mathematics");
+
+    act(() => (container.querySelector('button[aria-label="Next week"]') as HTMLButtonElement).click());
+    expect(container.querySelector(".timetable-day-button.is-selected")?.textContent).toContain("Tue");
+    expect(container.querySelector(".timetable-day-heading")?.textContent).toContain("Tuesday · 27 Oct");
   });
 });
