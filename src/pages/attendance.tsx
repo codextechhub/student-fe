@@ -43,18 +43,6 @@ export function AttendancePage() {
   return (
     <PageShell className="attendance-page">
       <div className="attendance-wrap">
-        {data?.term && <div className="attendance-toolbar">
-          <Popover.Root>
-            <Popover.Trigger asChild><button type="button" className="attendance-filter-trigger" aria-label="Filter attendance"><SlidersHorizontal size={18} aria-hidden="true" />{term !== null && <span className="attendance-filter-active" aria-hidden="true" />}</button></Popover.Trigger>
-            <Popover.Portal><Popover.Content align="end" sideOffset={8} className="attendance-filter-popover">
-              <div className="attendance-filter-header"><strong>Filter attendance</strong><Popover.Close aria-label="Close attendance filter">Done</Popover.Close></div>
-              <label htmlFor="attendance-filter-term">School term</label>
-              <div className="attendance-filter-select"><select id="attendance-filter-term" value={data.term.id} onChange={(event) => chooseTerm(Number(event.target.value))}>
-                {[...data.terms].reverse().map((option) => <option key={option.id} value={option.id}>{option.name} · {option.session_name}{option.is_current ? " (this term)" : ""}</option>)}
-              </select><ChevronDown size={16} aria-hidden="true" /></div>
-            </Popover.Content></Popover.Portal>
-          </Popover.Root>
-        </div>}
         {isLoading && !data && <div className="attendance-loading" role="status" aria-label="Loading attendance" />}
         {isError && !data && <div className="attendance-notice" role="alert">Your attendance can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button></div>}
         {data && counts && <div className="attendance-layout" aria-busy={isFetching}>
@@ -74,7 +62,19 @@ export function AttendancePage() {
           </div>
           <div className="attendance-details">
             <section aria-label="Day by day">
-              <div className="attendance-section-heading is-first"><h2>Day by day</h2><p>Tap a date to see its record</p></div>
+              <div className="attendance-section-heading attendance-day-heading is-first">
+                <div><h2>Day by day</h2><p>Tap a date to see its record</p></div>
+                {data.term && <div className="attendance-toolbar"><Popover.Root>
+                  <Popover.Trigger asChild><button type="button" className="attendance-filter-trigger" aria-label="Filter attendance"><SlidersHorizontal size={18} aria-hidden="true" />{term !== null && <span className="attendance-filter-active" aria-hidden="true" />}</button></Popover.Trigger>
+                  <Popover.Portal><Popover.Content align="end" sideOffset={8} className="attendance-filter-popover">
+                    <div className="attendance-filter-header"><strong>Filter attendance</strong><Popover.Close aria-label="Close attendance filter">Done</Popover.Close></div>
+                    <label htmlFor="attendance-filter-term">School term</label>
+                    <div className="attendance-filter-select"><select id="attendance-filter-term" value={data.term.id} onChange={(event) => chooseTerm(Number(event.target.value))}>
+                      {[...data.terms].reverse().map((option) => <option key={option.id} value={option.id}>{option.name} · {option.session_name}{option.is_current ? " (this term)" : ""}</option>)}
+                    </select><ChevronDown size={16} aria-hidden="true" /></div>
+                  </Popover.Content></Popover.Portal>
+                </Popover.Root></div>}
+              </div>
               <div className="attendance-surface attendance-calendar">
                 {activeMonth ? <>
                   <div className="attendance-calendar-toolbar">

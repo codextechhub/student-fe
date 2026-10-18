@@ -1,6 +1,6 @@
 .attendance-page{min-height:calc(100dvh - 8rem);padding:18px 20px 44px;background:radial-gradient(circle at 12% 0%,#e9eafe,transparent 31rem),#f5f7fc;color:#243453}
 .attendance-wrap{width:min(100%,1060px);margin:0 auto}
-.attendance-toolbar{display:flex;justify-content:flex-end;margin:0 2px 14px}
+.attendance-toolbar{display:flex;flex:none}
 .attendance-filter-trigger{position:relative;display:grid;place-items:center;width:40px;height:40px;border:1px solid #cdd8e9;border-radius:11px;background:#ffffffd9;color:#405d91;cursor:pointer}
 .attendance-filter-active{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#4a659d;box-shadow:0 0 0 2px white}
 .attendance-filter-popover{z-index:40;width:min(310px,calc(100vw - 32px));padding:17px;border:1px solid #dbe3f0;border-radius:17px;background:#fff;box-shadow:0 20px 48px #24365629;color:#263b5a}
@@ -111,5 +111,7 @@
 .attendance-count dd { margin-top: 4px; font-size: 17px; font-weight: 750; }
 .attendance-count-note { margin-top: 7px; font-size: 11px; }
 .attendance-section-heading { margin-top: 20px; }
+.attendance-day-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.attendance-day-heading > div:first-child { min-width: 0; }
 @media (min-width: 800px) { .attendance-hero { padding: 22px; } }
 @media (max-width: 380px) { .attendance-hero { padding: 19px; } .attendance-count { padding: 9px 7px; } .attendance-count dd { font-size: 16px; } }
