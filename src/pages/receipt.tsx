@@ -1,25 +1,19 @@
 import { useState } from "react";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Check, CircleAlert, Download } from "lucide-react";
 import { Link, useParams } from "react-router";
 
 import { PageShell } from "@/components/layout/page-shell";
-import { Button } from "@/components/ui/button";
 import { formatDate, formatNaira } from "@/lib/format";
-import { useLazyReceiptPdfQuery, useReceiptQuery } from "@/redux/services/portal-api";
+import { useLazyReceiptPdfQuery, useReceiptQuery, type Receipt } from "@/redux/services/portal-api";
 
-/**
- * One confirmed payment's receipt.
- *
- * Every figure is the server's, the balance after the payment included: it is
- * what was owed right after this payment, frozen when the receipt was booked,
- * not today's balance. "Download PDF" saves the same PDF the school's receipt
- * email attaches. A payment not yet confirmed, or not the pupil's, has no
- * receipt.
- */
+import "./receipt.css";
+
+/** A confirmed payment's receipt, with the balance frozen when it was booked. */
 export function ReceiptPage() {
   const { paymentRef } = useParams();
   const ref = Number(paymentRef);
-  const { data: receipt, isLoading, isError } = useReceiptQuery(ref, { skip: !Number.isFinite(ref) });
+  const validRef = Number.isSafeInteger(ref) && ref > 0;
+  const { data: receipt, isLoading, isError } = useReceiptQuery(ref, { skip: !validRef });
   const [fetchPdf, { isFetching }] = useLazyReceiptPdfQuery();
   const [pdfError, setPdfError] = useState("");
 
@@ -37,72 +31,74 @@ export function ReceiptPage() {
   };
 
   return (
-    <PageShell grid className="mx-auto w-full max-w-xl content-start gap-4 pt-4 lg:px-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link to="/fees" className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-          <ArrowLeft className="size-4" /> Fees
-        </Link>
+    <PageShell className="receipt-page">
+      <div className="receipt-wrap">
+        <Link to="/fees" className="receipt-back"><ArrowLeft size={17} aria-hidden="true" />My fees</Link>
+        <header className="receipt-heading"><p>Your payment record</p><h1>Everything you need to verify this payment.</h1></header>
+        {isLoading && !receipt && <div className="receipt-loading" role="status" aria-label="Loading receipt" />}
+        {(!validRef || isError) && !receipt && <Unavailable />}
         {receipt && (
-          <Button size="sm" onClick={download} loading={isFetching} disabled={isFetching}>
-            <Download /> Download PDF
-          </Button>
+          <div className="receipt-layout">
+            <div className="receipt-overview">
+              <section className="receipt-summary" aria-label="Confirmed payment">
+                <div className="receipt-summary-top"><span>Payment received</span><span className="receipt-success-icon"><Check size={22} aria-hidden="true" /></span></div>
+                <strong className="receipt-summary-amount">{formatNaira(receipt.amount)}</strong>
+                <p>Your payment is confirmed.</p>
+                <div className="receipt-summary-bottom"><span className="receipt-status">Received</span><span>{formatDate(receipt.paid_on)}</span></div>
+              </section>
+              <button type="button" className="receipt-download" onClick={download} disabled={isFetching}>
+                <Download size={18} aria-hidden="true" />{isFetching ? "Preparing PDF…" : "Download PDF receipt"}
+              </button>
+              {pdfError && <p role="alert" className="receipt-pdf-error">{pdfError}</p>}
+              <Link to="/fees" className="receipt-secondary">Back to My fees</Link>
+            </div>
+            <ReceiptDocument receipt={receipt} />
+          </div>
         )}
       </div>
-      {pdfError && <p role="alert" className="text-xs text-destructive">{pdfError}</p>}
-      {isLoading && <div className="h-80 animate-pulse rounded-xl bg-muted" />}
-      {isError && !receipt && (
-        <p className="rounded-xl border border-border p-6 text-center text-sm text-muted-foreground">
-          This receipt isn&apos;t available. A payment gets its receipt once it is confirmed.
-        </p>
-      )}
-      {receipt && (
-        <article className="grid gap-4 rounded-xl border border-border bg-white p-5">
-          <div className="flex items-start justify-between gap-3 border-b border-border pb-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">{receipt.issuer_name}</p>
-              <p className="text-xs text-muted-foreground">Payment receipt</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[11px] font-semibold tracking-wider text-muted-foreground">RECEIPT</p>
-              <p className="font-mono text-sm font-semibold">{receipt.receipt_number}</p>
-            </div>
-          </div>
-          <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-            <Fact label="Received from" value={receipt.received_from} />
-            <Fact label="Date" value={formatDate(receipt.paid_on)} />
-            <Fact label="Paid via" value={receipt.method_label} />
-            <Fact label="Reference" value={receipt.reference} mono />
-            {receipt.payer_name && <Fact label="Paid by" value={receipt.payer_name} />}
-          </dl>
-          <div className="grid gap-1.5 border-t border-border pt-3 text-sm">
-            {receipt.lines.map((line) => (
-              <div key={line.invoice_number} className="flex justify-between gap-3">
-                <span className="min-w-0 text-muted-foreground">
-                  {line.title} · {line.invoice_number}
-                </span>
-                <span className="font-mono tabular-nums">{formatNaira(line.amount_applied)}</span>
-              </div>
-            ))}
-            <div className="flex justify-between gap-3 border-t border-border pt-1.5 font-semibold">
-              <span>Amount paid</span>
-              <span className="font-mono tabular-nums">{formatNaira(receipt.amount)}</span>
-            </div>
-            <div className="flex justify-between gap-3 text-muted-foreground">
-              <span>Balance left after this payment</span>
-              <span className="font-mono tabular-nums">{formatNaira(receipt.balance_after)}</span>
-            </div>
-          </div>
-        </article>
-      )}
     </PageShell>
   );
 }
 
-function Fact({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-[11px] text-muted-foreground">{label}</dt>
-      <dd className={mono ? "font-mono text-xs break-all" : "text-sm text-foreground"}>{value || "-"}</dd>
+function Unavailable() {
+  return <section className="receipt-unavailable" role="status">
+    <span className="receipt-unavailable-icon"><CircleAlert size={27} aria-hidden="true" /></span>
+    <h2>Receipt not available yet</h2>
+    <p>A payment gets its receipt once it is confirmed. Check your payment status in Fees.</p>
+    <Link to="/fees" className="receipt-secondary">Back to My fees</Link>
+  </section>;
+}
+
+function ReceiptDocument({ receipt }: { receipt: Receipt }) {
+  return <article className="receipt-document" aria-label="Payment receipt">
+    <div className="receipt-document-top">
+      <div><p className="receipt-issuer">{receipt.issuer_name}</p><p className="receipt-issuer-sub">Official payment receipt</p></div>
+      <span className="receipt-document-stamp"><Check size={22} aria-hidden="true" /></span>
     </div>
-  );
+    <div className="receipt-document-id"><span>Receipt number</span><strong>{receipt.receipt_number}</strong></div>
+    <div className="receipt-tear" aria-hidden="true" />
+    <div className="receipt-document-body">
+      <dl className="receipt-details">
+        <Fact label="Received from" value={receipt.received_from} />
+        <Fact label="Payment date" value={formatDate(receipt.paid_on)} />
+        <Fact label="Payment method" value={receipt.method_label} />
+        <Fact label="Reference" value={receipt.reference} reference />
+        {receipt.payer_name && <Fact label="Paid by" value={receipt.payer_name} />}
+      </dl>
+      <h2 className="receipt-section-title">Applied to</h2>
+      <div className="receipt-lines">
+        {receipt.lines.map((line, index) => <div className="receipt-line" key={`${line.invoice_number}-${index}`}>
+          <div><strong>{line.title}</strong><small>{line.invoice_number}</small></div>
+          <span>{formatNaira(line.amount_applied)}</span>
+        </div>)}
+      </div>
+      <div className="receipt-total"><span>Amount received</span><strong>{formatNaira(receipt.amount)}</strong></div>
+      <div className="receipt-balance"><span>Balance after this payment</span><strong>{formatNaira(receipt.balance_after)}</strong></div>
+      <p className="receipt-historic">This was the balance when the payment was recorded. Your balance in Fees may have changed since then.</p>
+    </div>
+  </article>;
+}
+
+function Fact({ label, value, reference = false }: { label: string; value: string; reference?: boolean }) {
+  return <div><dt>{label}</dt><dd className={reference ? "is-reference" : undefined}>{value || "-"}</dd></div>;
 }
