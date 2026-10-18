@@ -1,195 +1,147 @@
 import { useState } from "react";
+import { CalendarDays, CircleDot, Clock3, MapPin } from "lucide-react";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
-import { nextLine, TodayPeriods } from "@/components/today-periods";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { formatClock, formatLongDate } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import { useTimetableQuery, type Timetable, type TimetableCell } from "@/redux/services/portal-api";
+import { formatClock } from "@/lib/format";
+import { useTimetableQuery, type Timetable, type TimetableCell, type TodayPeriod } from "@/redux/services/portal-api";
 
-/**
- * The pupil's class timetable for the year.
- *
- * Today's periods first, with what is under way and what is next, then the
- * week: on a phone one day at a time behind day tabs (today chosen), from `md`
- * the whole week as a grid with today's column picked out. Only a published
- * timetable is shown; while the school has not published one, or is editing a
- * published one, the screen says so rather than showing a draft.
- */
+import "./timetable.css";
+
+/** A published school week: current lesson, one selected day's full list, and a desktop week summary. */
 export function TimetablePage() {
   const { data, isLoading, isError, refetch } = useTimetableQuery();
-
   return (
-    <PageShell grid className="mx-auto w-full max-w-5xl content-start gap-4 pt-4 lg:px-6">
-      <PageHeader title="My timetable" description={data?.class_name || ""} />
-      {isLoading && <div className="h-48 animate-pulse rounded-xl bg-muted" />}
-      {isError && !data && (
-        <p className="rounded-xl border border-border p-4 text-xs text-muted-foreground">
-          Your timetable can&apos;t be shown right now.{" "}
-          <button type="button" className="font-medium text-primary" onClick={() => refetch()}>
-            Try again
-          </button>
-        </p>
-      )}
-      {data && !data.published && (
-        <p className="rounded-xl border border-border p-6 text-center text-sm text-muted-foreground">
-          Your class timetable hasn&apos;t been published yet. It will appear here when the school publishes it.
-        </p>
-      )}
-      {data?.published && (
-        <>
-          {data.today && (
-            <section className="min-w-0 rounded-xl border border-border p-4">
-              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <h2 className="text-sm font-semibold text-foreground">Today · {formatLongDate(data.today.date)}</h2>
-                {nextLine(data.today.periods) && (
-                  <span className="text-xs font-medium text-primary">{nextLine(data.today.periods)}</span>
-                )}
-              </div>
-              <TodayPeriods periods={data.today.periods} />
-            </section>
-          )}
-          <section className="min-w-0 rounded-xl border border-border p-4">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">This week · {data.class_name}</h2>
-            <div className="md:hidden">
-              <DayTabs timetable={data} />
-            </div>
-            <div className="hidden md:block">
-              <WeekGrid timetable={data} />
-            </div>
-          </section>
-        </>
-      )}
+    <PageShell className="timetable-page">
+      <div className="timetable-wrap">
+        <header className="timetable-heading">
+          <p>Your week, made simple</p>
+          <h1>My timetable</h1>
+          {data?.class_name && <span>{data.class_name}</span>}
+        </header>
+        {isLoading && !data && <div className="timetable-loading" role="status" aria-label="Loading timetable" />}
+        {isError && !data && (
+          <div className="timetable-panel timetable-message" role="alert">
+            Your timetable can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button>
+          </div>
+        )}
+        {data && !data.published && (
+          <div className="timetable-panel timetable-message">
+            <CalendarDays size={25} aria-hidden="true" />
+            <p>Your class timetable hasn&apos;t been published yet. It will appear here when the school publishes it.</p>
+          </div>
+        )}
+        {data?.published && (
+          <div className="timetable-layout">
+            <CurrentLesson timetable={data} />
+            <DaySchedule timetable={data} />
+            <WeekSummary timetable={data} />
+          </div>
+        )}
+      </div>
     </PageShell>
   );
 }
 
-function cellTitle(cell: TimetableCell): string {
-  if (cell.kind === "BREAK") return cell.label || "Break";
-  return cell.subject || "Free period";
+function cellTitle(cell: TimetableCell | TodayPeriod): string {
+  return cell.kind === "BREAK" ? cell.label || "Break" : cell.subject || "Free period";
 }
 
 function cellMeta(cell: TimetableCell): string {
-  if (cell.kind === "BREAK") return "";
-  return [cell.teacher, cell.room].filter(Boolean).join(" · ");
+  return cell.kind === "BREAK" ? "Break" : [cell.teacher, cell.room].filter(Boolean).join(" · ") || "Class period";
 }
 
-/** A phone's week: one day at a time, today chosen to begin with. */
-function DayTabs({ timetable }: { timetable: Timetable }) {
-  const todayIndex = Math.max(0, timetable.days.findIndex((d) => d.is_today));
-  const [chosen, setChosen] = useState(todayIndex);
-  const day = timetable.days[chosen];
+function CurrentLesson({ timetable }: { timetable: Timetable }) {
+  const periods = timetable.today?.periods ?? [];
+  const now = periods.find((period) => period.state === "now" && period.kind !== "BREAK");
+  const next = periods.find((period) => period.state === "next" && period.kind !== "BREAK");
+  const featured = now ?? next;
+  const nextAfterNow = now ? next : undefined;
+  const title = featured ? cellTitle(featured) : timetable.today ? "All done for today" : "Plan your week";
+  const label = now ? "Happening now" : next ? "Up next" : "Your timetable";
+
   return (
-    <div className="space-y-3">
-      <div role="tablist" className="flex max-w-full gap-1 overflow-x-auto rounded-full bg-muted p-1">
-        {timetable.days.map((d, i) => (
-          <button
-            key={d.day_of_week}
-            role="tab"
-            type="button"
-            aria-selected={i === chosen}
-            onClick={() => setChosen(i)}
-            className={cn(
-              "flex-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium",
-              i === chosen ? "bg-background text-foreground shadow-sm" : "text-muted-foreground",
-            )}
-          >
-            {d.day_label.slice(0, 3)}
-            {d.is_today && <span className="sr-only"> (today)</span>}
-          </button>
-        ))}
-      </div>
-      {day && day.cells.length === 0 && <p className="text-xs text-muted-foreground">No classes on {day.day_label}.</p>}
-      <ol className="space-y-1">
-        {day?.cells.map((cell) => (
-          <li
-            key={`${cell.start_time}-${cell.label}`}
-            className={cn("flex min-w-0 items-center gap-3 rounded-lg px-2 py-2", cell.kind === "BREAK" && "bg-muted/60")}
-          >
-            <span className="w-11 shrink-0 text-xs tabular-nums text-muted-foreground">{formatClock(cell.start_time)}</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-foreground">{cellTitle(cell)}</p>
-              {cellMeta(cell) && <p className="truncate text-xs text-muted-foreground">{cellMeta(cell)}</p>}
-            </div>
-          </li>
-        ))}
-      </ol>
-    </div>
+    <section className="timetable-feature" aria-labelledby="timetable-feature-title">
+      <div className="timetable-feature-orb" aria-hidden="true" />
+      <p className="timetable-feature-label"><CircleDot size={14} aria-hidden="true" />{label}</p>
+      <h2 id="timetable-feature-title">{title}</h2>
+      <p className="timetable-feature-description">
+        {featured
+          ? `${formatClock(featured.start_time)}–${formatClock(featured.end_time)}${featured.teacher ? ` · ${featured.teacher}` : ""}`
+          : timetable.today ? "Your classes have finished. Take a look at the rest of your week." : "Choose a school day to see its classes."}
+      </p>
+      {featured && (
+        <div className="timetable-feature-chips">
+          {featured.room && <span className="timetable-glass-chip"><MapPin size={14} aria-hidden="true" />{featured.room}</span>}
+          {nextAfterNow && <span className="timetable-glass-chip"><Clock3 size={14} aria-hidden="true" />Next: {cellTitle(nextAfterNow)} · {formatClock(nextAfterNow.start_time)}</span>}
+        </div>
+      )}
+    </section>
   );
 }
 
-/**
- * The week as a grid: one row per period start time, one column per day.
- *
- * Rows come from every day's periods together, so a day with fewer periods
- * leaves its later cells empty rather than shifting. A row that is a break on
- * every day becomes one band across the week.
- */
-function WeekGrid({ timetable }: { timetable: Timetable }) {
-  const starts = [...new Set(timetable.days.flatMap((d) => d.cells.map((c) => c.start_time)))].sort();
-  const cellAt = (dayIndex: number, start: string) =>
-    timetable.days[dayIndex].cells.find((c) => c.start_time === start);
+function DaySchedule({ timetable }: { timetable: Timetable }) {
+  const todayIndex = timetable.days.findIndex((day) => day.is_today);
+  const [chosen, setChosen] = useState(() => Math.max(0, todayIndex));
+  const selected = Math.min(chosen, timetable.days.length - 1);
+  const day = timetable.days[selected];
+  const todayStates = timetable.today?.periods ?? [];
 
   return (
-    <ScrollArea className="w-full">
-      <div
-        className="grid min-w-[640px] gap-1"
-        style={{ gridTemplateColumns: `4.5rem repeat(${timetable.days.length}, minmax(0, 1fr))` }}
-      >
-        <div />
-        {timetable.days.map((d) => (
-          <div
-            key={d.day_of_week}
-            className={cn("px-2 pb-1 text-xs font-medium", d.is_today ? "text-primary" : "text-foreground")}
-          >
-            {d.day_label}
-            {d.is_today && <span className="ml-1 text-[11px] font-normal">· Today</span>}
+    <section className="timetable-panel timetable-day-panel" aria-labelledby="timetable-week-title">
+      <div className="timetable-panel-heading"><h2 id="timetable-week-title">This week</h2><span>{timetable.class_name}</span></div>
+      {timetable.days.length > 0 ? (
+        <>
+          <div className="timetable-day-strip" role="group" aria-label="Choose a school day">
+            {timetable.days.map((item, index) => (
+              <button
+                key={item.day_of_week}
+                type="button"
+                className={`timetable-day-button${selected === index ? " is-selected" : ""}`}
+                aria-pressed={selected === index}
+                onClick={() => setChosen(index)}
+              >
+                <span>{item.day_label.slice(0, 3)}</span>
+                <strong>{item.is_today ? "Today" : item.day_label.slice(0, 3)}</strong>
+              </button>
+            ))}
+          </div>
+          <div className="timetable-day-heading"><h3>{day.day_label}&apos;s classes</h3><span>{day.cells.length} {day.cells.length === 1 ? "period" : "periods"}</span></div>
+          {day.cells.length ? (
+            <ol className="timetable-lessons">
+              {day.cells.map((cell) => {
+                const state = day.is_today ? todayStates.find((period) => period.start_time === cell.start_time && period.kind === cell.kind)?.state : undefined;
+                return (
+                  <li key={`${cell.start_time}-${cell.label}`} className={`timetable-lesson${state === "now" ? " is-now" : ""}${cell.kind === "BREAK" ? " is-break" : ""}`}>
+                    <span className="timetable-lesson-time"><span>{formatClock(cell.start_time)}</span><span>{formatClock(cell.end_time)}</span></span>
+                    <span className="timetable-lesson-track" aria-hidden="true" />
+                    <span className="timetable-lesson-detail"><strong>{cellTitle(cell)}</strong><span>{cellMeta(cell)}</span></span>
+                    {(state === "now" || state === "next") && <span className={`timetable-lesson-badge is-${state}`}>{state === "now" ? "Now" : "Next"}</span>}
+                  </li>
+                );
+              })}
+            </ol>
+          ) : <p className="timetable-empty">No classes on {day.day_label}.</p>}
+        </>
+      ) : <p className="timetable-empty">No school days are in this timetable yet.</p>}
+    </section>
+  );
+}
+
+function WeekSummary({ timetable }: { timetable: Timetable }) {
+  if (timetable.days.length === 0) return null;
+  return (
+    <section className="timetable-panel timetable-summary" aria-labelledby="timetable-summary-title">
+      <div className="timetable-panel-heading"><h2 id="timetable-summary-title">Week at a glance</h2><span>Choose a day above for the full list</span></div>
+      <div className="timetable-summary-grid">
+        {timetable.days.map((day) => (
+          <div key={day.day_of_week} className={`timetable-summary-day${day.is_today ? " is-today" : ""}`}>
+            <strong>{day.day_label}{day.is_today ? " · Today" : ""}</strong>
+            {day.cells.filter((cell) => cell.kind !== "BREAK").length ? (
+              <ul>{day.cells.filter((cell) => cell.kind !== "BREAK").slice(0, 3).map((cell) => <li key={`${cell.start_time}-${cell.label}`}>{cellTitle(cell)}</li>)}</ul>
+            ) : <span>No classes</span>}
           </div>
         ))}
-        {starts.map((start) => {
-          const row = timetable.days.map((_, i) => cellAt(i, start));
-          const first = row.find(Boolean);
-          const allBreak = row.every((c) => c?.kind === "BREAK");
-          return (
-            <div key={start} className="contents">
-              <div className="px-1 py-2 text-xs text-muted-foreground tabular-nums">
-                {formatClock(start)}
-                {first && <span className="block text-[11px]">{formatClock(first.end_time)}</span>}
-              </div>
-              {allBreak ? (
-                <div
-                  className="flex items-center rounded-md bg-muted/60 px-3 text-xs font-medium text-muted-foreground"
-                  style={{ gridColumn: `span ${timetable.days.length}` }}
-                >
-                  {first?.label || "Break"}
-                </div>
-              ) : (
-                row.map((cell, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      "min-w-0 rounded-md px-2 py-2",
-                      timetable.days[i].is_today ? "bg-primary/10" : "bg-muted/40",
-                      !cell && "bg-transparent",
-                    )}
-                  >
-                    {cell && (
-                      <>
-                        <p className="truncate text-xs font-medium text-foreground">{cellTitle(cell)}</p>
-                        {cellMeta(cell) && (
-                          <p className="truncate text-[11px] text-muted-foreground">{cellMeta(cell)}</p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          );
-        })}
       </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    </section>
   );
 }

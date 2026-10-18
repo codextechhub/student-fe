@@ -34,19 +34,19 @@ export function AppShell() {
   const { data: noticePage } = useNoticesQuery(1);
   const unread = noticePage?.unreadCount ?? 0;
   const current = itemFor(pathname);
-  const onHome = pathname === "/";
+  const onDesignPage = pathname === "/" || pathname === "/timetable";
   const badges: Partial<Record<NavItem["key"], number>> = { notices: unread };
   const where = [me?.school.name, me?.show_branch ? me?.branch?.name : null].filter(Boolean).join(" · ");
   const when = [me?.session?.name, me?.term?.name].filter(Boolean).join(" · ");
 
   return (
-    <div className={cn("flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onHome && "bg-[#f5f7fc]")}>
-      <header className={cn("sticky top-0 z-30 flex min-w-0 items-center gap-3 border-b border-border bg-background/95 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 backdrop-blur lg:px-6", onHome && "border-transparent bg-[#f5f7fc]/90")}>
+    <div className={cn("flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onDesignPage && "bg-[#f5f7fc]")}>
+      <header className={cn("sticky top-0 z-30 flex min-w-0 items-center gap-3 border-b border-border bg-background/95 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 backdrop-blur lg:px-6", onDesignPage && "border-transparent bg-[#f5f7fc]/90")}>
         <SchoolMark logo={me?.school.logo_url || null} size={28} animate={false} alt={where} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{onHome ? me?.school.name || "Student space" : current?.label ?? ""}</p>
-          <p className={cn("truncate text-xs text-muted-foreground", !onHome && "hidden sm:block")}>
-            {onHome ? "Student space" : [where, when].filter(Boolean).join(" · ")}
+          <p className="truncate text-sm font-semibold text-foreground">{onDesignPage ? me?.school.name || "Student space" : current?.label ?? ""}</p>
+          <p className={cn("truncate text-xs text-muted-foreground", !onDesignPage && "hidden sm:block")}>
+            {onDesignPage ? "Student space" : [where, when].filter(Boolean).join(" · ")}
           </p>
         </div>
         <PupilSwitcher />
