@@ -108,10 +108,27 @@ describe("fees account number", () => {
     const bills = container.querySelector(".fees-invoices")!;
     expect(bills.textContent).toContain("Science practical");
     expect(bills.textContent).toContain("DN-4");
-    act(() => (bills.querySelector('[aria-controls="fees-charge-9"]') as HTMLButtonElement).click());
+    expect(bills.querySelector('[aria-controls="fees-charge-9"]')?.getAttribute("aria-expanded")).toBe("true");
     expect(bills.textContent).toContain("₦7,000.00");
     expect(bills.textContent).toContain("Pay this by bank transfer to your account number.");
     expect(container.querySelector(".fees-hero-label")?.textContent).toBe("Balance to pay");
+  });
+
+  it("shows unpaid bills and charges first by earliest date, then paid bills newest first", () => {
+    mocks.invoices = [
+      { invoice_ref: 1, number: "IV-1", title: "Old paid bill", invoice_date: "2024-09-01", due_date: null, lines: [], total: 50_000, paid: 50_000, balance: 0, status: "PAID", status_label: "Paid" },
+      { invoice_ref: 2, number: "IV-2", title: "Later unpaid bill", invoice_date: "2026-09-01", due_date: "2026-11-01", lines: [], total: 50_000, paid: 0, balance: 50_000, status: "DUE", status_label: "Due" },
+      { invoice_ref: 3, number: "IV-3", title: "New paid bill", invoice_date: "2026-01-01", due_date: null, lines: [], total: 50_000, paid: 50_000, balance: 0, status: "PAID", status_label: "Paid" },
+      { invoice_ref: 4, number: "IV-4", title: "Earlier unpaid bill", invoice_date: "2026-08-01", due_date: "2026-10-01", lines: [], total: 50_000, paid: 0, balance: 50_000, status: "DUE", status_label: "Due" },
+    ];
+    mocks.charges = [{ note_ref: 9, number: "DN-9", date: "2026-09-20", reason: "Practical charge", total: 20_000, paid: 0, balance: 20_000, status: "UNPAID", status_label: "Owing" }];
+
+    render();
+
+    expect([...container.querySelectorAll(".fees-invoice-toggle .fees-invoice-title strong")].map((title) => title.textContent)).toEqual([
+      "Practical charge", "Earlier unpaid bill", "Later unpaid bill", "New paid bill", "Old paid bill",
+    ]);
+    expect(container.querySelector(".fees-invoice-toggle")?.getAttribute("aria-expanded")).toBe("true");
   });
 
   it("reads a saved copy from before charges were sent", () => {

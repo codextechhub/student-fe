@@ -37,6 +37,17 @@ export function FeesPage() {
   const matches = (date: string | null | undefined, balance: number) => (billYear === "all" || !!date?.startsWith(billYear)) && (billStatus === "all" || (billStatus === "due" ? balance > 0 : balance <= 0));
   const visibleBills = fees?.invoices.filter((invoice) => matches(invoice.invoice_date ?? invoice.due_date, invoice.balance)) ?? [];
   const visibleCharges = charges.filter((charge) => matches(charge.date, charge.balance));
+  const visibleItems = [
+    ...visibleBills.map((invoice) => ({ kind: "invoice" as const, invoice, balance: invoice.balance, date: invoice.balance > 0 ? invoice.due_date ?? invoice.invoice_date : invoice.invoice_date ?? invoice.due_date })),
+    ...visibleCharges.map((charge) => ({ kind: "charge" as const, charge, balance: charge.balance, date: charge.date })),
+  ].sort((left, right) => {
+    const leftOpen = left.balance > 0;
+    const rightOpen = right.balance > 0;
+    if (leftOpen !== rightOpen) return leftOpen ? -1 : 1;
+    if (!left.date) return right.date ? 1 : 0;
+    if (!right.date) return -1;
+    return leftOpen ? left.date.localeCompare(right.date) : right.date.localeCompare(left.date);
+  });
   const visiblePayments = payments?.filter((payment) => paymentYear === "all" || payment.paid_on?.startsWith(paymentYear)) ?? [];
 
   return (
@@ -61,7 +72,7 @@ export function FeesPage() {
               <section><div className="fees-detail-top"><Heading title="School bills" description="Open a bill to see its full breakdown" first />
                 {(hasBills || !!payments?.length) && <Popover.Root><Popover.Trigger asChild><button type="button" className="fees-filter-trigger" aria-label="Filter fees"><SlidersHorizontal size={18} aria-hidden="true" />{(billYear !== "all" || billStatus !== "all" || paymentYear !== "all") && <span className="fees-filter-active" aria-hidden="true" />}</button></Popover.Trigger><Popover.Portal><Popover.Content align="end" sideOffset={8} className="fees-filter-popover"><div className="fees-filter-header"><strong>Filter fees</strong><Popover.Close aria-label="Close filters">Done</Popover.Close></div><fieldset><legend>Bills</legend><label>Calendar year<span><select value={billYear} onChange={(event) => setBillYear(event.target.value)}><option value="all">All years</option>{billYears.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown size={15} aria-hidden="true" /></span></label><label>Status<span><select value={billStatus} onChange={(event) => setBillStatus(event.target.value)}><option value="all">All bills</option><option value="due">Balance due</option><option value="paid">Fully paid</option></select><ChevronDown size={15} aria-hidden="true" /></span></label></fieldset><fieldset><legend>Payment history</legend><label>Calendar year<span><select value={paymentYear} onChange={(event) => setPaymentYear(event.target.value)}><option value="all">All years</option>{paymentYears.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown size={15} aria-hidden="true" /></span></label></fieldset><button type="button" className="fees-filter-reset" onClick={() => { setBillYear("all"); setBillStatus("all"); setPaymentYear("all"); }}>Clear filters</button></Popover.Content></Popover.Portal></Popover.Root>}
               </div>
-                {!hasBills ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div> : visibleBills.length + visibleCharges.length === 0 ? <div className="fees-surface fees-empty">No bills match these filters.</div> : <ul className="fees-invoices">{visibleBills.map((invoice, index) => <InvoiceCard key={invoice.invoice_ref} invoice={invoice} openAtFirst={index === 0} canPay={fees.can_pay && !offline} offline={offline} />)}{visibleCharges.map((charge) => <ChargeCard key={charge.note_ref} charge={charge} hasAccount={account?.state === "ISSUED"} />)}</ul>}
+                {!hasBills ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div> : visibleItems.length === 0 ? <div className="fees-surface fees-empty">No bills match these filters.</div> : <ul className="fees-invoices">{visibleItems.map((item, index) => item.kind === "invoice" ? <InvoiceCard key={`invoice-${item.invoice.invoice_ref}`} invoice={item.invoice} openAtFirst={index === 0} canPay={fees.can_pay && !offline} offline={offline} /> : <ChargeCard key={`charge-${item.charge.note_ref}`} charge={item.charge} openAtFirst={index === 0} hasAccount={account?.state === "ISSUED"} />)}</ul>}
               </section>
               <section><Heading title="Payment history" description="Confirmed payments and transfers on their way" />
                 <div className="fees-surface fees-history">{!payments || payments.length === 0 ? <p className="fees-empty">No payments yet.</p> : visiblePayments.length === 0 ? <p className="fees-empty">No payments match this year.</p> : <ul>{visiblePayments.map((payment) => <PaymentRow key={payment.reference} payment={payment} />)}</ul>}</div>
@@ -100,8 +111,8 @@ function InvoiceCard({ invoice, openAtFirst, canPay, offline }: { invoice: Invoi
 }
 
 /** A charge added after a bill. Card payment names one bill, so a charge is settled by transfer. */
-function ChargeCard({ charge, hasAccount }: { charge: DebitNote; hasAccount: boolean }) {
-  const [open, setOpen] = useState(false);
+function ChargeCard({ charge, openAtFirst, hasAccount }: { charge: DebitNote; openAtFirst: boolean; hasAccount: boolean }) {
+  const [open, setOpen] = useState(openAtFirst);
   return (
     <li className="fees-invoice fees-surface">
       <button type="button" aria-expanded={open} aria-controls={`fees-charge-${charge.note_ref}`} onClick={() => setOpen((value) => !value)} className="fees-invoice-toggle">
