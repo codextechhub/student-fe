@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
     | { state: "ISSUED"; bank_name: string; account_number: string; account_name: string; as_of: string }
     | { state: "NONE"; as_of: string },
   invoices: [] as unknown[],
+  charges: undefined as unknown[] | undefined,
   balance: 0,
   canPay: true,
 }));
@@ -19,7 +20,7 @@ vi.mock("@/redux/hooks", () => ({
   }),
 }));
 vi.mock("@/redux/services/portal-api", () => ({
-  useFeesQuery: () => ({ data: { balance: mocks.balance, total_billed: 100_000, total_paid: 100_000, can_pay: mocks.canPay, min_part_payment: 0, invoices: mocks.invoices } }),
+  useFeesQuery: () => ({ data: { balance: mocks.balance, total_billed: 100_000, total_paid: 100_000, can_pay: mocks.canPay, min_part_payment: 0, invoices: mocks.invoices, debit_notes: mocks.charges } }),
   usePaymentsQuery: () => ({ data: [] }),
   useTransferAccountQuery: () => ({ data: mocks.account }),
   useMeQuery: () => ({ data: { student: { full_name: "Amaka Balogun" } } }),
@@ -37,6 +38,7 @@ beforeEach(() => {
   root = createRoot(container);
   mocks.account = { state: "ISSUED", bank_name: "Wema Bank", account_number: "0123456789", account_name: "TEST-MANAGED-ACCOUNT", as_of: "2026-10-18T00:00:00Z" };
   mocks.invoices = [];
+  mocks.charges = undefined;
   mocks.balance = 0;
   mocks.canPay = true;
 });
@@ -96,5 +98,24 @@ describe("fees account number", () => {
     act(() => { status.value = "due"; status.dispatchEvent(new Event("change", { bubbles: true })); });
     expect(container.textContent).toContain("No bills match these filters.");
     expect(container.querySelector(".fees-stats")?.textContent).toContain("₦1,000.00");
+  });
+
+  it("lists a charge added after the bill, so the balance it makes up can be found", () => {
+    mocks.balance = 700_000;
+    mocks.invoices = [{ invoice_ref: 1, number: "IV-1", title: "Second Semester", due_date: null, lines: [], total: 50_000, paid: 50_000, balance: 0, status: "PAID", status_label: "Paid" }];
+    mocks.charges = [{ note_ref: 9, number: "DN-4", date: "2026-10-18", reason: "Science practical", total: 1_000_000, paid: 300_000, balance: 700_000, status: "PARTIAL", status_label: "Part paid" }];
+    render();
+    const bills = container.querySelector(".fees-invoices")!;
+    expect(bills.textContent).toContain("Science practical");
+    expect(bills.textContent).toContain("DN-4");
+    act(() => (bills.querySelector('[aria-controls="fees-charge-9"]') as HTMLButtonElement).click());
+    expect(bills.textContent).toContain("₦7,000.00");
+    expect(bills.textContent).toContain("Pay this by bank transfer to your account number.");
+    expect(container.querySelector(".fees-hero-label")?.textContent).toBe("Balance to pay");
+  });
+
+  it("reads a saved copy from before charges were sent", () => {
+    render();
+    expect(container.textContent).toContain("No bills yet.");
   });
 });

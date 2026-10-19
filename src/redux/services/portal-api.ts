@@ -265,6 +265,23 @@ export type Invoice = {
 };
 
 /**
+ * A charge the school added to the pupil's account after a bill, such as a
+ * replacement ID card. It is not a bill, so it cannot be paid by card here: a
+ * transfer into the pupil's account number settles it, oldest charge first.
+ */
+export type DebitNote = {
+  note_ref: number;
+  number: string;
+  date: string | null;
+  reason: string;
+  total: number;
+  paid: number;
+  balance: number;
+  status: string;
+  status_label: string;
+};
+
+/**
  * The pupil's fees. `balance` below zero is credit. `can_pay` is the school's
  * choice to let pupils pay here; `min_part_payment` its smallest card part
  * payment, in kobo.
@@ -274,6 +291,8 @@ export type Fees = {
   total_billed: number;
   total_paid: number;
   invoices: Invoice[];
+  /** Absent from a copy saved before the school sent charges. */
+  debit_notes?: DebitNote[];
   can_pay: boolean;
   min_part_payment: number;
 };
