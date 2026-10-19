@@ -78,6 +78,8 @@
 .fees-payment-side a { display: inline-flex; align-items: center; gap: 3px; margin-top: 5px; color: #3d59bf; font-size: 11px; font-weight: 800; text-decoration: none; }
 .fees-payment-side small { display: block; margin-top: 5px; color: #99a5b6; font-size: 11px; }
 .fees-empty { margin: 0; padding: 23px; color: #75839a; font-size: 13px; text-align: center; }
+.fees-empty button { border: 0; background: none; color: #4a659d; font: inherit; font-weight: 750; cursor: pointer; }
+.fees-empty button:focus-visible { outline: 3px solid #7895c5; outline-offset: 2px; }
 .fees-notice { padding: 24px; border: 1px solid #ebeff6; border-radius: 21px; background: white; color: #53627a; font-size: 14px; text-align: center; }
 .fees-notice button { border: 0; background: none; color: #3e59ca; font: inherit; font-weight: 800; cursor: pointer; }
 .fees-loading { height: 225px; border-radius: 29px; background: #e9edfa; animation: fees-pulse 1.4s ease-in-out infinite alternate; }
@@ -104,3 +106,15 @@
 .fees-get-account .fees-get-account-error { margin-top: 8px; color: #b33e35; font-weight: 750; }
 .fees-get-account-action { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 49px; margin-top: 17px; padding: 11px 14px; border-radius: 14px; background: #2d4778; color: white; font-size: 14px; font-weight: 800; }
 .fees-get-account-action:focus-visible { outline: 3px solid #5975ff; outline-offset: 3px; }
+
+.fees-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 8px 10px 8px 15px; border: 1px solid #d8e3f0; border-radius: 16px; background: linear-gradient(135deg, #ffffffeb, #edf3fae8); box-shadow: 0 7px 20px #2638590c; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.fees-pager-count { color: #63748c; font-size: 12px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.fees-pager-buttons { display: flex; align-items: center; gap: 3px; }
+.fees-pager-slot { display: inline-flex; align-items: center; gap: 3px; }
+.fees-pager button { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border: 0; border-radius: 10px; background: transparent; color: #4a659d; font-size: 12px; font-weight: 750; cursor: pointer; font-variant-numeric: tabular-nums; }
+.fees-pager button:hover:not(:disabled):not(.is-active) { background: #e4ecf7; }
+.fees-pager button.is-active { background: #2d4778; box-shadow: 0 4px 10px #1b356d26; color: white; }
+.fees-pager button:disabled { color: #aab7c9; cursor: default; }
+.fees-pager button:focus-visible { outline: 3px solid #7895c5; outline-offset: 2px; }
+.fees-pager-ellipsis { padding: 0 2px; color: #8d9cb0; font-size: 12px; }
+@media (max-width: 520px) { .fees-pager { justify-content: center; padding: 10px; } .fees-pager-count { width: 100%; text-align: center; } }

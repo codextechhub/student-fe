@@ -297,6 +297,17 @@ export type Fees = {
   min_part_payment: number;
 };
 
+export type PageInfo = { page: number; page_size: number; total: number; total_pages: number };
+export type FeeBill = ({ kind: "invoice" } & Invoice) | ({ kind: "charge" } & DebitNote);
+export type FeeBillsPage = Omit<Fees, "invoices" | "debit_notes"> & {
+  has_bills: boolean;
+  years: string[];
+  next_due: string | null;
+  items: FeeBill[];
+  pagination: PageInfo;
+};
+export type PaymentsPage = { items: Payment[]; years: string[]; pagination: PageInfo };
+
 /** A payment on the pupil's account: confirmed with a receipt, or online and still being confirmed. */
 export type Payment = {
   payment_ref: number | null;
@@ -405,9 +416,19 @@ export const portalApi = baseApi.injectEndpoints({
       transformResponse: unwrap<Fees>,
       providesTags: ["Fees"],
     }),
+    feeBills: build.query<FeeBillsPage, { page: number; year: string; status: string }>({
+      query: ({ page, year, status }) => `/portal/student/fees/?page=${page}&year=${encodeURIComponent(year)}&status=${encodeURIComponent(status)}`,
+      transformResponse: unwrap<FeeBillsPage>,
+      providesTags: ["Fees"],
+    }),
     payments: build.query<Payment[], void>({
       query: () => "/portal/student/fees/payments/",
       transformResponse: unwrap<Payment[]>,
+      providesTags: ["Fees"],
+    }),
+    paymentPage: build.query<PaymentsPage, { page: number; year: string }>({
+      query: ({ page, year }) => `/portal/student/fees/payments/?page=${page}&year=${encodeURIComponent(year)}`,
+      transformResponse: unwrap<PaymentsPage>,
       providesTags: ["Fees"],
     }),
     receipt: build.query<Receipt, number>({
@@ -534,7 +555,9 @@ export const {
   useSessionResultsQuery,
   useReportCardQuery,
   useFeesQuery,
+  useFeeBillsQuery,
   usePaymentsQuery,
+  usePaymentPageQuery,
   useReceiptQuery,
   useLazyReceiptPdfQuery,
   useStartPaymentMutation,

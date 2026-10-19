@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown, Clock3, Info, Receipt as ReceiptIcon, SlidersHorizontal } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, Info, Receipt as ReceiptIcon, SlidersHorizontal } from "lucide-react";
 import { Popover } from "radix-ui";
 import { Link } from "react-router";
 
@@ -9,7 +9,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { formatDate, formatNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/redux/hooks";
-import { useFeesQuery, useMeQuery, usePaymentsQuery, useTransferAccountQuery, type DebitNote, type Invoice, type Payment, type TransferAccount } from "@/redux/services/portal-api";
+import { useFeeBillsQuery, useMeQuery, usePaymentPageQuery, useTransferAccountQuery, type DebitNote, type Invoice, type PageInfo, type Payment, type TransferAccount } from "@/redux/services/portal-api";
 
 import "./fees.css";
 
@@ -21,35 +21,23 @@ import "./fees.css";
  * amount that makes it up. The bill filters apply to both.
  */
 export function FeesPage() {
+  const [billPage, setBillPage] = useState(1);
   const [billYear, setBillYear] = useState("all");
   const [billStatus, setBillStatus] = useState("all");
+  const [paymentPage, setPaymentPage] = useState(1);
   const [paymentYear, setPaymentYear] = useState("all");
-  const { data: fees, isLoading, isError, refetch } = useFeesQuery();
-  const { data: payments } = usePaymentsQuery();
+  const { data: fees, currentData: currentFees, isLoading, isError, refetch } = useFeeBillsQuery({ page: billPage, year: billYear, status: billStatus });
+  const { data: payments, currentData: currentPayments, isError: paymentsError, refetch: refetchPayments } = usePaymentPageQuery({ page: paymentPage, year: paymentYear });
   const { data: account } = useTransferAccountQuery();
   const { data: me } = useMeQuery();
   const signedInName = useAppSelector((s) => s.session.pupils.find((p) => p.account === s.session.active)?.fullName);
   const offline = useAppSelector((s) => s.connectivity.offline);
-  const nextDue = fees?.invoices.filter((invoice) => invoice.balance > 0 && invoice.due_date).map((invoice) => invoice.due_date!).sort()[0];
-  const billYears = [...new Set([...(fees?.invoices ?? []).map((invoice) => invoice.invoice_date ?? invoice.due_date), ...(fees?.debit_notes ?? []).map((charge) => charge.date)].map((date) => date?.slice(0, 4)).filter((year): year is string => !!year))].sort().reverse();
-  const paymentYears = [...new Set((payments ?? []).map((payment) => payment.paid_on?.slice(0, 4)).filter((year): year is string => !!year))].sort().reverse();
-  const charges = fees?.debit_notes ?? [];
-  const hasBills = (fees?.invoices.length ?? 0) + charges.length > 0;
-  const matches = (date: string | null | undefined, balance: number) => (billYear === "all" || !!date?.startsWith(billYear)) && (billStatus === "all" || (billStatus === "due" ? balance > 0 : balance <= 0));
-  const visibleBills = fees?.invoices.filter((invoice) => matches(invoice.invoice_date ?? invoice.due_date, invoice.balance)) ?? [];
-  const visibleCharges = charges.filter((charge) => matches(charge.date, charge.balance));
-  const visibleItems = [
-    ...visibleBills.map((invoice) => ({ kind: "invoice" as const, invoice, balance: invoice.balance, date: invoice.balance > 0 ? invoice.due_date ?? invoice.invoice_date : invoice.invoice_date ?? invoice.due_date })),
-    ...visibleCharges.map((charge) => ({ kind: "charge" as const, charge, balance: charge.balance, date: charge.date })),
-  ].sort((left, right) => {
-    const leftOpen = left.balance > 0;
-    const rightOpen = right.balance > 0;
-    if (leftOpen !== rightOpen) return leftOpen ? -1 : 1;
-    if (!left.date) return right.date ? 1 : 0;
-    if (!right.date) return -1;
-    return leftOpen ? left.date.localeCompare(right.date) : right.date.localeCompare(left.date);
-  });
-  const visiblePayments = payments?.filter((payment) => paymentYear === "all" || payment.paid_on?.startsWith(paymentYear)) ?? [];
+  const nextDue = fees?.next_due;
+  const billYears = fees?.years ?? [];
+  const paymentYears = payments?.years ?? [];
+  const hasBills = fees?.has_bills ?? false;
+  const visibleItems = currentFees?.items;
+  const visiblePayments = currentPayments?.items;
 
   return (
     <PageShell className="fees-page">
@@ -72,12 +60,14 @@ export function FeesPage() {
             </div>
             <div className="fees-detail">
               <section><div className="fees-detail-top"><Heading title="School bills" description="Open a bill to see its full breakdown" first />
-                {(hasBills || !!payments?.length) && <Popover.Root><Popover.Trigger asChild><button type="button" className="fees-filter-trigger" aria-label="Filter fees"><SlidersHorizontal size={18} aria-hidden="true" />{(billYear !== "all" || billStatus !== "all" || paymentYear !== "all") && <span className="fees-filter-active" aria-hidden="true" />}</button></Popover.Trigger><Popover.Portal><Popover.Content align="end" sideOffset={8} className="fees-filter-popover"><div className="fees-filter-header"><strong>Filter fees</strong><Popover.Close aria-label="Close filters">Done</Popover.Close></div><fieldset><legend>Bills</legend><label>Calendar year<span><select value={billYear} onChange={(event) => setBillYear(event.target.value)}><option value="all">All years</option>{billYears.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown size={15} aria-hidden="true" /></span></label><label>Status<span><select value={billStatus} onChange={(event) => setBillStatus(event.target.value)}><option value="all">All bills</option><option value="due">Balance due</option><option value="paid">Fully paid</option></select><ChevronDown size={15} aria-hidden="true" /></span></label></fieldset><fieldset><legend>Payment history</legend><label>Calendar year<span><select value={paymentYear} onChange={(event) => setPaymentYear(event.target.value)}><option value="all">All years</option>{paymentYears.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown size={15} aria-hidden="true" /></span></label></fieldset><button type="button" className="fees-filter-reset" onClick={() => { setBillYear("all"); setBillStatus("all"); setPaymentYear("all"); }}>Clear filters</button></Popover.Content></Popover.Portal></Popover.Root>}
+                {(hasBills || (payments?.pagination.total ?? 0) > 0) && <Popover.Root><Popover.Trigger asChild><button type="button" className="fees-filter-trigger" aria-label="Filter fees"><SlidersHorizontal size={18} aria-hidden="true" />{(billYear !== "all" || billStatus !== "all" || paymentYear !== "all") && <span className="fees-filter-active" aria-hidden="true" />}</button></Popover.Trigger><Popover.Portal><Popover.Content align="end" sideOffset={8} className="fees-filter-popover"><div className="fees-filter-header"><strong>Filter fees</strong><Popover.Close aria-label="Close filters">Done</Popover.Close></div><fieldset><legend>Bills</legend><label>Calendar year<span><select value={billYear} onChange={(event) => { setBillYear(event.target.value); setBillPage(1); }}><option value="all">All years</option>{billYears.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown size={15} aria-hidden="true" /></span></label><label>Status<span><select value={billStatus} onChange={(event) => { setBillStatus(event.target.value); setBillPage(1); }}><option value="all">All bills</option><option value="due">Balance due</option><option value="paid">Fully paid</option></select><ChevronDown size={15} aria-hidden="true" /></span></label></fieldset><fieldset><legend>Payment history</legend><label>Calendar year<span><select value={paymentYear} onChange={(event) => { setPaymentYear(event.target.value); setPaymentPage(1); }}><option value="all">All years</option>{paymentYears.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown size={15} aria-hidden="true" /></span></label></fieldset><button type="button" className="fees-filter-reset" onClick={() => { setBillYear("all"); setBillStatus("all"); setPaymentYear("all"); setBillPage(1); setPaymentPage(1); }}>Clear filters</button></Popover.Content></Popover.Portal></Popover.Root>}
               </div>
-                {!hasBills ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div> : visibleItems.length === 0 ? <div className="fees-surface fees-empty">No bills match these filters.</div> : <ul className="fees-invoices">{visibleItems.map((item, index) => item.kind === "invoice" ? <InvoiceCard key={`invoice-${item.invoice.invoice_ref}`} invoice={item.invoice} openAtFirst={index === 0} canPay={fees.can_pay && !offline} offline={offline} /> : <ChargeCard key={`charge-${item.charge.note_ref}`} charge={item.charge} openAtFirst={index === 0} transfer={account?.state} />)}</ul>}
+                {!currentFees ? <div className="fees-surface fees-empty" role="status">{isError ? <>Bills can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button></> : "Loading bills…"}</div> : !hasBills ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div> : visibleItems?.length === 0 ? <div className="fees-surface fees-empty">No bills match these filters.</div> : <ul className="fees-invoices">{visibleItems?.map((item, index) => item.kind === "invoice" ? <InvoiceCard key={`invoice-${item.invoice_ref}`} invoice={item} openAtFirst={index === 0} canPay={fees.can_pay && !offline} offline={offline} /> : <ChargeCard key={`charge-${item.note_ref}`} charge={item} openAtFirst={index === 0} transfer={account?.state} />)}</ul>}
+                {currentFees && <PageControls label="School bills" page={currentFees.pagination} onChange={setBillPage} />}
               </section>
               <section><Heading title="Payment history" description="Confirmed payments and transfers on their way" />
-                <div className="fees-surface fees-history">{!payments || payments.length === 0 ? <p className="fees-empty">No payments yet.</p> : visiblePayments.length === 0 ? <p className="fees-empty">No payments match this year.</p> : <ul>{visiblePayments.map((payment) => <PaymentRow key={payment.reference} payment={payment} />)}</ul>}</div>
+                <div className="fees-surface fees-history">{paymentsError && !currentPayments ? <p className="fees-empty">Payments can&apos;t be shown right now. <button type="button" onClick={() => refetchPayments()}>Try again</button></p> : !currentPayments ? <p className="fees-empty" role="status">Loading payments…</p> : currentPayments.pagination.total === 0 ? <p className="fees-empty">{paymentYear === "all" ? "No payments yet." : "No payments match this year."}</p> : <ul>{visiblePayments?.map((payment) => <PaymentRow key={payment.reference} payment={payment} />)}</ul>}</div>
+                {currentPayments && <PageControls label="Payment history" page={currentPayments.pagination} onChange={setPaymentPage} />}
               </section>
             </div>
           </div>
@@ -94,6 +84,21 @@ function Heading({ title, description, first = false }: { title: string; descrip
 
 function Stat({ label, value }: { label: string; value: string }) {
   return <div className="fees-stat"><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function PageControls({ label, page, onChange }: { label: string; page: PageInfo; onChange: (page: number) => void }) {
+  if (page.total_pages <= 1) return null;
+  const pages = [...new Set([1, page.page - 1, page.page, page.page + 1, page.total_pages])]
+    .filter((number) => number >= 1 && number <= page.total_pages)
+    .sort((left, right) => left - right);
+  return <nav className="fees-pager" aria-label={`${label} pages`}>
+    <span className="fees-pager-count">{(page.page - 1) * page.page_size + 1}–{Math.min(page.page * page.page_size, page.total)} of {page.total}</span>
+    <div className="fees-pager-buttons">
+      <button type="button" className="fees-pager-arrow" aria-label={`Previous ${label.toLowerCase()} page`} disabled={page.page === 1} onClick={() => onChange(page.page - 1)}><ChevronLeft size={17} aria-hidden="true" /></button>
+      {pages.map((number, index) => <span className="fees-pager-slot" key={number}>{index > 0 && number > pages[index - 1] + 1 && <span className="fees-pager-ellipsis" aria-hidden="true">…</span>}<button type="button" className={cn("fees-pager-number", number === page.page && "is-active")} aria-label={`${label} page ${number}`} aria-current={number === page.page ? "page" : undefined} onClick={() => onChange(number)}>{number}</button></span>)}
+      <button type="button" className="fees-pager-arrow" aria-label={`Next ${label.toLowerCase()} page`} disabled={page.page === page.total_pages} onClick={() => onChange(page.page + 1)}><ChevronRight size={17} aria-hidden="true" /></button>
+    </div>
+  </nav>;
 }
 
 function InvoiceCard({ invoice, openAtFirst, canPay, offline }: { invoice: Invoice; openAtFirst: boolean; canPay: boolean; offline: boolean }) {
