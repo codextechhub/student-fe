@@ -3,12 +3,13 @@ import { Check, ChevronDown, Clock3, Info, Receipt as ReceiptIcon, SlidersHorizo
 import { Popover } from "radix-ui";
 import { Link } from "react-router";
 
+import { GetTransferAccount } from "@/components/fees/get-transfer-account";
 import { TransferAccountCard } from "@/components/fees/transfer-account-card";
 import { PageShell } from "@/components/layout/page-shell";
 import { formatDate, formatNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/redux/hooks";
-import { useFeesQuery, useMeQuery, usePaymentsQuery, useTransferAccountQuery, type DebitNote, type Invoice, type Payment } from "@/redux/services/portal-api";
+import { useFeesQuery, useMeQuery, usePaymentsQuery, useTransferAccountQuery, type DebitNote, type Invoice, type Payment, type TransferAccount } from "@/redux/services/portal-api";
 
 import "./fees.css";
 
@@ -66,13 +67,14 @@ export function FeesPage() {
               </section>
               <div className="fees-stats"><Stat label="Total billed" value={formatNaira(fees.total_billed)} /><Stat label="Paid so far" value={formatNaira(fees.total_paid)} /></div>
               {account?.state === "ISSUED" && <section className="fees-account-section"><Heading title="Pay by transfer" description="Your own account number for school fees" /><TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Your account number" /></section>}
+              {account?.state === "NONE" && fees.balance > 0 && !offline && <section className="fees-account-section"><Heading title="Pay by transfer" description="Your own account number for school fees" /><GetTransferAccount /></section>}
               {fees.can_pay && <div className="fees-guardian"><Info size={17} aria-hidden="true" /><p><strong>Fees are normally paid by your parent or guardian.</strong> If they can&apos;t pay through their own app right now, you can pay here. Card details are entered on the secure gateway.</p></div>}
             </div>
             <div className="fees-detail">
               <section><div className="fees-detail-top"><Heading title="School bills" description="Open a bill to see its full breakdown" first />
                 {(hasBills || !!payments?.length) && <Popover.Root><Popover.Trigger asChild><button type="button" className="fees-filter-trigger" aria-label="Filter fees"><SlidersHorizontal size={18} aria-hidden="true" />{(billYear !== "all" || billStatus !== "all" || paymentYear !== "all") && <span className="fees-filter-active" aria-hidden="true" />}</button></Popover.Trigger><Popover.Portal><Popover.Content align="end" sideOffset={8} className="fees-filter-popover"><div className="fees-filter-header"><strong>Filter fees</strong><Popover.Close aria-label="Close filters">Done</Popover.Close></div><fieldset><legend>Bills</legend><label>Calendar year<span><select value={billYear} onChange={(event) => setBillYear(event.target.value)}><option value="all">All years</option>{billYears.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown size={15} aria-hidden="true" /></span></label><label>Status<span><select value={billStatus} onChange={(event) => setBillStatus(event.target.value)}><option value="all">All bills</option><option value="due">Balance due</option><option value="paid">Fully paid</option></select><ChevronDown size={15} aria-hidden="true" /></span></label></fieldset><fieldset><legend>Payment history</legend><label>Calendar year<span><select value={paymentYear} onChange={(event) => setPaymentYear(event.target.value)}><option value="all">All years</option>{paymentYears.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown size={15} aria-hidden="true" /></span></label></fieldset><button type="button" className="fees-filter-reset" onClick={() => { setBillYear("all"); setBillStatus("all"); setPaymentYear("all"); }}>Clear filters</button></Popover.Content></Popover.Portal></Popover.Root>}
               </div>
-                {!hasBills ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div> : visibleItems.length === 0 ? <div className="fees-surface fees-empty">No bills match these filters.</div> : <ul className="fees-invoices">{visibleItems.map((item, index) => item.kind === "invoice" ? <InvoiceCard key={`invoice-${item.invoice.invoice_ref}`} invoice={item.invoice} openAtFirst={index === 0} canPay={fees.can_pay && !offline} offline={offline} /> : <ChargeCard key={`charge-${item.charge.note_ref}`} charge={item.charge} openAtFirst={index === 0} hasAccount={account?.state === "ISSUED"} />)}</ul>}
+                {!hasBills ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div> : visibleItems.length === 0 ? <div className="fees-surface fees-empty">No bills match these filters.</div> : <ul className="fees-invoices">{visibleItems.map((item, index) => item.kind === "invoice" ? <InvoiceCard key={`invoice-${item.invoice.invoice_ref}`} invoice={item.invoice} openAtFirst={index === 0} canPay={fees.can_pay && !offline} offline={offline} /> : <ChargeCard key={`charge-${item.charge.note_ref}`} charge={item.charge} openAtFirst={index === 0} transfer={account?.state} />)}</ul>}
               </section>
               <section><Heading title="Payment history" description="Confirmed payments and transfers on their way" />
                 <div className="fees-surface fees-history">{!payments || payments.length === 0 ? <p className="fees-empty">No payments yet.</p> : visiblePayments.length === 0 ? <p className="fees-empty">No payments match this year.</p> : <ul>{visiblePayments.map((payment) => <PaymentRow key={payment.reference} payment={payment} />)}</ul>}</div>
@@ -110,8 +112,12 @@ function InvoiceCard({ invoice, openAtFirst, canPay, offline }: { invoice: Invoi
   );
 }
 
-/** A charge added after a bill. Card payment names one bill, so a charge is settled by transfer. */
-function ChargeCard({ charge, openAtFirst, hasAccount }: { charge: DebitNote; openAtFirst: boolean; hasAccount: boolean }) {
+/**
+ * A charge added after a bill. Card payment names one bill, so a charge is
+ * settled by transfer: into the pupil's number, or one they can get under Pay
+ * by transfer. Only a school that takes no transfers sends them to the office.
+ */
+function ChargeCard({ charge, openAtFirst, transfer }: { charge: DebitNote; openAtFirst: boolean; transfer?: TransferAccount["state"] }) {
   const [open, setOpen] = useState(openAtFirst);
   return (
     <li className="fees-invoice fees-surface">
@@ -121,7 +127,7 @@ function ChargeCard({ charge, openAtFirst, hasAccount }: { charge: DebitNote; op
         <ChevronDown className={cn("fees-invoice-chevron", open && "is-open")} size={17} aria-hidden="true" />
       </button>
       {open && <div className="fees-invoice-detail" id={`fees-charge-${charge.note_ref}`}><dl><div className="fees-invoice-line is-total"><dt>Charge</dt><dd>{formatNaira(charge.total)}</dd></div><div className="fees-invoice-line"><dt>Paid</dt><dd>{formatNaira(charge.paid)}</dd></div><div className="fees-invoice-line is-balance"><dt>Balance</dt><dd>{formatNaira(charge.balance)}</dd></div></dl>
-        {charge.balance > 0 ? <p className="fees-invoice-note">{hasAccount ? "Pay this by bank transfer to your account number. Money sent there settles the oldest amount owed first." : "Ask the school office how to pay this charge."}</p> : <p className="fees-invoice-note is-paid"><Check size={16} aria-hidden="true" />This charge is fully paid. Thank you.</p>}
+        {charge.balance > 0 ? <p className="fees-invoice-note">{transfer === "ISSUED" ? "Pay this by bank transfer to your account number. Money sent there settles the oldest amount owed first." : transfer === "NONE" ? "Pay this by bank transfer. Get your account number under Pay by transfer, then send the money there." : "Ask the school office how to pay this charge."}</p> : <p className="fees-invoice-note is-paid"><Check size={16} aria-hidden="true" />This charge is fully paid. Thank you.</p>}
       </div>}
     </li>
   );

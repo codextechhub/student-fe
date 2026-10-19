@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Building2, CreditCard, Lock, Wallet } from "lucide-react";
 import { Link, useParams } from "react-router";
 
+import { GetTransferAccount } from "@/components/fees/get-transfer-account";
 import { TransferAccountCard } from "@/components/fees/transfer-account-card";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,6 @@ import {
   useDepositsQuery,
   useFeesQuery,
   useMeQuery,
-  useOpenTransferAccountMutation,
   useStartPaymentMutation,
   useTransferAccountQuery,
   type Fees,
@@ -120,13 +120,11 @@ function TransferPayment() {
   const { data: account, isLoading, isError, error } = useTransferAccountQuery();
   const { data: me } = useMeQuery();
   const signedInName = useAppSelector((s) => s.session.pupils.find((p) => p.account === s.session.active)?.fullName);
-  const [open, { isLoading: opening }] = useOpenTransferAccountMutation();
-  const [openError, setOpenError] = useState("");
 
   if (isLoading) return <div className="pay-loading" role="status" aria-label="Loading transfer account" />;
   if (isError || !account) return <Note>{refusal(error).message || "Your account number can't be shown right now."}</Note>;
   if (account.state === "UNAVAILABLE") return <Note>{account.message}</Note>;
-  if (account.state === "NONE") return <section className="pay-card-panel"><h3>Your transfer account</h3><p className="pay-panel-intro">You don&apos;t have an account number for school fees yet. Get one, and your family can pay into it from any bank.</p>{openError && <p className="pay-error" role="alert">{openError}</p>}<Button className="pay-primary-action" onClick={async () => { setOpenError(""); try { await open().unwrap(); } catch (failure) { setOpenError(refusal(failure).message); } }} loading={opening} disabled={opening}>Get my account number</Button></section>;
+  if (account.state === "NONE") return <GetTransferAccount />;
 
   return <div className="pay-transfer"><TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Pay into this account" /><p className="pay-transfer-note">Transfer any amount from a bank app. There is no card-payment minimum for a bank transfer.</p><DepositWatch since={account.as_of} /></div>;
 }

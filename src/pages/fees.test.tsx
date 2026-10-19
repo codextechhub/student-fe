@@ -24,6 +24,8 @@ vi.mock("@/redux/services/portal-api", () => ({
   usePaymentsQuery: () => ({ data: [] }),
   useTransferAccountQuery: () => ({ data: mocks.account }),
   useMeQuery: () => ({ data: { student: { full_name: "Amaka Balogun" } } }),
+  useOpenTransferAccountMutation: () => [vi.fn(), { isLoading: false }],
+  refusal: () => ({ message: "" }),
 }));
 
 import { FeesPage } from "./fees";
@@ -134,5 +136,30 @@ describe("fees account number", () => {
   it("reads a saved copy from before charges were sent", () => {
     render();
     expect(container.textContent).toContain("No bills yet.");
+  });
+
+  it("offers an account number to a pupil who owes only a charge and has none", () => {
+    mocks.account = { state: "NONE", as_of: "2026-10-19T00:00:00Z" };
+    mocks.balance = 150_000;
+    mocks.charges = [{ note_ref: 4, number: "DN-1", date: "2026-10-19", reason: "Replacement ID Card", total: 150_000, paid: 0, balance: 150_000, status: "UNPAID", status_label: "Owing" }];
+    render();
+    expect(container.textContent).toContain("Get my account number");
+    expect(container.textContent).toContain("Get your account number under Pay by transfer");
+    expect(container.textContent).not.toContain("Ask the school office");
+  });
+
+  it("sends a pupil to the office only where the school takes no transfers", () => {
+    mocks.account = { state: "UNAVAILABLE", message: "Your school cannot take bank transfers here yet." } as never;
+    mocks.balance = 150_000;
+    mocks.charges = [{ note_ref: 4, number: "DN-1", date: "2026-10-19", reason: "Replacement ID Card", total: 150_000, paid: 0, balance: 150_000, status: "UNPAID", status_label: "Owing" }];
+    render();
+    expect(container.textContent).toContain("Ask the school office how to pay this charge.");
+    expect(container.textContent).not.toContain("Get my account number");
+  });
+
+  it("does not offer a number when nothing is owed", () => {
+    mocks.account = { state: "NONE", as_of: "2026-10-19T00:00:00Z" };
+    render();
+    expect(container.textContent).not.toContain("Get my account number");
   });
 });
