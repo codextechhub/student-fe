@@ -35,8 +35,8 @@ export function PayPage() {
   return (
     <PageShell className="pay-page">
       <div className="pay-wrap">
+        <h1 className="sr-only">Pay a bill</h1>
         <Link to="/fees" className="pay-back"><ArrowLeft size={17} aria-hidden="true" />My fees</Link>
-        <header className="pay-heading"><p>{invoice?.title ?? "School bill"}</p><h1>Choose a way to pay your school bill.</h1></header>
         {isLoading && !fees && <div className="pay-loading" role="status" aria-label="Loading bill" />}
         {fees && !invoice && <Note>This bill isn&apos;t on your account.</Note>}
         {fees && invoice && (
@@ -47,7 +47,7 @@ export function PayPage() {
             </div>
             <div className="pay-detail">
               {!fees.can_pay ? <Note>Your school doesn&apos;t take payments from pupils here. Ask your parent or guardian to pay.</Note> : invoice.balance <= 0 ? <Note>This bill is fully paid. Thank you.</Note> : offline ? <Note>You&apos;re offline. You can pay when you&apos;re back online.</Note> : <>
-                <div className="pay-section-heading"><h2>How would you like to pay?</h2><p>Choose one method to continue</p></div>
+                <div className="pay-section-heading"><h2>How would you like to pay?</h2></div>
                 <div className="pay-methods" role="radiogroup" aria-label="How would you like to pay?">
                   <MethodButton active={method === "card"} onClick={() => setMethod("card")} icon={<CreditCard size={19} />} label="Card" description="Secure checkout" />
                   <MethodButton active={method === "transfer"} onClick={() => setMethod("transfer")} icon={<Building2 size={19} />} label="Bank transfer" description="Pay from any bank" />
@@ -100,7 +100,7 @@ function CardPayment({ fees, invoice }: { fees: Fees; invoice: Invoice }) {
   };
 
   return <section className="pay-card-panel">
-    <h3>How much will you pay?</h3><p className="pay-panel-intro">Start with the full balance, or choose a part payment.</p>
+    <h3>How much will you pay?</h3>
     <div className="pay-amount-options" role="radiogroup" aria-label="How much">
       <MethodButton active={mode === "full"} onClick={() => { setMode("full"); setError(""); }} icon={<span className="pay-amount-icon">{formatNaira(invoice.balance)}</span>} label="Pay in full" />
       <MethodButton active={mode === "part"} onClick={() => { setMode("part"); setError(""); }} icon={<span className="pay-amount-icon">Choose an amount</span>} label="Part payment" />

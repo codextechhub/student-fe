@@ -16,7 +16,6 @@ const GIVE_UP_AFTER_MS = 3 * 60_000;
 type Detail = { label: string; value: string; emphasis?: "money" | "positive" };
 type Tone = "confirmed" | "pending" | "failed" | "neutral";
 type Outcome = {
-  tagline: string;
   chip: string;
   icon: ReactNode;
   title: string;
@@ -64,8 +63,8 @@ export function PaidPage() {
   const outcome = describeOutcome({ reference, status, feesBalance: fees?.balance, receiptRef, gaveUp, isError: !!isError });
 
   return <PageShell className="paid-page"><div className="paid-wrap">
+    <h1 className="sr-only">Payment status</h1>
     <Link to="/fees" className="paid-back"><ArrowLeft size={17} aria-hidden="true" />My fees</Link>
-    <header className="paid-heading"><p>Card payment</p><h1>{outcome.tagline}</h1></header>
     <div className="paid-layout">
       <section className="paid-cover" aria-labelledby="paid-outcome-title" role="status">
         <div className="paid-cover-top"><span>Payment update</span><span className="paid-status-chip">{outcome.chip}</span></div>
@@ -102,7 +101,6 @@ function describeOutcome({ reference, status, feesBalance, receiptRef, gaveUp, i
   isError: boolean;
 }): Outcome {
   if (!reference) return {
-    tagline: "Check your fees for an update.",
     chip: "No reference",
     icon: <Clock3 size={36} />,
     title: "Thank you",
@@ -120,7 +118,6 @@ function describeOutcome({ reference, status, feesBalance, receiptRef, gaveUp, i
   ];
 
   if (!status) return {
-    tagline: "We are checking with the bank.",
     chip: isError ? "Check unavailable" : "Checking",
     icon: isError ? <CircleAlert size={36} /> : <Clock3 size={36} />,
     title: isError ? "Could not check yet" : "Checking your payment",
@@ -141,7 +138,6 @@ function describeOutcome({ reference, status, feesBalance, receiptRef, gaveUp, i
       ? " Your balance is now " + formatNaira(feesBalance) + "."
       : feesBalance < 0 ? " You have " + formatNaira(-feesBalance) + " in credit." : " Your fees are fully paid.";
     return {
-      tagline: "Your payment is complete.",
       chip: "Confirmed",
       icon: <Check size={36} />,
       title: "Payment received",
@@ -156,7 +152,6 @@ function describeOutcome({ reference, status, feesBalance, receiptRef, gaveUp, i
   }
 
   if (status.status === "PENDING") return {
-    tagline: gaveUp ? "The bank is taking longer." : "We are checking with the bank.",
     chip: gaveUp ? "Still confirming" : "Confirming",
     icon: <Clock3 size={36} />,
     title: gaveUp ? "Still checking" : "Almost there",
@@ -169,7 +164,6 @@ function describeOutcome({ reference, status, feesBalance, receiptRef, gaveUp, i
   };
 
   return {
-    tagline: "This payment was not completed.",
     chip: "Not completed",
     icon: <X size={36} />,
     title: status.status === "ABANDONED" ? "Payment was cancelled" : "Payment did not go through",
