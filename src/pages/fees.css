@@ -118,3 +118,87 @@
 .fees-pager button:focus-visible { outline: 3px solid #7895c5; outline-offset: 2px; }
 .fees-pager-ellipsis { padding: 0 2px; color: #8d9cb0; font-size: 12px; }
 @media (max-width: 520px) { .fees-pager { justify-content: center; padding: 10px; } .fees-pager-count { width: 100%; text-align: center; } }
+
+/* Student fees arrangement: one balance, compact bill rows, supporting details on demand. */
+.fees-page .fees-wrap { width: min(100%, 850px); }
+.fees-layout.fees-simple-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.fees-hero.fees-simple-hero {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  min-width: 0; padding: 27px 30px; border-radius: 21px; background: #2d4778;
+  box-shadow: 0 16px 34px #1b356d1f;
+}
+.fees-simple-hero::before, .fees-simple-hero::after { display: none; }
+.fees-simple-hero .fees-hero-label { color: #d8e4f7; font-size: 13px; }
+.fees-simple-hero .fees-hero-value { margin-top: 6px; font-size: clamp(35px, 5vw, 46px); font-weight: 700; }
+.fees-simple-due { margin: 9px 0 0; color: #dbe6f7; font-size: 13px; }
+.fees-simple-hero-note { flex: none; width: 225px; padding: 13px 15px; border: 1px solid #ffffff36; border-radius: 12px; background: #ffffff17; }
+.fees-simple-hero-note strong, .fees-simple-hero-note span { display: block; font-size: 12px; }
+.fees-simple-hero-note span { margin-top: 4px; color: #dbe6f7; line-height: 1.4; }
+.fees-page .fees-guardian { margin-top: 15px; padding: 14px 16px; border-radius: 14px; }
+.fees-page .fees-guardian p { font-size: 13px; }
+.fees-simple-detail-top { margin: 34px 0 13px; }
+.fees-simple-detail-top .fees-section-heading { margin: 0; }
+.fees-simple-detail-top .fees-section-heading h2 { font-size: 21px; }
+.fees-simple-detail-top .fees-section-heading p { margin-top: 4px; }
+.fees-invoices.fees-simple-items { display: block; overflow: hidden; margin: 0; padding: 0; border: 1px solid #e3e9f2; border-radius: 19px; background: #fff; box-shadow: 0 8px 24px #2638590c; }
+.fees-simple-items .fees-invoice { overflow: visible; border: 0; border-radius: 0; box-shadow: none; }
+.fees-simple-items .fees-invoice + .fees-invoice { border-top: 1px solid #e9edf4; }
+.fees-bill-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; min-height: 94px; padding: 17px 21px; }
+.fees-bill-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: #e9eef9; color: #4a659d; }
+.fees-charge .fees-bill-icon { background: #f8efe2; color: #a77232; }
+.fees-bill-row .fees-invoice-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.fees-bill-row .fees-invoice-title small { color: #75849c; }
+.fees-bill-balance { text-align: right; white-space: nowrap; }
+.fees-bill-balance strong, .fees-bill-balance small { display: block; }
+.fees-bill-balance strong { color: #223153; font-size: 18px; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.fees-bill-balance small { margin-top: 3px; color: #9b6527; font-size: 12px; font-weight: 650; }
+.fees-bill-balance.is-clear strong, .fees-bill-balance.is-clear small { color: #227956; }
+.fees-bill-actions { display: flex; align-items: center; gap: 8px; }
+.fees-bill-pay, .fees-simple-items .fees-invoice-toggle {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  width: auto; min-height: 40px; margin: 0; padding: 9px 12px; border-radius: 10px;
+  font-size: 13px; font-weight: 700; white-space: nowrap; text-decoration: none;
+}
+.fees-bill-pay { border: 1px solid #4a659d; background: #4a659d; color: white; }
+.fees-bill-pay:hover { background: #3a5389; }
+.fees-simple-items .fees-invoice-toggle { border: 1px solid #dce4ef; background: white; color: #405d91; }
+.fees-simple-items .fees-invoice-toggle:hover { background: #f4f7fc; }
+.fees-simple-items .fees-invoice-toggle svg { color: inherit; transition: transform .2s; }
+.fees-simple-items .fees-invoice-toggle svg.is-open { transform: rotate(180deg); }
+.fees-simple-items .fees-invoice-detail { margin: 0 21px 19px 77px; padding: 12px 0 0; border-top: 1px solid #e9edf4; }
+.fees-invoice-detail[hidden], .fees-secondary-panel[hidden] { display: none; }
+.fees-simple-items .fees-invoice-line { margin-top: 9px; }
+.fees-simple-items .fees-invoice-line.is-total { margin-top: 12px; }
+.fees-simple-items .fees-invoice-note { margin: 13px 0 0; font-weight: 600; line-height: 1.45; }
+.fees-detail-pay, .fees-transfer-reveal { display: inline-flex; margin-top: 13px; padding: 0; border: 0; background: none; color: #405d91; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.fees-secondary-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 25px; }
+.fees-secondary-button { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; min-height: 72px; padding: 16px 18px; border: 1px solid #e3e9f2; border-radius: 15px; background: white; color: #243654; text-align: left; box-shadow: 0 7px 20px #2638590a; cursor: pointer; }
+.fees-secondary-button:hover, .fees-secondary-button[aria-expanded="true"] { border-color: #aebfdf; }
+.fees-secondary-button strong, .fees-secondary-button small { display: block; }
+.fees-secondary-button strong { font-size: 14px; font-weight: 700; }
+.fees-secondary-button small { margin-top: 4px; color: #75849c; font-size: 12px; }
+.fees-secondary-button svg { flex: none; color: #4a659d; transition: transform .2s; }
+.fees-secondary-button svg.is-open { transform: rotate(180deg); }
+.fees-secondary-panel { min-width: 0; margin-top: 12px; padding: 19px 21px; border: 1px solid #e3e9f2; border-radius: 15px; background: #fff; }
+.fees-secondary-panel h2 { margin: 0 0 6px; color: #243654; font-size: 16px; font-weight: 700; }
+.fees-secondary-panel > p { margin: 0 0 12px; color: #75849c; font-size: 13px; }
+.fees-secondary-panel .fees-history { padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+.fees-secondary-panel .fees-empty { padding: 14px 0; text-align: left; }
+.fees-secondary-panel .student-transfer-card, .fees-secondary-panel .fees-get-account { border: 0; padding: 0; box-shadow: none; }
+.fees-secondary-panel .student-transfer-label { margin-top: 10px; }
+.fees-bill-pay:focus-visible, .fees-detail-pay:focus-visible, .fees-transfer-reveal:focus-visible, .fees-secondary-button:focus-visible { outline: 3px solid #7895c5; outline-offset: 3px; }
+@media (max-width: 700px) {
+  .fees-hero.fees-simple-hero { display: block; padding: 23px; }
+  .fees-simple-hero-note { width: auto; margin-top: 20px; }
+  .fees-bill-row { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; padding: 16px; }
+  .fees-bill-actions { grid-column: 2 / -1; }
+  .fees-bill-balance { grid-column: 3; grid-row: 1; }
+  .fees-simple-items .fees-invoice-detail { margin: 0 16px 18px 70px; }
+}
+@media (max-width: 480px) {
+  .fees-secondary-actions { grid-template-columns: 1fr; gap: 9px; }
+  .fees-simple-detail-top .fees-section-heading p { max-width: 155px; }
+  .fees-bill-balance strong { font-size: 16px; }
+  .fees-bill-row .fees-invoice-title strong { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .fees-simple-items .fees-invoice-toggle svg, .fees-secondary-button svg { transition: none; } }

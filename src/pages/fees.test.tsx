@@ -81,13 +81,14 @@ describe("fees account number", () => {
       { invoice_ref: 2, number: "IV-2", title: "Second Term", due_date: null, lines: [], total: 50_000, paid: 50_000, balance: 0, status: "PAID", status_label: "Paid" },
     ];
     render();
+    act(() => (container.querySelector('button[aria-controls="fees-transfer-account"]') as HTMLButtonElement).click());
     expect(container.textContent).toContain("Your account number");
     expect(container.textContent).toContain("Amaka Balogun's account");
     expect(container.textContent).toContain("0123456789");
     expect(container.textContent).toContain("Bank account name: TEST-MANAGED-ACCOUNT");
     expect(container.textContent).toContain("First Term");
     expect(container.textContent).toContain("Second Term");
-    expect(container.textContent).not.toContain("Pay balance");
+    expect(container.textContent).not.toContain("Pay bill");
   });
 
   it("does not show an account number until one has been issued", () => {
@@ -109,10 +110,11 @@ describe("fees account number", () => {
     mocks.invoices = [{ invoice_ref: 3, number: "IV-3", title: "Third Term", due_date: null, lines: [], total: 100_000, paid: 50_000, balance: 50_000, status: "PARTIAL", status_label: "Part paid" }];
     render();
     expect(container.textContent).toContain("Third Term");
-    expect(container.textContent).not.toContain("Pay balance");
+    expect(container.textContent).not.toContain("Pay bill");
   });
 
   it("filters bills by year and balance without changing the account total", () => {
+    mocks.balance = 50_000;
     mocks.invoices = [
       { invoice_ref: 1, number: "IV-1", title: "Old paid bill", invoice_date: "2024-09-01", due_date: null, lines: [], total: 50_000, paid: 50_000, balance: 0, status: "PAID", status_label: "Paid" },
       { invoice_ref: 2, number: "IV-2", title: "Current unpaid bill", invoice_date: "2026-09-01", due_date: null, lines: [], total: 50_000, paid: 0, balance: 50_000, status: "DUE", status_label: "Due" },
@@ -125,7 +127,7 @@ describe("fees account number", () => {
     expect(container.querySelector(".fees-invoices")?.textContent).not.toContain("Current unpaid bill");
     act(() => { status.value = "due"; status.dispatchEvent(new Event("change", { bubbles: true })); });
     expect(container.textContent).toContain("No bills match these filters.");
-    expect(container.querySelector(".fees-stats")?.textContent).toContain("₦1,000.00");
+    expect(container.querySelector(".fees-hero-value")?.textContent).toContain("₦500.00");
   });
 
   it("lists a charge added after the bill, so the balance it makes up can be found", () => {
@@ -135,6 +137,8 @@ describe("fees account number", () => {
     render();
     const bills = container.querySelector(".fees-invoices")!;
     expect(bills.textContent).toContain("Science practical");
+    expect(bills.querySelector('[aria-controls="fees-charge-9"]')?.getAttribute("aria-expanded")).toBe("false");
+    act(() => (bills.querySelector('[aria-controls="fees-charge-9"]') as HTMLButtonElement).click());
     expect(bills.textContent).toContain("DN-4");
     expect(bills.querySelector('[aria-controls="fees-charge-9"]')?.getAttribute("aria-expanded")).toBe("true");
     expect(bills.textContent).toContain("₦7,000.00");
@@ -157,10 +161,10 @@ describe("fees account number", () => {
 
     render();
 
-    expect([...container.querySelectorAll(".fees-invoice-toggle .fees-invoice-title strong")].map((title) => title.textContent)).toEqual([
+    expect([...container.querySelectorAll(".fees-bill-row .fees-invoice-title strong")].map((title) => title.textContent)).toEqual([
       "Practical charge", "Earlier unpaid bill", "Later unpaid bill", "New paid bill", "Old paid bill",
     ]);
-    expect(container.querySelector(".fees-invoice-toggle")?.getAttribute("aria-expanded")).toBe("true");
+    expect(container.querySelector(".fees-invoice-toggle")?.getAttribute("aria-expanded")).toBe("false");
   });
 
   it("changes bill pages without paging payment history", () => {
@@ -176,6 +180,7 @@ describe("fees account number", () => {
 
     expect(container.querySelector(".fees-invoices")?.textContent).toContain("Bill 3");
     expect(container.querySelector(".fees-invoices")?.textContent).not.toContain("Bill 1");
+    act(() => (container.querySelector('button[aria-controls="fees-payment-history"]') as HTMLButtonElement).click());
     expect(container.querySelector(".fees-history")?.textContent).toContain("₦100.00");
     expect(container.querySelector('button[aria-label="Next school bills page"]')?.hasAttribute("disabled")).toBe(true);
   });
@@ -183,6 +188,7 @@ describe("fees account number", () => {
   it("pages payment history independently", () => {
     mocks.payments = Array.from({ length: 11 }, (_, index) => ({ reference: `P${index}`, amount: 10_000 + index * 100, status: "CONFIRMED", status_label: "Confirmed", method_label: "Card", paid_on: "2026-01-01", payer_name: "", source_label: "", has_receipt: false, payment_ref: null }));
     render();
+    act(() => (container.querySelector('button[aria-controls="fees-payment-history"]') as HTMLButtonElement).click());
     expect(container.querySelectorAll(".fees-payment")).toHaveLength(10);
     expect(container.querySelector('nav[aria-label="Payment history pages"]')?.textContent).toContain("1–10 of 11");
 
@@ -202,8 +208,10 @@ describe("fees account number", () => {
     mocks.balance = 150_000;
     mocks.charges = [{ note_ref: 4, number: "DN-1", date: "2026-10-19", reason: "Replacement ID Card", total: 150_000, paid: 0, balance: 150_000, status: "UNPAID", status_label: "Owing" }];
     render();
+    act(() => (container.querySelector('button[aria-controls="fees-charge-4"]') as HTMLButtonElement).click());
+    act(() => (container.querySelector('button[aria-controls="fees-transfer-account"]') as HTMLButtonElement).click());
     expect(container.textContent).toContain("Get my account number");
-    expect(container.textContent).toContain("Get your account number under Pay by transfer");
+    expect(container.textContent).toContain("Open Bank transfer account below to get your account number");
     expect(container.textContent).not.toContain("Ask the school office");
   });
 
@@ -212,6 +220,7 @@ describe("fees account number", () => {
     mocks.balance = 150_000;
     mocks.charges = [{ note_ref: 4, number: "DN-1", date: "2026-10-19", reason: "Replacement ID Card", total: 150_000, paid: 0, balance: 150_000, status: "UNPAID", status_label: "Owing" }];
     render();
+    act(() => (container.querySelector('button[aria-controls="fees-charge-4"]') as HTMLButtonElement).click());
     expect(container.textContent).toContain("Ask the school office how to pay this charge.");
     expect(container.textContent).not.toContain("Get my account number");
   });
