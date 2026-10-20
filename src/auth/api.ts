@@ -59,3 +59,21 @@ export function withTenant(path: string): string {
   if (!slug || /[?&]tenant=/.test(path)) return path;
   return `${path}${path.includes("?") ? "&" : "?"}tenant=${encodeURIComponent(slug)}`;
 }
+
+/**
+ * A file address as the API serves it.
+ *
+ * The API answers a stored file (a crest, a photograph) as `/media/...`, a
+ * path on its own host, which is not this app's host in a build. A path is
+ * therefore read against the API's origin, and a full address is kept.
+ */
+export function apiAddress(url: string): string {
+  const api = new URL(API_BASE || "/", window.location.origin);
+  return new URL(url, api.origin).href;
+}
+
+/** Whether `url` is a file the API stores, which it serves only to a signed-in reader. */
+export function isStoredFile(url: string): boolean {
+  if (!url || url.startsWith("blob:") || url.startsWith("data:")) return false;
+  return new URL(apiAddress(url)).pathname.startsWith("/media/");
+}

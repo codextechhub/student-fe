@@ -1,3 +1,5 @@
+import { apiAddress } from "@/auth/api";
+
 import { baseApi } from "./base-api";
 import type { ReportCard } from "./report-card-types";
 
@@ -523,14 +525,15 @@ export const portalApi = baseApi.injectEndpoints({
       invalidatesTags: ["Profile", "Me"],
     }),
     /**
-     * A picture the API serves only to the signed-in pupil (their photograph),
-     * fetched with their token and shown from a local `blob:` address, because
-     * an `<img>` cannot send the token itself.
+     * A picture the API serves only to a signed-in reader (the pupil's
+     * photograph, the school's crest), fetched with the pupil's token and shown
+     * from a local `blob:` address, because an `<img>` cannot send the token
+     * itself.
      */
     authImage: build.query<string, string>({
       queryFn: async (url, _api, _extra, baseQuery) => {
         const result = await baseQuery({
-          url: new URL(url, window.location.origin).href,
+          url: apiAddress(url),
           responseHandler: async (r) => (r.ok ? r.blob() : r.text()),
         });
         if (result.error) return { error: result.error };
