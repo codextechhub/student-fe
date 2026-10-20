@@ -174,18 +174,18 @@ describe("once the app is installed, neither the card nor the row shows", () => 
 });
 
 describe("the card", () => {
-  it("names the app by the school's short name from its manifest", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ name: "Meridian College", short_name: "Meridian", icons: [] }))));
+  it("names the app after the school, as it shows under the icon", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ name: "Meridian College Student", short_name: "Meridian Student", school_name: "Meridian College", icons: [] }))));
     const m = await load();
     await (await import("@/lib/school-app")).applySchoolApp();
     m.render(m.React.createElement(m.offer.InstallOffer));
-    expect(m.text()).toContain("To install Meridian, use your browser's menu");
+    expect(m.text()).toContain("To install Meridian Student, use your browser's menu");
   });
 
   it("falls back to the school's name, as it shows under the icon, before the manifest is read", async () => {
     const m = await load();
     m.render(m.React.createElement(m.offer.InstallOffer));
-    expect(m.text()).toContain("To install Meridian, use your browser's menu");
+    expect(m.text()).toContain("To install Meridian Student, use your browser's menu");
   });
 
   it("offers Install with Chrome's prompt, and goes for good once accepted", async () => {
