@@ -1,7 +1,7 @@
 import { Home } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
-import { itemFor, splitTabs, type NavItem } from "./nav";
+import { itemFor, NAV, splitTabs, type NavItem } from "./nav";
 
 const item = (label: string, onBar = false): NavItem => ({ key: "home", label, path: `/${label}`, icon: Home, onBar });
 
@@ -21,7 +21,15 @@ describe("the tab bar", () => {
     expect(more.map((t) => t.label)).toEqual(["Attendance", "Notices", "Profile"]);
   });
 
+  it("keeps Messages under More, beside Notices, so the bar keeps the four most used", () => {
+    const { tabs, more } = splitTabs(NAV);
+    expect(tabs.map((t) => t.key)).toEqual(["home", "timetable", "results", "fees"]);
+    expect(more.map((t) => t.key)).toContain("messages");
+  });
+
   it("names the screen a path belongs to", () => {
+    expect(itemFor("/messages/41")?.key).toBe("messages");
+    expect(itemFor("/messages/new")?.key).toBe("messages");
     expect(itemFor("/notices/12")?.key).toBe("notices");
     expect(itemFor("/")?.key).toBe("home");
     expect(itemFor("/timetable")?.key).toBe("timetable");

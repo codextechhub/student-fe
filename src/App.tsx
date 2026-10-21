@@ -8,6 +8,7 @@ import { UpdateBar } from "@/components/update-bar";
 import { AttendancePage } from "@/pages/attendance";
 import { FeesPage } from "@/pages/fees";
 import { HomePage } from "@/pages/home";
+import { MessagesPage } from "@/pages/messages";
 import { NoticesPage } from "@/pages/notices";
 import { NotFoundPage } from "@/pages/not-found";
 import { PaidPage } from "@/pages/paid";
@@ -52,6 +53,9 @@ export default function App() {
             <Route path="fees/receipts/:paymentRef" element={<ReceiptPage />} />
             <Route path="notices" element={<NoticesPage />} />
             <Route path="notices/:id" element={<NoticesPage />} />
+            <Route path="messages" element={<MessagesPage />} />
+            <Route path="messages/new" element={<MessagesPage />} />
+            <Route path="messages/:id" element={<MessagesPage />} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />

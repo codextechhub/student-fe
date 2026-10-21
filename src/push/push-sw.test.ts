@@ -53,7 +53,7 @@ describe("a push arriving", () => {
       renotify: true,
       icon: "/student/icons/icon-192.png",
       badge: "/student/icons/badge-96.png",
-      data: { tag: "gradebook.result_released", account: "a-femi", notificationId: "812" },
+      data: { tag: "gradebook.result_released", account: "a-femi", notificationId: "812", url: "/student/" },
     }));
   });
 });
@@ -91,5 +91,27 @@ describe("a tap on the notification", () => {
     expect(await opened("notices.published")).toBe("/student/notices");
     expect(await opened("billing.payment_received")).toBe("/student/fees");
     expect(await opened("something.else")).toBe("/student/");
+  });
+
+  it("opens the conversation a message push names, and Messages when it names none", async () => {
+    const opened = async (data: Record<string, string>) => {
+      const { self, listeners } = loadWorker([]);
+      await fire(listeners.notificationclick, { notification: { data: { tag: "messages.new_message_pupil", account: "", ...data }, close: vi.fn() } });
+      return self.clients.openWindow.mock.calls[0]?.[0];
+    };
+    expect(await opened({ url: "/student/messages/41" })).toBe("/student/messages/41");
+    expect(await opened({ url: "/student/messages" })).toBe("/student/messages");
+    expect(await opened({})).toBe("/student/messages");
+  });
+
+  it("never opens a message address outside the app or beyond one conversation", async () => {
+    const opened = async (url: string) => {
+      const { self, listeners } = loadWorker([]);
+      await fire(listeners.notificationclick, { notification: { data: { tag: "messages.new_message_pupil", account: "", url }, close: vi.fn() } });
+      return self.clients.openWindow.mock.calls[0]?.[0];
+    };
+    expect(await opened("https://evil.example/student/messages/1")).toBe("/student/messages");
+    expect(await opened("/parent/messages/1")).toBe("/student/messages");
+    expect(await opened("/student/messages/1/../../fees")).toBe("/student/messages");
   });
 });

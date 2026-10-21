@@ -6,6 +6,7 @@ import { wipePupil, keepAnswer, keptAnswer, resetOfflineCopyForTests } from "@/o
 import { connectivityReducer } from "@/redux/features/connectivity-slice";
 import { sessionReducer } from "@/redux/features/session-slice";
 import { baseApi } from "@/redux/services/base-api";
+import { messagesApi } from "@/redux/services/messages-api";
 
 import { accessFor, dropAccess } from "./access-tokens";
 import { pushChoiceFor, setPushChoice } from "@/push/push-choice";
@@ -47,8 +48,9 @@ function meAnswer(token: string) {
 }
 
 /** Routes the session calls; `ended` lists accounts whose refresh is refused for good. */
-function api(ended: string[] = []) {
+function api(ended: string[] = [], more: Parameters<typeof routeFetch>[0] = {}) {
   const routed = routeFetch({
+    ...more,
     "POST /user/auth/device/refresh/": (body) => {
       const account = (body as { account: string }).account;
       return ended.includes(account)
@@ -192,6 +194,48 @@ describe("switching and signing out", () => {
     // bookkeeping after a reset is allowed.)
     const between = seen.slice(reset + 1, shown).map((a) => a.type);
     expect(between.filter((type) => /execute(Query|Mutation)/.test(type))).toEqual([]);
+  });
+
+  it("throws away the messages the last pupil read before the next pupil is showing", async () => {
+    const conversations = {
+      success: true,
+      data: [{ id: 41, display_name: "Mrs Okoro", counterpart: { user_id: 9, name: "Mrs Okoro", label: "Mathematics" } }],
+      pagination: { currentPage: 1, totalPages: 1 },
+      unread_count: 1,
+      oversight_notice: "Your parent or guardian and the school can read your messages.",
+    };
+    api([], {
+      "GET /portal/student/messages/conversations/": { status: 200, body: conversations },
+      "GET /portal/student/messages/unread-count/": { status: 200, body: { data: { total: 1 } } },
+    });
+    await putPupil(pupil("a-ebere"));
+    await putPupil(pupil("a-femi"));
+    await setActiveAccount("a-ebere");
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    await store.dispatch(messagesApi.endpoints.conversations.initiate(1));
+    await store.dispatch(messagesApi.endpoints.unreadMessages.initiate());
+    expect(JSON.stringify(store.getState().api.queries)).toContain("Mrs Okoro");
+
+    // What a screen would draw the instant Femi is the pupil showing.
+    let atSwitch: string | null = null;
+    const unsubscribe = store.subscribe(() => {
+      if (atSwitch === null && store.getState().session.active === "a-femi") {
+        atSwitch = JSON.stringify(store.getState().api.queries);
+      }
+    });
+    await store.dispatch(switchPupil("a-femi"));
+    unsubscribe();
+    expect(atSwitch).not.toBeNull();
+    expect(atSwitch).not.toContain("Okoro");
+    expect(atSwitch).not.toContain("messages");
+
+    // Ebere's last-read copy is hers alone; Femi has none, and signing her out wipes it.
+    const address = "/portal/student/messages/conversations/?page=1";
+    await vi.waitFor(async () => expect(await keptAnswer("a-ebere", address)).not.toBeNull());
+    expect(await keptAnswer("a-femi", address)).toBeNull();
+    await store.dispatch(signOutPupil("a-ebere"));
+    expect(await keptAnswer("a-ebere", address)).toBeNull();
   });
 
   it("drops an answer that arrives after the pupil showing changed", async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatClock, formatDate, formatLongDate, formatNaira, formatTimeOfDay } from "./format";
+import { dayKey, formatClock, formatDate, formatDayLabel, formatLongDate, formatNaira, formatTimeOfDay, formatWhen } from "./format";
 
 describe("formatting", () => {
   it("writes kobo as naira with two decimals", () => {
@@ -35,5 +35,26 @@ describe("reading a typed amount", () => {
     expect(parseNaira("0")).toBeNull();
     expect(parseNaira("12.345")).toBeNull();
     expect(parseNaira("abc")).toBeNull();
+  });
+});
+
+describe("writing when a message was sent", () => {
+  const now = new Date(2026, 9, 21, 15, 0);
+  const at = (day: number, hour = 9, minute = 5) => new Date(2026, 9, day, hour, minute).toISOString();
+
+  it("gives the time today, Yesterday, the weekday this week and the date after that", () => {
+    expect(formatWhen(at(21, 7, 12), now)).toBe("7:12am");
+    expect(formatWhen(at(20), now)).toBe("Yesterday");
+    expect(formatWhen(at(17), now)).toBe("Sat");
+    expect(formatWhen(at(10), now)).toBe("10 Oct 2026");
+    expect(formatWhen("not a date", now)).toBe("");
+  });
+
+  it("labels a day in a thread and groups by the reader's day", () => {
+    expect(formatDayLabel(at(21), now)).toBe("Today");
+    expect(formatDayLabel(at(20), now)).toBe("Yesterday");
+    expect(formatDayLabel(at(3), now)).toBe("3 Oct 2026");
+    expect(dayKey(at(21, 1))).toBe(dayKey(at(21, 23)));
+    expect(dayKey(at(21))).not.toBe(dayKey(at(20)));
   });
 });

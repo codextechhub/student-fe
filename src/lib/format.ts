@@ -59,6 +59,48 @@ export function formatTimeOfDay(at: number): string {
   return `${hours % 12 || 12}:${minutes}${hours < 12 ? "am" : "pm"}`;
 }
 
+const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Midnight at the start of the reader's day for `at`. */
+function dayStart(at: Date): number {
+  return new Date(at.getFullYear(), at.getMonth(), at.getDate()).getTime();
+}
+
+/** Whole calendar days from `then` to `now` on the reader's own calendar. */
+function daysBetween(then: Date, now: Date): number {
+  return Math.round((dayStart(now) - dayStart(then)) / 86_400_000);
+}
+
+/**
+ * When a message was sent, for a list row: the time today, "Yesterday", the
+ * weekday within the last week, else the date.
+ */
+export function formatWhen(value: string, now: Date = new Date()): string {
+  const at = new Date(value);
+  if (Number.isNaN(at.getTime())) return "";
+  const days = daysBetween(at, now);
+  if (days <= 0) return formatTimeOfDay(at.getTime());
+  if (days === 1) return "Yesterday";
+  if (days < 7) return SHORT_WEEKDAYS[at.getDay()];
+  return formatTimestampDate(value);
+}
+
+/** The heading over one day's messages in a thread: "Today", "Yesterday" or the date. */
+export function formatDayLabel(value: string, now: Date = new Date()): string {
+  const at = new Date(value);
+  if (Number.isNaN(at.getTime())) return "";
+  const days = daysBetween(at, now);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return formatTimestampDate(value);
+}
+
+/** The reader's calendar day of a timestamp, as a key for grouping a thread by day. */
+export function dayKey(value: string): string {
+  const at = new Date(value);
+  return Number.isNaN(at.getTime()) ? "" : `${at.getFullYear()}-${at.getMonth()}-${at.getDate()}`;
+}
+
 /**
  * A typed naira amount in kobo: "20,000", "₦20,000.50" or "20000" all read;
  * anything that is not a positive amount with at most two decimals is null.

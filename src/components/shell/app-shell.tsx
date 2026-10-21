@@ -8,12 +8,16 @@ import { SchoolMark } from "@/components/school-mark";
 import { PupilSwitcher } from "@/components/session/pupil-switcher";
 import { cn } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
+import { useUnreadMessagesQuery } from "@/redux/services/messages-api";
 import { useMeQuery, useNoticesQuery } from "@/redux/services/portal-api";
 
 import { itemFor, NAV, splitTabs, type NavItem } from "./nav";
 import { OfflineBar } from "./offline-bar";
 import { PullToRefresh } from "./pull-to-refresh";
 import "./app-shell.css";
+
+/** How often the Messages badge asks the school for the unread count, in milliseconds. */
+const MESSAGE_BADGE_POLL_MS = 60_000;
 
 /**
  * The frame every signed-in screen sits in.
@@ -40,9 +44,16 @@ export function AppShell() {
   }, [me, dispatch]);
   const { data: noticePage } = useNoticesQuery(1);
   const unread = noticePage?.unreadCount ?? 0;
+  // The Messages badge: read again every minute and whenever the app comes back into view.
+  const { data: unreadMessages = 0 } = useUnreadMessagesQuery(undefined, {
+    pollingInterval: MESSAGE_BADGE_POLL_MS,
+    skipPollingIfUnfocused: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
   const current = itemFor(pathname);
-  const onDesignPage = pathname === "/" || pathname === "/timetable" || pathname.startsWith("/results") || pathname === "/attendance" || pathname === "/profile" || pathname.startsWith("/fees") || pathname.startsWith("/notices");
-  const badges: Partial<Record<NavItem["key"], number>> = { notices: unread };
+  const onDesignPage = pathname === "/" || pathname === "/timetable" || pathname.startsWith("/results") || pathname === "/attendance" || pathname === "/profile" || pathname.startsWith("/fees") || pathname.startsWith("/notices") || pathname.startsWith("/messages");
+  const badges: Partial<Record<NavItem["key"], number>> = { notices: unread, messages: unreadMessages };
   const where = [me?.school.name, me?.show_branch ? me?.branch?.name : null].filter(Boolean).join(" · ");
   const screenTitle = pathname.startsWith("/results/card/") ? "Report card" : pathname.startsWith("/fees/receipts/") ? "Payment receipt" : pathname.startsWith("/fees/pay/") ? "Pay a bill" : pathname === "/fees/paid" ? "Payment status" : current?.key === "fees" ? "My fees" : current?.key === "attendance" ? "My attendance" : current?.key === "timetable" ? "My timetable" : current?.key === "results" ? "My results" : current?.key === "profile" ? "My profile" : current?.label ?? "";
 

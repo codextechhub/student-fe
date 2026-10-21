@@ -40,7 +40,8 @@ the backend documents win: they record the owner's later decisions.
    pill above the bottom edge with the screen showing raised inside it, More
    once there are too many tabs. Content may still use two panes where they
    help (notices, fees) on wide screens.
-10. Messages and Assignments are not built, and are hidden.
+10. Assignments are not built, and are hidden. Messages were hidden until
+    the backend's Messaging module shipped (Phase 8, 21 October 2026).
 11. **Paying offers two choices, Card and Bank transfer.** Card goes to
     Paystack's own page (OPay is only what Paystack offers there) and comes
     back to the app. Bank transfer shows the pupil's **permanent** account
@@ -574,9 +575,63 @@ start is named at once, offline too. The sign-in heading is the school's full
 name. An address that names no school stays XVS Student. An iPhone install
 made before this keeps its old label until it is added again.
 
-### Parked: Messages and Assignments
+### Phase 8: Messages
 
-No module owns them. When the owner calls for them, each starts from its own
+The pupil's messages with their teachers and the school office, built against
+the Messaging module's API (`backend/docs/messaging/messaging-design.md`,
+sections 1, 2, 5, 9.5, 11 and 14).
+
+- **Where it sits:** Messages is a nav item under More, beside Notices; the
+  bar keeps Home, Timetable, Results and Fees. The More tab carries the
+  unread count with the notices' count, and Messages its own. The count is
+  read from `unread-count/` every minute while the app is in view and again
+  whenever it comes back into view or back online.
+- **Routes:** `messages`, `messages/new` and `messages/:id`. A push for a
+  message opens `/student/messages/<id>`: the worker takes the push's own
+  address, and only for that kind of push and only when it names one
+  conversation inside the app.
+- **The list:** the school's notice that a parent or guardian and the school
+  can read these messages sits above the rows, in plain type, and the new
+  message sheet repeats it. Each row is the teacher's name and label
+  ("Mathematics", "Class teacher, JSS1 A", "School office"), the last
+  message, the time and an unread count. On a phone the list and a thread take
+  the screen in turn; from 800px they sit side by side.
+- **A thread:** oldest to newest under day headings, earlier messages loaded
+  with the oldest message held as the cursor, marked read on opening and again
+  when something new arrives while it is open. The newest page is read every 20
+  seconds while the thread is open and in view. The box takes up to 4,000
+  characters (a longer message is flagged, never cut) and Send waits for words.
+  Where the pupil can no longer write, the school's `read_only_reason` stands
+  where the box would be.
+- **One send, one message:** every send carries a `client_token`, kept with
+  the words, so a double tap or a retry after a dropped connection reuses it
+  and the school stores the message once; new words get a new token.
+- **New message:** a sheet over the list, rising from the bottom on a phone
+  and centred on a wide screen, the teachers in the school's order (class
+  teacher first, the office last) and the box beneath them, which stays in
+  reach however many teachers there are. When the school has switched pupil
+  messaging off the sheet gives its sentence and no box. Sending opens the
+  conversation, whether it is new or already existed.
+- **Several pupils, one phone:** the reads are cached and kept offline like
+  every other screen's, per pupil, and are emptied when the pupil showing
+  changes, before the next pupil's first screen draws (a test holds it).
+  Offline the thread and list show what was last seen, under the offline bar,
+  and the box is shut with the reason; a half-written message stays in the box.
+- **Not built:** searching conversations and the unread-only filter, which the
+  API serves. A pupil has a handful of teachers, so the list is not searched.
+
+**Done 21 October 2026.** Driven in Chromium against the running backend as
+the seeded Lagoon View pupil (`seed_messaging_scenarios`): the More tab and
+Messages carrying their unread count; the list with the notice; opening the
+unread conversation (one read call, the badges clearing); one tap-pair on Send
+storing one message, and a 272-character unbroken word wrapping inside its
+bubble; New message to a teacher and to the school office; the offline thread
+with its box shut and the draft kept. No horizontal overflow on the list, a
+thread or the sheet at 375px, 768px and 1280px.
+
+### Parked: Assignments
+
+No module owns them. When the owner calls for them, they start from their own
 backend plan and a staff-side design.
 
 ---

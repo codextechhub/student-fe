@@ -13,9 +13,11 @@ export type Canned = { status: number; body?: unknown };
 export function routeFetch(routes: Record<string, Canned | ((body: unknown) => Canned | Promise<Canned>)>) {
   const calls: { key: string; body: unknown; headers: Record<string, string> }[] = [];
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = new URL(String(input), "http://test.local");
+    // RTK Query's fetchBaseQuery hands fetch a Request; the auth code passes an address and init.
+    const request = input instanceof Request ? input : null;
+    const url = new URL(request ? request.url : String(input), "http://test.local");
     const path = url.pathname.replace(/^\/v1/, "");
-    const key = `${(init?.method ?? "GET").toUpperCase()} ${path}`;
+    const key = `${(init?.method ?? request?.method ?? "GET").toUpperCase()} ${path}`;
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ key, body, headers: Object.fromEntries(new Headers(init?.headers).entries()) });
     if (key === "GET /user/auth/csrf/" && !routes[key]) {

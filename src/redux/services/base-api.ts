@@ -139,9 +139,33 @@ const pupilQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> 
 export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: pupilQuery,
-  tagTypes: ["Me", "Home", "Notices", "Profile", "Timetable", "Attendance", "Results", "Fees", "TransferAccount"],
+  tagTypes: [
+    "Me",
+    "Home",
+    "Notices",
+    "Profile",
+    "Timetable",
+    "Attendance",
+    "Results",
+    "Fees",
+    "TransferAccount",
+    "Conversations",
+    "MessageThread",
+  ],
   endpoints: () => ({}),
 });
 
 /** Every tag, for refetching everything on screen (pull to refresh, back online). */
-export const ALL_TAGS = ["Me", "Home", "Notices", "Profile", "Timetable", "Attendance", "Results", "Fees", "TransferAccount"] as const;
+export const ALL_TAGS = [
+  "Me",
+  "Home",
+  "Notices",
+  "Profile",
+  "Timetable",
+  "Attendance",
+  "Results",
+  "Fees",
+  "TransferAccount",
+  "Conversations",
+  "MessageThread",
+] as const;
