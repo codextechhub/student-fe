@@ -267,20 +267,24 @@ the real services, so these pupils exist and are named in its output:
 
 **Done 16 October 2026** (backend `2ad8fb10`). Every pupil signs in with
 `Pupil@School2026` and was checked through the real sign-in route and the
-portal's reads:
+portal's reads. The seeder chooses pupils from the roll created by the other
+seeders, so display names may change as that roll changes. Treat the role and
+admission number as the stable handle; the latest seeder printout is the
+authority.
 
 | Role | lagoon-view (two branches) | sunrise-academy (one branch) |
 |---|---|---|
 | Active (published timetable) | Adaeze Adeyemi, `LV/2026/0026`: JSS1 A, one term released | Adaeze Adeyemi, `SUN/2026/0262` |
-| Full | Ebere Bello, `LV/2026/0029` or `ebere.bello@lagoon-view.example.com`: JSS2 A, last year's three terms with the year-end block, billed, part-paid at the desk (₦11,687.50 owing), one card payment still being confirmed | Amaka Balogun, `SUN/2026/0265` or `amaka.balogun@sunrise-academy.example.com`: one term released, nothing billed (no fee structure) |
-| Sibling (shared phone) | Femi Bello, `LV/2026/0030`: same guardian, no email, owes nothing | Musa Balogun, `SUN/2026/0266` |
+| Full | Amaka Balogun, `LV/2026/0029` or `amaka.balogun@lagoon-view.example.com`: JSS1 A, ₦11,687.50 owing, one card payment still being confirmed | Amaka Balogun, `SUN/2026/0265` or `amaka.balogun@sunrise-academy.example.com`: one term released, nothing billed (no fee structure) |
+| Sibling (shared phone) | Musa Balogun, `LV/2026/0030`: same guardian, no email | Musa Balogun, `SUN/2026/0266` |
 | Held | Zainab Afolabi, `LV/2026/0031`: term withheld | none at this school |
-| Invited / revoked | Tunde Adeleke / Amaka Adeleke | Bola Okoro / Tunde Okoro |
+| Invited / revoked | Bola Okoro / Tunde Okoro | Bola Okoro / Tunde Okoro |
 
 Things the seeded data shows that the screens must handle:
 
-- **Unpublished timetable:** every JSS2 A pupil (Ebere, Femi, Zainab) and all
-  of sunrise-academy. Only lagoon-view JSS1 A has a published one.
+- **Unpublished timetable:** the pupil at `LV/2026/0031` and all of
+  sunrise-academy. Use the latest seeder printout for any additional pupil
+  whose class timetable is unpublished.
 - **A pending card payment's method reads "Online"** until it is confirmed:
   the pupil may switch to a transfer or USSD on Paystack's own page. Show the
   API's `method_label`; while pending, "Waiting for confirmation" is acceptable
