@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Dialog } from "radix-ui";
 import { NavLink, Outlet, useLocation } from "react-router";
@@ -6,12 +6,13 @@ import { NavLink, Outlet, useLocation } from "react-router";
 import { refreshShowingPupil } from "@/auth/device-session";
 import { SchoolMark } from "@/components/school-mark";
 import { PupilSwitcher } from "@/components/session/pupil-switcher";
+import { useVisualViewportBox } from "@/lib/visual-viewport";
 import { cn } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { useUnreadMessagesQuery } from "@/redux/services/messages-api";
 import { useMeQuery, useNoticesQuery } from "@/redux/services/portal-api";
 
-import { itemFor, NAV, splitTabs, type NavItem } from "./nav";
+import { isConversationPath, itemFor, NAV, splitTabs, type NavItem } from "./nav";
 import { OfflineBar } from "./offline-bar";
 import { PullToRefresh } from "./pull-to-refresh";
 import "./app-shell.css";
@@ -27,6 +28,15 @@ const MESSAGE_BADGE_POLL_MS = 60_000;
  * screen title and the pupil switcher. The offline bar sits under the header
  * whenever the app is showing kept data, and a pull down from the top of a
  * screen reads everything on it again.
+ *
+ * An open Messages conversation is the one screen that does not scroll as a
+ * page. The shell is held to the visible height (`100dvh`, narrowed to
+ * `visualViewport` so the message box rides above the phone keyboard), the
+ * conversation fills the screen, and on a phone the shell's own header (crest,
+ * title, pupil switcher) and the tab bar both step aside, so the conversation's
+ * header with its back arrow is the top of the screen, as in a messaging app.
+ * Both return on the list, where the pupil switcher stays reachable. From 800px,
+ * where the list sits beside the thread, the shell header and tab bar stay.
  */
 export function AppShell() {
   const { pathname } = useLocation();
@@ -52,14 +62,19 @@ export function AppShell() {
     refetchOnReconnect: true,
   });
   const current = itemFor(pathname);
+  const conversationOpen = isConversationPath(pathname);
+  const viewport = useVisualViewportBox(conversationOpen);
   const onDesignPage = pathname === "/" || pathname === "/timetable" || pathname.startsWith("/results") || pathname === "/attendance" || pathname === "/profile" || pathname.startsWith("/fees") || pathname.startsWith("/notices") || pathname.startsWith("/messages");
   const badges: Partial<Record<NavItem["key"], number>> = { notices: unread, messages: unreadMessages };
   const where = [me?.school.name, me?.show_branch ? me?.branch?.name : null].filter(Boolean).join(" · ");
   const screenTitle = pathname.startsWith("/results/card/") ? "Report card" : pathname.startsWith("/fees/receipts/") ? "Payment receipt" : pathname.startsWith("/fees/pay/") ? "Pay a bill" : pathname === "/fees/paid" ? "Payment status" : current?.key === "fees" ? "My fees" : current?.key === "attendance" ? "My attendance" : current?.key === "timetable" ? "My timetable" : current?.key === "results" ? "My results" : current?.key === "profile" ? "My profile" : current?.label ?? "";
 
   return (
-    <div className={cn("app-shell flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onDesignPage && "app-shell--design")}>
-      <header className={cn("sticky top-0 z-30 flex min-h-[58px] min-w-0 items-center gap-3 border-b px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 transition-[background-color,backdrop-filter,border-color] duration-200 sm:min-h-[66px] lg:px-6", onDesignPage ? scrolled ? "border-[#dbe0eb] bg-[#f5f7fc]/70 backdrop-blur-xl backdrop-saturate-150" : "border-transparent bg-transparent" : scrolled ? "border-border bg-background/75 backdrop-blur-xl" : "border-border bg-background")}>
+    <div
+      className={cn("app-shell flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onDesignPage && "app-shell--design", conversationOpen && "app-shell--conversation", viewport?.keyboard && "is-keyboard")}
+      style={viewport ? ({ "--vv-top": `${viewport.top}px`, "--vv-height": `${viewport.height}px` } as CSSProperties) : undefined}
+    >
+      <header data-hidden-on-phone={conversationOpen || undefined} className={cn("app-shell-head sticky top-0 z-30 flex min-h-[58px] min-w-0 items-center gap-3 border-b px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 transition-[background-color,backdrop-filter,border-color] duration-200 sm:min-h-[66px] lg:px-6", onDesignPage ? scrolled ? "border-[#dbe0eb] bg-[#f5f7fc]/70 backdrop-blur-xl backdrop-saturate-150" : "border-transparent bg-transparent" : scrolled ? "border-border bg-background/75 backdrop-blur-xl" : "border-border bg-background")}>
         <SchoolMark logo={me?.school.logo_url || null} size={onDesignPage ? 34 : 28} animate={false} alt={where} className={onDesignPage ? "max-h-7 sm:max-h-[34px]" : undefined} />
         <div className="min-w-0 flex-1">
           <p className={cn("truncate font-semibold text-foreground", onDesignPage ? "text-base" : "text-sm")}>{screenTitle}</p>
@@ -67,10 +82,10 @@ export function AppShell() {
         <PupilSwitcher />
       </header>
       <OfflineBar />
-      <PullToRefresh>
+      <PullToRefresh disabled={conversationOpen}>
         <Outlet />
       </PullToRefresh>
-      <TabBar badges={badges} />
+      <TabBar badges={badges} hiddenOnPhone={conversationOpen} />
     </div>
   );
 }
@@ -112,8 +127,10 @@ const TAB =
  * The app's tab bar, at every size: a frosted pill floating above the bottom
  * edge, the screen showing raised inside it as its own pill. It clears the
  * home indicator on phones that have one, and the page scrolls on underneath.
+ * `hiddenOnPhone` takes it off screens narrower than 800px (an open
+ * conversation); `app-shell.css` holds the breakpoint.
  */
-function TabBar({ badges }: { badges: Partial<Record<NavItem["key"], number>> }) {
+function TabBar({ badges, hiddenOnPhone }: { badges: Partial<Record<NavItem["key"], number>>; hiddenOnPhone: boolean }) {
   const { tabs, more } = splitTabs(NAV);
   const [moreOpen, setMoreOpen] = useState(false);
   const { pathname } = useLocation();
@@ -126,7 +143,8 @@ function TabBar({ badges }: { badges: Partial<Record<NavItem["key"], number>> })
   return (
     <nav
       aria-label="Screens"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      data-hidden-on-phone={hiddenOnPhone || undefined}
+      className="app-shell-tabs pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
     >
       <div className="pointer-events-auto relative flex w-full max-w-md gap-1 rounded-full border border-white/70 bg-white/70 p-1.5 shadow-[0_10px_30px_-8px_rgba(17,24,39,0.25)] ring-1 ring-black/5 backdrop-blur-xl backdrop-saturate-150">
         <span

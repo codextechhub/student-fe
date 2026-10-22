@@ -30,7 +30,15 @@ export type Conversation = {
   read_only: boolean;
   can_send: boolean;
   read_only_reason: string;
+  /** True while the school shows read receipts to this pupil; ticks are drawn only then. */
+  receipts?: boolean;
 };
+
+/** Whether the person written to has read a message the pupil sent. */
+export type Receipt = { state: "sent" | "read"; read_count: number; recipient_count: number };
+
+/** A receipt as a poll answers it, named by the message it belongs to. */
+export type ReceiptUpdate = Receipt & { id: number };
 
 export type ChatMessage = {
   id: number;
@@ -38,6 +46,8 @@ export type ChatMessage = {
   sender: { user_id: number; name: string } | null;
   sent_at: string;
   mine: boolean;
+  /** Present on the pupil's own messages while receipts apply. */
+  receipt?: Receipt;
 };
 
 export type ConversationPage = {
@@ -49,6 +59,9 @@ export type ConversationPage = {
 
 /** One cursor page of a thread, newest first as the school sends it. */
 export type MessagePage = { results: ChatMessage[]; hasMore: boolean; nextBefore: number | null };
+
+/** What changed in a thread since a message: newer messages, oldest first, and fresh receipts. */
+export type PollAnswer = { results: ChatMessage[]; hasMore: boolean; receipts: ReceiptUpdate[] };
 
 export type Contact = { user_id: number; name: string; label: string };
 
@@ -78,7 +91,8 @@ const CONTACTS_PAGE_SIZE = 100;
  * A thread is read a cursor page at a time (`before` is the oldest message id
  * already held). Every list, row and count shares the `Conversations` tag, so
  * a send or a read refreshes them together; a thread is tagged by its own id.
- * Nothing here is kept by address outside the pupil's own cache: the base
+ * `messagesAfter` is the poll: the messages newer than the newest held and the
+ * receipts of the pupil's recent ones. Nothing here is kept by address outside the pupil's own cache: the base
  * query keeps each read per pupil for the offline copy, and the cache is
  * emptied when the pupil showing changes.
  */
@@ -108,6 +122,17 @@ export const messagesApi = baseApi.injectEndpoints({
         nextBefore: body.data.next_before,
       }),
       providesTags: (_result, _error, { id }) => [{ type: "MessageThread", id }],
+    }),
+    messagesAfter: build.query<PollAnswer, { id: number; after: number }>({
+      query: ({ id, after }) => `/portal/student/messages/conversations/${id}/messages/?after=${after}`,
+      transformResponse: (body: { data: { results: ChatMessage[]; has_more: boolean; receipts?: ReceiptUpdate[] } }) => ({
+        results: body.data.results,
+        hasMore: body.data.has_more,
+        receipts: body.data.receipts ?? [],
+      }),
+      // A poll is a live look, never kept for offline and never answered from a copy.
+      extraOptions: { live: true },
+      keepUnusedDataFor: 0,
     }),
     unreadMessages: build.query<number, void>({
       query: () => "/portal/student/messages/unread-count/",
@@ -145,8 +170,12 @@ export const messagesApi = baseApi.injectEndpoints({
       },
       invalidatesTags: (_result, _error, { id }) => ["Conversations", { type: "MessageThread", id }],
     }),
-    markConversationRead: build.mutation<{ conversation: number; unread_count: number }, { id: number }>({
-      query: ({ id }) => ({ url: `/portal/student/messages/conversations/${id}/read/`, method: "POST", body: {} }),
+    markConversationRead: build.mutation<{ conversation: number; unread_count: number }, { id: number; upTo?: number }>({
+      query: ({ id, upTo }) => ({
+        url: `/portal/student/messages/conversations/${id}/read/`,
+        method: "POST",
+        body: upTo ? { up_to: upTo } : {},
+      }),
       transformResponse: unwrap<{ conversation: number; unread_count: number }>,
       invalidatesTags: ["Conversations"],
     }),
@@ -170,6 +199,7 @@ export const {
   useConversationQuery,
   useMessagesPageQuery,
   useLazyMessagesPageQuery,
+  useLazyMessagesAfterQuery,
   useUnreadMessagesQuery,
   useContactsQuery,
   useSendMessageMutation,

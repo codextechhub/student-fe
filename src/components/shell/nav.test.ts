@@ -1,7 +1,7 @@
 import { Home } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
-import { itemFor, NAV, splitTabs, type NavItem } from "./nav";
+import { isConversationPath, itemFor, NAV, splitTabs, type NavItem } from "./nav";
 
 const item = (label: string, onBar = false): NavItem => ({ key: "home", label, path: `/${label}`, icon: Home, onBar });
 
@@ -33,5 +33,15 @@ describe("the tab bar", () => {
     expect(itemFor("/notices/12")?.key).toBe("notices");
     expect(itemFor("/")?.key).toBe("home");
     expect(itemFor("/timetable")?.key).toBe("timetable");
+  });
+});
+
+describe("an open conversation", () => {
+  it("is a conversation id under Messages, and nothing else", () => {
+    expect(isConversationPath("/messages/41")).toBe(true);
+    expect(isConversationPath("/messages/41/")).toBe(true);
+    expect(isConversationPath("/messages")).toBe(false);
+    expect(isConversationPath("/messages/new")).toBe(false);
+    expect(isConversationPath("/notices/41")).toBe(false);
   });
 });

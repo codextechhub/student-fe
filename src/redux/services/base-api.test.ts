@@ -14,6 +14,7 @@ vi.mock("@/utils/school-host", () => ({ currentSchoolSlug: () => "lagoon-view" }
 const probe = baseApi.injectEndpoints({
   endpoints: (b) => ({
     probeRead: b.query<unknown, void>({ query: () => "/portal/student/probe/" }),
+    probeLive: b.query<unknown, void>({ query: () => "/portal/student/probe/live/", extraOptions: { live: true } }),
     probeWrite: b.mutation<unknown, void>({ query: () => ({ url: "/portal/student/probe/", method: "POST", body: {} }) }),
   }),
 });
@@ -77,5 +78,34 @@ describe("the offline copy", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ data: "new" }), { status: 200 })));
     await store.dispatch(probe.endpoints.probeRead.initiate(undefined, { forceRefetch: true }));
     expect(store.getState().connectivity).toEqual({ offline: false, lastUpdated: null });
+  });
+});
+
+describe("a live read (a message poll)", () => {
+  it("is not kept for offline and is never answered from a copy", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ data: "fresh" }), { status: 200 })));
+    const store = storeFor("a-bola");
+    await store.dispatch(probe.endpoints.probeLive.initiate());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await keptAnswer("a-bola", "/portal/student/probe/live/")).toBeNull();
+
+    await keepAnswer("a-bola", "/portal/student/probe/live/", { data: "old" });
+    offline();
+    const result = await store.dispatch(probe.endpoints.probeLive.initiate(undefined, { forceRefetch: true }));
+    expect("error" in result && result.error).toBeTruthy();
+    expect(store.getState().connectivity.offline).toBe(true);
+  });
+
+  it("is dropped when a different pupil is showing by the time it answers", async () => {
+    let answer: (r: Response) => void = () => {};
+    const fetcher = vi.fn(() => new Promise<Response>((resolve) => { answer = resolve; }));
+    vi.stubGlobal("fetch", fetcher);
+    const store = storeFor("a-bola");
+    const pending = store.dispatch(probe.endpoints.probeLive.initiate());
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalled());
+    store.dispatch(sessionSettled({ status: "signed-in", pupils: [], active: "a-tunde" }));
+    answer(new Response(JSON.stringify({ data: "bola's" }), { status: 200 }));
+    const result = await pending;
+    expect(result.data).toBeUndefined();
   });
 });

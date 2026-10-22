@@ -16,9 +16,11 @@ const MAX = 96;
  * Touch only, and only when the page is already scrolled to the top, so it
  * never fights an ordinary scroll. The browser's own pull-to-reload is turned
  * off in `index.css` (`overscroll-behavior-y`), because reloading the page
- * would drop the pupil's in-memory sign-in for no reason.
+ * would drop the pupil's in-memory sign-in for no reason. `disabled` turns it
+ * off for a screen whose own parts scroll (an open conversation), where a drag
+ * down is the reader going back up the messages.
  */
-export function PullToRefresh({ children }: { children: ReactNode }) {
+export function PullToRefresh({ children, disabled = false }: { children: ReactNode; disabled?: boolean }) {
   const dispatch = useAppDispatch();
   const [pull, setPull] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -26,6 +28,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
   const distance = useRef(0);
 
   useEffect(() => {
+    if (disabled) return;
     const down = (e: TouchEvent) => {
       start.current = window.scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null;
     };
@@ -53,11 +56,11 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       window.removeEventListener("touchmove", move);
       window.removeEventListener("touchend", up);
     };
-  }, [dispatch]);
+  }, [dispatch, disabled]);
 
   const shown = busy ? TRIGGER * 0.6 : pull;
   return (
-    <div className="relative min-w-0 flex-1">
+    <div className="pull-refresh relative min-w-0 flex-1">
       <div
         aria-hidden={!busy}
         className="pointer-events-none absolute inset-x-0 top-0 flex justify-center"
@@ -68,7 +71,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
           style={{ transform: busy ? undefined : `rotate(${pull * 3}deg)` }}
         />
       </div>
-      <div style={{ transform: shown ? `translateY(${shown}px)` : undefined }} className="transition-transform">
+      <div style={{ transform: shown ? `translateY(${shown}px)` : undefined }} className="pull-refresh-body transition-transform">
         {children}
       </div>
     </div>

@@ -53,3 +53,15 @@ export function itemFor(pathname: string): NavItem | undefined {
     .sort((a, b) => b.path.length - a.path.length)
     .find((item) => (item.path === "/" ? pathname === "/" : pathname === item.path || pathname.startsWith(`${item.path}/`)));
 }
+
+/**
+ * Whether the path is an open conversation (`/messages/41`).
+ *
+ * The app shell reads this to give the conversation the whole screen: the tab
+ * bar steps aside on a phone and the shell is held to the visible height, so
+ * the screen's own parts, not the page, do the scrolling. `/messages/new` is
+ * the new-message sheet over the list, not a conversation.
+ */
+export function isConversationPath(pathname: string): boolean {
+  return /^\/messages\/\d+\/?$/.test(pathname);
+}

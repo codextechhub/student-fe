@@ -35,7 +35,9 @@ function initialsOf(name: string): string {
  * The pupil's messages with their teachers and the school office.
  *
  * One list of conversations and, beside it on a wide screen, the thread that
- * is open; on a phone the list and the thread take the screen in turn. The
+ * is open; on a phone the list and the thread take the screen in turn. An open
+ * thread is a fixed column (see `MessageThread`) that fills the space the app
+ * shell leaves it, and the list beside it scrolls on its own. The
  * school's notice that a parent or guardian and the school can read these
  * messages sits at the top of the list, in plain sight. Starting a message
  * opens a sheet over the list, from the bottom of the screen on a phone.
@@ -49,7 +51,7 @@ export function MessagesPage() {
   const unread = first?.unreadCount ?? 0;
 
   return (
-    <PageShell className="messages-page">
+    <PageShell className={cn("messages-page", openId !== null && "has-conversation")}>
       <div className="messages-wrap">
         <div className="messages-layout">
           <div className={cn("messages-list-panel", openId !== null && "is-hidden-on-detail")}>

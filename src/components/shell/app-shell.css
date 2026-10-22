@@ -9,3 +9,33 @@
 .app-shell--design :is(.report-hero, .attendance-hero, .receipt-summary, .paid-cover) {
   min-height: 0;
 }
+
+/* An open conversation: held to the visible height so only its message list scrolls. */
+.app-shell--conversation {
+  position: fixed;
+  top: var(--vv-top, 0px);
+  right: 0;
+  left: 0;
+  height: var(--vv-height, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-shell--conversation .pull-refresh,
+.app-shell--conversation .pull-refresh-body {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+@media (max-width: 799px) {
+  .app-shell--conversation {
+    padding-bottom: 0;
+  }
+
+  .app-shell-tabs[data-hidden-on-phone],
+  .app-shell-head[data-hidden-on-phone] {
+    display: none;
+  }
+}

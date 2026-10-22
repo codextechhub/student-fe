@@ -66,9 +66,10 @@ async function withOfflineCopy(
   result: Awaited<ReturnType<typeof raw>>,
   dispatch: (action: unknown) => unknown,
   offlineNow: boolean,
+  live: boolean,
 ): Promise<Awaited<ReturnType<typeof raw>>> {
   if (result.error?.status === "FETCH_ERROR") {
-    if (!account || !isRead(args)) {
+    if (!account || !isRead(args) || live) {
       dispatch(wentOffline());
       return result;
     }
@@ -82,7 +83,7 @@ async function withOfflineCopy(
   }
   if (!result.error) {
     if (offlineNow) dispatch(reachedSchool());
-    if (account && isRead(args)) void keepAnswer(account, readKey(args), result.data);
+    if (account && isRead(args) && !live) void keepAnswer(account, readKey(args), result.data);
   }
   return result;
 }
@@ -101,8 +102,12 @@ async function withOfflineCopy(
  * Tunde's results that were in flight when the phone switched to Bola must
  * never land in the cache Bola's screens read. A retry is never re-sent as
  * the new pupil either.
+ *
+ * An endpoint declared with `extraOptions: { live: true }` is a live look (a
+ * message poll): it is neither kept for offline nor answered from a copy, so a
+ * lost connection is reported as one rather than hidden behind an old answer.
  */
-const pupilQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
+const pupilQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError, { live?: boolean }> = async (
   args,
   api,
   extra,
@@ -113,7 +118,7 @@ const pupilQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> 
 
   const offlineNow = () => (api.getState() as StateWithSession).connectivity.offline;
   const settle = (r: Awaited<ReturnType<typeof raw>>) =>
-    withOfflineCopy(args, account, r, api.dispatch, offlineNow());
+    withOfflineCopy(args, account, r, api.dispatch, offlineNow(), !!extra?.live);
 
   let result = await raw(tenanted(args), api, extra);
   if (showing() !== account) return switched;
