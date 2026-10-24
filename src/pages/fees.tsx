@@ -52,10 +52,9 @@ export function FeesPage() {
               <div>
                 <span className="fees-hero-label">{owing > 0 ? "Balance to pay" : credit > 0 ? "In credit" : hasBills ? "All paid" : "No bills yet"}</span>
                 <strong className="fees-hero-value">{formatNaira(owing > 0 ? owing : credit)}</strong>
-                <p className="fees-simple-due">{owing > 0 ? (fees.next_due ? "Next bill due " + formatDate(fees.next_due) : "Open bills and charges on your account") : credit > 0 ? "Credit available for your next bill" : hasBills ? "Nothing to pay right now" : "Your account is ready when needed"}</p>
+                <p className="fees-hero-note">{owing > 0 ? (fees.next_due ? "Next bill due " + formatDate(fees.next_due) : "Open bills and charges on your account") : credit > 0 ? "Credit available for your next bill" : hasBills ? "Nothing to pay right now" : "Your account is ready when needed"}</p>
                 {owing > 0 && credit > 0 && <p className="fees-hero-credit">{formatNaira(credit)} credit held by the school. Ask the school to apply it before you pay.</p>}
               </div>
-              {hasBills && <div className="fees-simple-hero-note"><strong>Your school account</strong><span>See school bills and added charges below</span></div>}
             </section>
 
             {fees.can_pay && <div className="fees-guardian"><Info size={17} aria-hidden="true" /><p><strong>Your parent or guardian usually pays school fees.</strong> If they can&apos;t pay in their app right now, you can pay a bill here.</p></div>}

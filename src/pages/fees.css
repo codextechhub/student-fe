@@ -122,19 +122,9 @@
 /* Student fees arrangement: one balance, compact bill rows, supporting details on demand. */
 .fees-page .fees-wrap { width: min(100%, 850px); }
 .fees-layout.fees-simple-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
-.fees-hero.fees-simple-hero {
-  display: flex; align-items: center; justify-content: space-between; gap: 24px;
-  min-width: 0; padding: 27px 30px; border-radius: 21px; background: #2d4778;
-  box-shadow: 0 16px 34px #1b356d1f;
-}
-.fees-simple-hero::before, .fees-simple-hero::after { display: none; }
-.fees-simple-hero .fees-hero-label { color: #d8e4f7; font-size: 13px; }
-.fees-simple-hero .fees-hero-value { margin-top: 6px; font-size: clamp(35px, 5vw, 46px); font-weight: 700; }
-.fees-simple-due { margin: 9px 0 0; color: #dbe6f7; font-size: 13px; }
+.fees-hero.fees-simple-hero { min-width: 0; }
+.fees-simple-hero .fees-hero-note { display: flex; width: fit-content; margin-bottom: 0; }
 .fees-hero-credit { max-width: 440px; margin: 14px 0 0; padding: 10px 12px; border: 1px solid #ffffff4d; border-radius: 10px; background: #ffffff1f; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.45; }
-.fees-simple-hero-note { flex: none; width: 225px; padding: 13px 15px; border: 1px solid #ffffff36; border-radius: 12px; background: #ffffff17; }
-.fees-simple-hero-note strong, .fees-simple-hero-note span { display: block; font-size: 12px; }
-.fees-simple-hero-note span { margin-top: 4px; color: #dbe6f7; line-height: 1.4; }
 .fees-page .fees-guardian { margin-top: 15px; padding: 14px 16px; border-radius: 14px; }
 .fees-page .fees-guardian p { font-size: 13px; }
 .fees-simple-detail-top { margin: 34px 0 13px; }
@@ -189,8 +179,6 @@
 .fees-secondary-panel .student-transfer-label { margin-top: 10px; }
 .fees-bill-pay:focus-visible, .fees-detail-pay:focus-visible, .fees-transfer-reveal:focus-visible, .fees-secondary-button:focus-visible { outline: 3px solid #7895c5; outline-offset: 3px; }
 @media (max-width: 700px) {
-  .fees-hero.fees-simple-hero { display: block; padding: 23px; }
-  .fees-simple-hero-note { width: auto; margin-top: 20px; }
   .fees-bill-row { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; padding: 16px; }
   .fees-bill-actions { grid-column: 2 / -1; }
   .fees-bill-balance { grid-column: 3; grid-row: 1; }
