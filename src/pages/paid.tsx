@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowUpRight, Check, CircleAlert, Clock3, ReceiptText, X } f
 import { Link, useSearchParams } from "react-router";
 
 import { PageShell } from "@/components/layout/page-shell";
+import { feeFigures } from "@/lib/fee-figures";
 import { formatNaira } from "@/lib/format";
 import { useAppDispatch } from "@/redux/hooks";
 import { baseApi } from "@/redux/services/base-api";
@@ -60,7 +61,7 @@ export function PaidPage() {
     return () => window.clearInterval(again);
   }, [status?.status, receiptRef, dispatch]);
 
-  const outcome = describeOutcome({ reference, status, feesBalance: fees?.balance, receiptRef, gaveUp, isError: !!isError });
+  const outcome = describeOutcome({ reference, status, fees: fees ? feeFigures(fees) : undefined, receiptRef, gaveUp, isError: !!isError });
 
   return <PageShell className="paid-page"><div className="paid-wrap">
     <h1 className="sr-only">Payment status</h1>
@@ -92,10 +93,10 @@ export function PaidPage() {
   </div></PageShell>;
 }
 
-function describeOutcome({ reference, status, feesBalance, receiptRef, gaveUp, isError }: {
+function describeOutcome({ reference, status, fees, receiptRef, gaveUp, isError }: {
   reference: string;
   status?: PaymentStatus;
-  feesBalance?: number;
+  fees?: { owing: number; credit: number };
   receiptRef: number | null;
   gaveUp: boolean;
   isError: boolean;
@@ -129,14 +130,19 @@ function describeOutcome({ reference, status, feesBalance, receiptRef, gaveUp, i
   };
 
   if (status.status === "CONFIRMED") {
-    const balanceDetail: Detail[] = feesBalance === undefined ? [] : [{
-      label: feesBalance < 0 ? "In credit" : "New balance",
-      value: formatNaira(Math.abs(feesBalance)),
-      emphasis: feesBalance <= 0 ? "positive" : "money",
-    }];
-    const balanceLine = feesBalance === undefined ? "" : feesBalance > 0
-      ? " Your balance is now " + formatNaira(feesBalance) + "."
-      : feesBalance < 0 ? " You have " + formatNaira(-feesBalance) + " in credit." : " Your fees are fully paid.";
+    const balanceDetail: Detail[] = !fees ? [] : fees.owing > 0
+      ? [
+        { label: "New balance", value: formatNaira(fees.owing), emphasis: "money" as const },
+        ...(fees.credit > 0 ? [{ label: "Credit held by the school", value: formatNaira(fees.credit), emphasis: "positive" as const }] : []),
+      ]
+      : [{
+        label: fees.credit > 0 ? "In credit" : "New balance",
+        value: formatNaira(fees.credit),
+        emphasis: "positive" as const,
+      }];
+    const balanceLine = !fees ? "" : fees.owing > 0
+      ? " Your balance is now " + formatNaira(fees.owing) + "." + (fees.credit > 0 ? " The school also holds " + formatNaira(fees.credit) + " of your credit." : "")
+      : fees.credit > 0 ? " You have " + formatNaira(fees.credit) + " in credit." : " Your fees are fully paid.";
     return {
       chip: "Confirmed",
       icon: <Check size={36} />,

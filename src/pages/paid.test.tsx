@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   status: {} as Record<string, unknown>,
   balance: 0,
+  owing: 0,
+  credit: 0,
   payments: [] as { reference: string; has_receipt: boolean; payment_ref: number }[],
   error: false,
   refetch: vi.fn(),
@@ -16,7 +18,7 @@ vi.mock("@/redux/services/base-api", () => ({ baseApi: { util: { invalidateTags:
 vi.mock("@/redux/services/portal-api", () => ({
   usePaymentStatusQuery: () => ({ data: mocks.status, isError: mocks.error, refetch: mocks.refetch }),
   usePaymentsQuery: () => ({ data: mocks.payments }),
-  useFeesQuery: () => ({ data: { balance: mocks.balance } }),
+  useFeesQuery: () => ({ data: { balance: mocks.balance, owing: mocks.owing, credit: mocks.credit } }),
 }));
 
 import { PaidPage } from "./paid";
@@ -31,6 +33,8 @@ beforeEach(() => {
   mocks.dispatch.mockReset();
   mocks.payments = [];
   mocks.balance = 0;
+  mocks.owing = 0;
+  mocks.credit = 0;
   mocks.error = false;
   mocks.refetch.mockReset();
 });
@@ -50,11 +54,26 @@ describe("card payment return", () => {
   it("shows server credit and a receipt only after confirmation", () => {
     mocks.status = { status: "CONFIRMED", amount_naira: "₦5,000.00", payee_name: "Lagoon View School" };
     mocks.balance = -100_000;
+    mocks.credit = 100_000;
     mocks.payments = [{ reference: "R1", has_receipt: true, payment_ref: 42 }];
     render();
     expect(container.textContent).toContain("Payment received");
     expect(container.textContent).toContain("₦1,000.00 in credit");
     expect(container.querySelector('a[href="/fees/receipts/42"]')).not.toBeNull();
+  });
+
+  it("never says in credit while something is still owed", () => {
+    mocks.status = { status: "CONFIRMED", amount_naira: "₦5,000.00", payee_name: "Lagoon View School" };
+    mocks.balance = -50_000;
+    mocks.owing = 150_000;
+    mocks.credit = 200_000;
+    render();
+    expect(container.textContent).toContain("Your balance is now ₦1,500.00");
+    expect(container.textContent).toContain("The school also holds ₦2,000.00 of your credit");
+    expect(container.textContent).toContain("New balance");
+    expect(container.textContent).toContain("Credit held by the school");
+    expect(container.textContent).not.toContain("You have ₦");
+    expect(container.textContent).not.toContain("fully paid");
   });
 
   it("keeps a confirmed payment visible while its receipt is prepared", () => {

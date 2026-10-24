@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   payments: [] as unknown[],
   billPageSize: 8,
   balance: 0,
+  owing: 0,
+  credit: 0,
   canPay: true,
 }));
 
@@ -33,7 +35,7 @@ vi.mock("@/redux/services/portal-api", () => ({
       (status === "all" || (item.balance > 0) === (status === "due")),
     );
     const result = {
-      balance: mocks.balance, total_billed: 100_000, total_paid: 100_000, can_pay: mocks.canPay, min_part_payment: 0,
+      balance: mocks.balance, owing: mocks.owing, credit: mocks.credit, total_billed: 100_000, total_paid: 100_000, can_pay: mocks.canPay, min_part_payment: 0,
       has_bills: items.length > 0, years: ["2026", "2024"], next_due: null,
       items: filtered.slice((page - 1) * mocks.billPageSize, page * mocks.billPageSize),
       pagination: { page, page_size: mocks.billPageSize, total: filtered.length, total_pages: Math.max(1, Math.ceil(filtered.length / mocks.billPageSize)) },
@@ -68,6 +70,8 @@ beforeEach(() => {
   mocks.payments = [];
   mocks.billPageSize = 8;
   mocks.balance = 0;
+  mocks.owing = 0;
+  mocks.credit = 0;
   mocks.canPay = true;
 });
 afterEach(() => { act(() => root.unmount()); container.remove(); });
@@ -99,14 +103,60 @@ describe("fees account number", () => {
 
   it("labels a credit balance even when there are no open bills", () => {
     mocks.balance = -300_000;
+    mocks.credit = 300_000;
     render();
     expect(container.querySelector(".fees-hero-label")?.textContent).toBe("In credit");
     expect(container.querySelector(".fees-hero-value")?.textContent).toContain("₦3,000.00");
   });
 
+  it("shows what is owed, not the net, when an unpaid bill and larger credit coexist", () => {
+    mocks.balance = -50_000;
+    mocks.owing = 150_000;
+    mocks.credit = 200_000;
+    mocks.invoices = [{ invoice_ref: 5, number: "IV-5", title: "First Term", due_date: null, lines: [], total: 150_000, paid: 0, balance: 150_000, status: "DUE", status_label: "Due" }];
+    render();
+    expect(container.querySelector(".fees-hero-label")?.textContent).toBe("Balance to pay");
+    expect(container.querySelector(".fees-hero-value")?.textContent).toContain("₦1,500.00");
+    expect(container.querySelector(".fees-hero-credit")?.textContent).toBe("₦2,000.00 credit held by the school. Ask the school to apply it before you pay.");
+    expect(container.querySelector(".fees-hero")?.textContent).not.toContain("In credit");
+    expect(container.querySelector(".fees-hero")?.textContent).not.toContain("All paid");
+    expect(container.textContent).toContain("What you owe");
+    expect(container.textContent).toContain("Pay bill");
+  });
+
+  it("shows the bill, not 'All paid', when credit exactly covers it", () => {
+    mocks.balance = 0;
+    mocks.owing = 150_000;
+    mocks.credit = 150_000;
+    mocks.invoices = [{ invoice_ref: 5, number: "IV-5", title: "First Term", due_date: null, lines: [], total: 150_000, paid: 0, balance: 150_000, status: "DUE", status_label: "Due" }];
+    render();
+    expect(container.querySelector(".fees-hero-label")?.textContent).toBe("Balance to pay");
+    expect(container.querySelector(".fees-hero-value")?.textContent).toContain("₦1,500.00");
+    expect(container.querySelector(".fees-hero")?.textContent).not.toContain("All paid");
+  });
+
+  it("shows no credit line when nothing is held", () => {
+    mocks.balance = 50_000;
+    mocks.owing = 50_000;
+    mocks.invoices = [{ invoice_ref: 3, number: "IV-3", title: "Third Term", due_date: null, lines: [], total: 100_000, paid: 50_000, balance: 50_000, status: "PARTIAL", status_label: "Part paid" }];
+    render();
+    expect(container.querySelector(".fees-hero-credit")).toBeNull();
+  });
+
+  it("reads a copy saved before owing and credit were sent from the net balance", () => {
+    mocks.balance = 50_000;
+    mocks.owing = undefined as unknown as number;
+    mocks.credit = undefined as unknown as number;
+    mocks.invoices = [{ invoice_ref: 3, number: "IV-3", title: "Third Term", due_date: null, lines: [], total: 100_000, paid: 50_000, balance: 50_000, status: "PARTIAL", status_label: "Part paid" }];
+    render();
+    expect(container.querySelector(".fees-hero-label")?.textContent).toBe("Balance to pay");
+    expect(container.querySelector(".fees-hero-value")?.textContent).toContain("₦500.00");
+  });
+
   it("does not offer payment when the school has turned it off", () => {
     mocks.canPay = false;
     mocks.balance = 50_000;
+    mocks.owing = 50_000;
     mocks.invoices = [{ invoice_ref: 3, number: "IV-3", title: "Third Term", due_date: null, lines: [], total: 100_000, paid: 50_000, balance: 50_000, status: "PARTIAL", status_label: "Part paid" }];
     render();
     expect(container.textContent).toContain("Third Term");
@@ -115,6 +165,7 @@ describe("fees account number", () => {
 
   it("filters bills by year and balance without changing the account total", () => {
     mocks.balance = 50_000;
+    mocks.owing = 50_000;
     mocks.invoices = [
       { invoice_ref: 1, number: "IV-1", title: "Old paid bill", invoice_date: "2024-09-01", due_date: null, lines: [], total: 50_000, paid: 50_000, balance: 0, status: "PAID", status_label: "Paid" },
       { invoice_ref: 2, number: "IV-2", title: "Current unpaid bill", invoice_date: "2026-09-01", due_date: null, lines: [], total: 50_000, paid: 0, balance: 50_000, status: "DUE", status_label: "Due" },
@@ -132,6 +183,7 @@ describe("fees account number", () => {
 
   it("lists a charge added after the bill, so the balance it makes up can be found", () => {
     mocks.balance = 700_000;
+    mocks.owing = 700_000;
     mocks.invoices = [{ invoice_ref: 1, number: "IV-1", title: "Second Semester", due_date: null, lines: [], total: 50_000, paid: 50_000, balance: 0, status: "PAID", status_label: "Paid" }];
     mocks.charges = [{ note_ref: 9, number: "DN-4", date: "2026-10-18", reason: "Science practical", total: 1_000_000, paid: 300_000, balance: 700_000, status: "PARTIAL", status_label: "Part paid" }];
     render();
@@ -206,6 +258,7 @@ describe("fees account number", () => {
   it("offers an account number to a pupil who owes only a charge and has none", () => {
     mocks.account = { state: "NONE", as_of: "2026-10-19T00:00:00Z" };
     mocks.balance = 150_000;
+    mocks.owing = 150_000;
     mocks.charges = [{ note_ref: 4, number: "DN-1", date: "2026-10-19", reason: "Replacement ID Card", total: 150_000, paid: 0, balance: 150_000, status: "UNPAID", status_label: "Owing" }];
     render();
     act(() => (container.querySelector('button[aria-controls="fees-charge-4"]') as HTMLButtonElement).click());
@@ -218,6 +271,7 @@ describe("fees account number", () => {
   it("sends a pupil to the office only where the school takes no transfers", () => {
     mocks.account = { state: "UNAVAILABLE", message: "Your school cannot take bank transfers here yet." } as never;
     mocks.balance = 150_000;
+    mocks.owing = 150_000;
     mocks.charges = [{ note_ref: 4, number: "DN-1", date: "2026-10-19", reason: "Replacement ID Card", total: 150_000, paid: 0, balance: 150_000, status: "UNPAID", status_label: "Owing" }];
     render();
     act(() => (container.querySelector('button[aria-controls="fees-charge-4"]') as HTMLButtonElement).click());

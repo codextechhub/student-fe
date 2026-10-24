@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { dayKey, formatClock, formatDate, formatDayLabel, formatLongDate, formatNaira, formatTimeOfDay, formatWhen } from "./format";
+import { accountBalanceWords, dayKey, formatClock, formatDate, formatDayLabel, formatLongDate, formatNaira, formatTimeOfDay, formatWhen } from "./format";
 
 describe("formatting", () => {
   it("writes kobo as naira with two decimals", () => {
@@ -56,5 +56,11 @@ describe("writing when a message was sent", () => {
     expect(formatDayLabel(at(3), now)).toBe("3 Oct 2026");
     expect(dayKey(at(21, 1))).toBe(dayKey(at(21, 23)));
     expect(dayKey(at(21))).not.toBe(dayKey(at(20)));
+  });
+
+  it("writes an account balance by its side, never by a minus sign", () => {
+    expect(accountBalanceWords(10_000_000)).toBe("₦100,000.00 owing");
+    expect(accountBalanceWords(-2_000_000)).toBe("₦20,000.00 in credit");
+    expect(accountBalanceWords(0)).toBe("₦0.00");
   });
 });

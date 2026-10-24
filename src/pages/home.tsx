@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { InstallOffer } from "@/components/install-offer";
 import { PageShell } from "@/components/layout/page-shell";
 import { PushOffer } from "@/components/push-settings";
+import { feeFigures } from "@/lib/fee-figures";
 import { formatClock, formatDate, formatLongDate, formatNaira, formatTimestampDate } from "@/lib/format";
 import { classLine, rateLine, todayLine } from "@/lib/pupil-lines";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
@@ -143,18 +144,22 @@ const FEE_STATUS: Record<"OWING" | "CLEAR" | "IN_CREDIT", string> = {
   OWING: "Owing", CLEAR: "Paid up", IN_CREDIT: "In credit",
 };
 
-function FeesCard({ block }: { block: Home["fees"] }) {
+export function FeesCard({ block }: { block: Home["fees"] }) {
+  const { owing, credit } = block.available ? feeFigures(block) : { owing: 0, credit: 0 };
+  const figure = block.available ? formatNaira(block.status === "IN_CREDIT" ? credit : owing) : "";
   const detail = !block.available ? block.message : [
     FEE_STATUS[block.status],
     block.open_invoice?.due_date ? `Due ${formatDate(block.open_invoice.due_date)}` : "",
     block.open_invoice_count > 1 ? `${block.open_invoice_count} open bills` : "",
   ].filter(Boolean).join(" · ");
+  const creditLine = block.available && block.status === "OWING" && credit > 0 ? `${formatNaira(credit)} credit held by the school` : "";
   return (
-    <Link to="/fees" className="home-surface home-insight home-insight--fees" aria-label={`Fee balance. ${block.available ? `${formatNaira(Math.abs(block.balance))}. ` : ""}${detail}`}>
+    <Link to="/fees" className="home-surface home-insight home-insight--fees" aria-label={`Fee balance. ${block.available ? `${figure}. ` : ""}${detail}${creditLine ? `. ${creditLine}` : ""}`}>
       <span className="home-insight-icon"><Wallet size={19} aria-hidden="true" /></span><ChevronRight className="home-insight-arrow" size={17} aria-hidden="true" />
       <span className="home-insight-label">Fee balance</span>
-      <strong className="home-insight-value">{block.available ? formatNaira(Math.abs(block.balance)) : "—"}</strong>
+      <strong className="home-insight-value">{block.available ? figure : "-"}</strong>
       <span className="home-insight-sub">{detail}</span>
+      {creditLine && <span className="home-insight-sub home-insight-credit">{creditLine}</span>}
     </Link>
   );
 }

@@ -131,6 +131,7 @@
 .fees-simple-hero .fees-hero-label { color: #d8e4f7; font-size: 13px; }
 .fees-simple-hero .fees-hero-value { margin-top: 6px; font-size: clamp(35px, 5vw, 46px); font-weight: 700; }
 .fees-simple-due { margin: 9px 0 0; color: #dbe6f7; font-size: 13px; }
+.fees-hero-credit { max-width: 440px; margin: 14px 0 0; padding: 10px 12px; border: 1px solid #ffffff4d; border-radius: 10px; background: #ffffff1f; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.45; }
 .fees-simple-hero-note { flex: none; width: 225px; padding: 13px 15px; border: 1px solid #ffffff36; border-radius: 12px; background: #ffffff17; }
 .fees-simple-hero-note strong, .fees-simple-hero-note span { display: block; font-size: 12px; }
 .fees-simple-hero-note span { margin-top: 4px; color: #dbe6f7; line-height: 1.4; }

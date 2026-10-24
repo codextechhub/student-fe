@@ -6,6 +6,7 @@ import { Link } from "react-router";
 import { GetTransferAccount } from "@/components/fees/get-transfer-account";
 import { TransferAccountCard } from "@/components/fees/transfer-account-card";
 import { PageShell } from "@/components/layout/page-shell";
+import { feeFigures } from "@/lib/fee-figures";
 import { formatDate, formatNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/redux/hooks";
@@ -36,7 +37,8 @@ export function FeesPage() {
   const billYears = fees?.years ?? [];
   const paymentYears = payments?.years ?? [];
   const hasBills = fees?.has_bills ?? false;
-  const canShowTransfer = account?.state === "ISSUED" || (account?.state === "NONE" && !!fees && fees.balance > 0 && !offline);
+  const { owing, credit } = fees ? feeFigures(fees) : { owing: 0, credit: 0 };
+  const canShowTransfer = account?.state === "ISSUED" || (account?.state === "NONE" && !!fees && owing > 0 && !offline);
   const filterActive = billYear !== "all" || billStatus !== "all" || paymentYear !== "all";
 
   return (
@@ -48,9 +50,10 @@ export function FeesPage() {
           <div className="fees-layout fees-simple-layout">
             <section className="fees-hero fees-simple-hero" aria-label="Fee balance">
               <div>
-                <span className="fees-hero-label">{fees.balance < 0 ? "In credit" : !hasBills ? "No bills yet" : fees.balance === 0 ? "All paid" : "Balance to pay"}</span>
-                <strong className="fees-hero-value">{formatNaira(Math.abs(fees.balance))}</strong>
-                <p className="fees-simple-due">{fees.next_due && fees.balance > 0 ? "Next bill due " + formatDate(fees.next_due) : fees.balance < 0 ? "Credit available for your next bill" : fees.balance === 0 && hasBills ? "Nothing to pay right now" : "Your account is ready when needed"}</p>
+                <span className="fees-hero-label">{owing > 0 ? "Balance to pay" : credit > 0 ? "In credit" : hasBills ? "All paid" : "No bills yet"}</span>
+                <strong className="fees-hero-value">{formatNaira(owing > 0 ? owing : credit)}</strong>
+                <p className="fees-simple-due">{owing > 0 ? (fees.next_due ? "Next bill due " + formatDate(fees.next_due) : "Open bills and charges on your account") : credit > 0 ? "Credit available for your next bill" : hasBills ? "Nothing to pay right now" : "Your account is ready when needed"}</p>
+                {owing > 0 && credit > 0 && <p className="fees-hero-credit">{formatNaira(credit)} credit held by the school. Ask the school to apply it before you pay.</p>}
               </div>
               {hasBills && <div className="fees-simple-hero-note"><strong>Your school account</strong><span>See school bills and added charges below</span></div>}
             </section>
@@ -59,7 +62,7 @@ export function FeesPage() {
 
             <section aria-labelledby="fees-bills-heading">
               <div className="fees-detail-top fees-simple-detail-top">
-                <div className="fees-section-heading"><h2 id="fees-bills-heading">{fees.balance > 0 ? "What you owe" : "School bills"}</h2><p>Open an item for details</p></div>
+                <div className="fees-section-heading"><h2 id="fees-bills-heading">{owing > 0 ? "What you owe" : "School bills"}</h2><p>Open an item for details</p></div>
                 {(hasBills || (payments?.pagination.total ?? 0) > 0) && (
                   <Popover.Root>
                     <Popover.Trigger asChild><button type="button" className="fees-filter-trigger" aria-label="Filter fees"><SlidersHorizontal size={18} aria-hidden="true" />{filterActive && <span className="fees-filter-active" aria-hidden="true" />}</button></Popover.Trigger>

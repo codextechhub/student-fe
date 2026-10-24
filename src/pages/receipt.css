@@ -50,7 +50,7 @@
 .receipt-total span{color:#2c3d5b;font-size:16px;font-weight:650}
 .receipt-total strong{color:#263b64;font-size:21px;font-weight:650;letter-spacing:-.03em;text-align:right;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .receipt-balance{display:flex;justify-content:space-between;gap:12px;padding:13px 14px;border-radius:13px;background:#f2f5fc}
-.receipt-balance span{color:#5e6e88;font-size:13px;font-weight:650}
+.receipt-balance span{color:#5e6e88;font-size:13px;font-weight:650;white-space:nowrap}
 .receipt-balance strong{color:#314caa;font-size:14px;font-weight:650;text-align:right;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .receipt-historic{margin:10px 1px 0;color:#8795a8;font-size:12px;line-height:1.45}
 .receipt-unavailable{padding:28px 22px;border:1px solid #e9edf5;border-radius:24px;background:white;box-shadow:0 9px 29px #26385912;text-align:center}

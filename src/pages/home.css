@@ -71,6 +71,7 @@
 .home-insight--fees .home-insight-value { overflow: visible; white-space: normal; overflow-wrap: anywhere; }
 .home-insight-sub { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin-top: 7px; color: #247656; font-size: 11px; font-weight: 700; line-height: 1.35; }
 .home-insight--fees .home-insight-sub { color: #97601e; }
+.home-insight--fees .home-insight-credit { margin-top: 4px; -webkit-line-clamp: 3; color: #4a659d; }
 
 .home-notice { display: flex; gap: 13px; padding: 17px; }
 .home-notice-link { text-decoration: none; transition: transform .2s, border-color .2s, box-shadow .2s; }

@@ -3,7 +3,7 @@ import { ArrowLeft, Check, CircleAlert, Download } from "lucide-react";
 import { Link, useParams } from "react-router";
 
 import { PageShell } from "@/components/layout/page-shell";
-import { formatDate, formatNaira } from "@/lib/format";
+import { accountBalanceWords, formatDate, formatNaira } from "@/lib/format";
 import { useLazyReceiptPdfQuery, useReceiptQuery, type Receipt } from "@/redux/services/portal-api";
 
 import "./receipt.css";
@@ -90,7 +90,7 @@ function ReceiptDocument({ receipt }: { receipt: Receipt }) {
         </div>)}
       </div>
       <div className="receipt-total"><span>Amount received</span><strong>{formatNaira(receipt.amount)}</strong></div>
-      <div className="receipt-balance"><span>Balance after this payment</span><strong>{formatNaira(receipt.balance_after)}</strong></div>
+      <div className="receipt-balance"><span>Account balance after this payment</span><strong>{accountBalanceWords(receipt.balance_after)}</strong></div>
       <p className="receipt-historic">This was the balance when the payment was recorded. Your balance in Fees may have changed since then.</p>
     </div>
   </article>;

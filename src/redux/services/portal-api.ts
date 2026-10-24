@@ -77,6 +77,10 @@ export type Home = {
     | ({
         available: true;
         balance: number;
+        /** Open bills and charges, never reduced by credit. */
+        owing: number;
+        /** Credit the school holds for the pupil. */
+        credit: number;
         status: "OWING" | "CLEAR" | "IN_CREDIT";
         open_invoice: {
           invoice_ref: number;
@@ -284,12 +288,16 @@ export type DebitNote = {
 };
 
 /**
- * The pupil's fees. `balance` below zero is credit. `can_pay` is the school's
- * choice to let pupils pay here; `min_part_payment` its smallest card part
- * payment, in kobo.
+ * The pupil's fees. `owing` is what open bills and charges add up to and is
+ * never reduced by credit; `credit` is what the school holds for the pupil;
+ * `balance` is `owing` less `credit`, kept for older readers. `can_pay` is the
+ * school's choice to let pupils pay here; `min_part_payment` its smallest card
+ * part payment, in kobo.
  */
 export type Fees = {
   balance: number;
+  owing: number;
+  credit: number;
   total_billed: number;
   total_paid: number;
   invoices: Invoice[];
