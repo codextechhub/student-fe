@@ -37,8 +37,8 @@ export type PushSupport = "ready" | "install-first" | "unsupported";
 
 /**
  * Whether this browser can show the school's notifications, and what stands in the way.
- * The store app has no Web Push: its notifications are native push, which
- * `native/native-push` will register.
+ * The store app has no Web Push: its notifications are native push
+ * (`native/native-push`).
  */
 export function pushSupport(): PushSupport {
   if (isNativeApp()) return "unsupported";

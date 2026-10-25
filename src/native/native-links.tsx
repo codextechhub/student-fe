@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { currentSchoolSlug } from "@/utils/school-host";
 
 import { decideLink } from "./app-links";
+import { checkoutReturned, isPaymentReturn } from "./checkout";
 import { saveSchoolCode } from "./school-code";
 import { lookUpSchool } from "./school-lookup";
 
@@ -19,7 +20,8 @@ type Pending = { code: string; name: string; path: string; switching: boolean };
  * chosen, shows a confirmation that names the school, and only a tap on the
  * button changes the school, through the same steps as the school choice
  * screen: keep the code, then reload into it. A link to anything that is not a
- * school's student app is ignored.
+ * school's student app is ignored. The gateway's return to the payment result
+ * closes the checkout browser first (`checkout.ts`).
  */
 export function NativeLinks() {
   const navigate = useNavigate();
@@ -33,6 +35,8 @@ export function NativeLinks() {
     const opened = async (link: string) => {
       const decision = decideLink(link, currentSchoolSlug());
       if (decision.kind === "go") {
+        // The gateway's return: the checkout browser is closed before the result is shown.
+        if (isPaymentReturn(decision.path)) await checkoutReturned();
         navigate(decision.path);
         return;
       }

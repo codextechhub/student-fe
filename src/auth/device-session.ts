@@ -2,6 +2,7 @@ import type { ThunkDispatch, UnknownAction } from "@reduxjs/toolkit";
 
 import { putCredential } from "@/native/credentials";
 import { isNativeApp } from "@/native/platform";
+import { forgetPupilDevice } from "@/native/push-register";
 import { wipePupil } from "@/offline/offline-copy";
 import { pushChoiceFor, setPushChoice } from "@/push/push-choice";
 import { wentOffline } from "@/redux/features/connectivity-slice";
@@ -136,7 +137,7 @@ async function showNobody(dispatch: Dispatch, notice = ""): Promise<void> {
 }
 
 /** Why a pupil's sign-in ended, which decides what the next screen says. */
-export type EndReason = "ended" | "password-changed";
+export type EndReason = "ended" | "password-changed" | "closed";
 
 /** Takes a pupil whose sign-in has ended off the phone, saying so to whoever looks next. */
 async function forget(account: string, why: EndReason = "ended"): Promise<string> {
@@ -147,9 +148,11 @@ async function forget(account: string, why: EndReason = "ended"): Promise<string
   await wipePupil(account);
   setPushChoice(account, null);
   if (!pupil?.firstName) return "";
-  return why === "password-changed"
-    ? `${pupil.firstName}'s password was changed, so they were signed out. Sign in with the new password to carry on.`
-    : `${pupil.firstName} was signed out on this device. Sign in again to carry on.`;
+  if (why === "password-changed") {
+    return `${pupil.firstName}'s password was changed, so they were signed out. Sign in with the new password to carry on.`;
+  }
+  if (why === "closed") return `${pupil.firstName}'s account was deleted and has been removed from this device.`;
+  return `${pupil.firstName} was signed out on this device. Sign in again to carry on.`;
 }
 
 /**
@@ -327,12 +330,15 @@ export const switchPupil =
 /**
  * Shows the pupil a tapped notification is about, when they are on this
  * phone; a notification for anybody else changes nothing.
+ *
+ * Answers whether that pupil is now showing, so the caller opens the
+ * notification's screen only for them.
  */
 export const showPupilFromPush =
   (account: string) =>
-  async (dispatch: Dispatch): Promise<void> => {
-    if (!(await listPupils()).some((pupil) => pupil.account === account)) return;
-    await dispatch(switchPupil(account));
+  async (dispatch: Dispatch): Promise<boolean> => {
+    if (!(await listPupils()).some((pupil) => pupil.account === account)) return false;
+    return (await dispatch(switchPupil(account))).ok;
   };
 
 /**
@@ -342,6 +348,8 @@ export const showPupilFromPush =
 export const signOutPupil =
   (account: string) =>
   async (dispatch: Dispatch, getState: GetState): Promise<void> => {
+    // While the sign-in still works, ask the school to forget this phone for the pupil (native push).
+    if (isNativeApp()) await forgetPupilDevice(account);
     await deviceSignOut(account);
     dropAccess(account);
     await deletePupil(account);
@@ -395,6 +403,22 @@ export const signOutAfterPasswordChange =
   async (dispatch: Dispatch): Promise<void> => {
     await deviceSignOut(account);
     await dispatch(endPupil(account, "password-changed"));
+  };
+
+/**
+ * Takes a pupil off this phone after their account was closed.
+ *
+ * The school ended every sign-in the account had when it closed, so this only
+ * clears what the phone holds: the cookie in a browser, the stored credential
+ * in the store app, the pupil's entry, offline copy and notification choice.
+ * The next pupil on the phone is shown, or the sign-in screen, which says the
+ * account was deleted.
+ */
+export const leaveAfterClosure =
+  (account: string) =>
+  async (dispatch: Dispatch): Promise<void> => {
+    await deviceSignOut(account);
+    await dispatch(endPupil(account, "closed"));
   };
 
 /**

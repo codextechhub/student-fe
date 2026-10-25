@@ -158,6 +158,7 @@ export const baseApi = createApi({
     "TransferAccount",
     "Conversations",
     "MessageThread",
+    "AccountClosure",
   ],
   endpoints: () => ({}),
 });

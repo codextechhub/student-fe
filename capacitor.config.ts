@@ -1,3 +1,5 @@
+/// <reference types="@capacitor-firebase/messaging" />
+
 import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
@@ -14,7 +16,24 @@ const config: CapacitorConfig = {
   webDir: "dist-native",
   // The web view's colour before the page has painted, the app's page background.
   backgroundColor: "#F9FAFB",
+  // The messaging plugin and Capacitor each pull in a Swift package; linking the plugin by
+  // symlink avoids the package identity collision between them.
+  experimental: {
+    ios: {
+      spm: {
+        packageOptions: {
+          "@capacitor-firebase/messaging": { symlink: true },
+        },
+      },
+    },
+  },
   plugins: {
+    // A notification that arrives while the app is open: the iPhone shows its banner and plays
+    // its sound itself. Android shows nothing for an open app, so the app shows a toast
+    // (`native-push.tsx`).
+    FirebaseMessaging: {
+      presentationOptions: ["alert", "sound"],
+    },
     // The splash (the XVS crest) is taken down by the app once its first real
     // screen is drawn (`src/native/splash.ts`). Auto-hide is the safety net: if
     // the app never gets that far, the plugin removes the splash itself after

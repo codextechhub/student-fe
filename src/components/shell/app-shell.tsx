@@ -64,10 +64,10 @@ export function AppShell() {
   const current = itemFor(pathname);
   const conversationOpen = isConversationPath(pathname);
   const viewport = useVisualViewportBox(conversationOpen);
-  const onDesignPage = pathname === "/" || pathname === "/timetable" || pathname.startsWith("/results") || pathname === "/attendance" || pathname === "/profile" || pathname.startsWith("/fees") || pathname.startsWith("/notices") || pathname.startsWith("/messages");
+  const onDesignPage = pathname === "/" || pathname === "/timetable" || pathname.startsWith("/results") || pathname === "/attendance" || pathname.startsWith("/profile") || pathname.startsWith("/fees") || pathname.startsWith("/notices") || pathname.startsWith("/messages");
   const badges: Partial<Record<NavItem["key"], number>> = { notices: unread, messages: unreadMessages };
   const where = [me?.school.name, me?.show_branch ? me?.branch?.name : null].filter(Boolean).join(" · ");
-  const screenTitle = pathname.startsWith("/results/card/") ? "Report card" : pathname.startsWith("/fees/receipts/") ? "Payment receipt" : pathname.startsWith("/fees/pay/") ? "Pay a bill" : pathname === "/fees/paid" ? "Payment status" : current?.key === "fees" ? "My fees" : current?.key === "attendance" ? "My attendance" : current?.key === "timetable" ? "My timetable" : current?.key === "results" ? "My results" : current?.key === "profile" ? "My profile" : current?.label ?? "";
+  const screenTitle = pathname.startsWith("/results/card/") ? "Report card" : pathname.startsWith("/fees/receipts/") ? "Payment receipt" : pathname.startsWith("/fees/pay/") ? "Pay a bill" : pathname === "/fees/paid" ? "Payment status" : pathname === "/profile/delete-account" ? "Delete my account" : current?.key === "fees" ? "My fees" : current?.key === "attendance" ? "My attendance" : current?.key === "timetable" ? "My timetable" : current?.key === "results" ? "My results" : current?.key === "profile" ? "My profile" : current?.label ?? "";
 
   return (
     <div

@@ -39,7 +39,31 @@ beforeEach(() => {
   mocks.refetch.mockReset();
 });
 afterEach(() => { act(() => root.unmount()); container.remove(); });
-const render = () => act(() => root.render(<MemoryRouter initialEntries={["/fees/paid?reference=R1"]}><PaidPage /></MemoryRouter>));
+const render = (address = "/fees/paid?reference=R1") => act(() => root.render(<MemoryRouter initialEntries={[address]}><PaidPage /></MemoryRouter>));
+
+describe("an address that claims success", () => {
+  const CLAIM = "/fees/paid?reference=R1&trxref=R1&status=success&paid=true";
+
+  it("is not believed: a payment the API calls pending is shown as pending", () => {
+    mocks.status = { status: "PENDING", amount_naira: "₦5,000.00", payee_name: "Lagoon View School" };
+    render(CLAIM);
+    expect(container.textContent).toContain("Almost there");
+    expect(container.textContent).not.toContain("Payment received");
+  });
+
+  it("is not believed: a payment the API calls abandoned is shown as not completed", () => {
+    mocks.status = { status: "ABANDONED", amount_naira: "₦5,000.00", payee_name: "Lagoon View School" };
+    render(CLAIM);
+    expect(container.textContent).toContain("Payment was cancelled");
+    expect(container.textContent).not.toContain("Payment received");
+  });
+
+  it("says nothing is confirmed while the API has not answered", () => {
+    mocks.status = undefined as never;
+    render(CLAIM);
+    expect(container.textContent).not.toContain("Payment received");
+  });
+});
 
 describe("card payment return", () => {
   it("keeps a pending payment unconfirmed and offers no receipt", () => {

@@ -12,6 +12,7 @@ import { captureInstallPrompt } from "./install/install-prompt";
 import { checkRelatedApps } from "./install/installed";
 import { applySchoolApp } from "./lib/school-app";
 import { isNativeApp } from "./native/platform";
+import { logDebugToken } from "./native/push-debug";
 import { loadSchoolCode } from "./native/school-code";
 import { schoolApi } from "./redux/services/school-api";
 import { store } from "./redux/store";
@@ -39,6 +40,7 @@ if (!native) void applySchoolApp(readSchoolName).then(checkRelatedApps);
 /** The store app knows its school only from what was kept, so that is read before anything draws. */
 async function start() {
   if (native) await loadSchoolCode();
+  if (native) void logDebugToken();
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <Provider store={store}>

@@ -19,7 +19,11 @@ export function routeFetch(routes: Record<string, Canned | ((body: unknown) => C
     const path = url.pathname.replace(/^\/v1/, "");
     const key = `${(init?.method ?? request?.method ?? "GET").toUpperCase()} ${path}`;
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
-    calls.push({ key, body, headers: Object.fromEntries(new Headers(init?.headers).entries()) });
+    // A plain header object is read as it is: happy-dom's Headers hides Authorization.
+    const sent = init?.headers && !(init.headers instanceof Headers) && !Array.isArray(init.headers)
+      ? Object.fromEntries(Object.entries(init.headers).map(([name, value]) => [name, String(value)]))
+      : Object.fromEntries(new Headers(init?.headers).entries());
+    calls.push({ key, body, headers: sent });
     if (key === "GET /user/auth/csrf/" && !routes[key]) {
       return new Response(JSON.stringify({ data: { csrf_token: "csrf-test" } }), { status: 200 });
     }

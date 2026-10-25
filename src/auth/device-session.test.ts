@@ -14,6 +14,7 @@ import { pushChoiceFor, setPushChoice } from "@/push/push-choice";
 import {
   bootSession,
   HANDOVER_KEY,
+  leaveAfterClosure,
   showPupilFromPush,
   signInPupil,
   signOutAfterPasswordChange,
@@ -343,6 +344,38 @@ describe("after a password change", () => {
   });
 });
 
+describe("after the account was deleted", () => {
+  it("takes the pupil off this phone, leaves their sibling signed in, and says what happened", async () => {
+    const { calls } = api();
+    await putPupil(pupil("a-ebere"));
+    await putPupil(pupil("a-femi"));
+    await setActiveAccount("a-ebere");
+    await keepAnswer("a-ebere", "/portal/student/results/", { mine: "ebere" });
+    setPushChoice("a-ebere", "on");
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    await store.dispatch(leaveAfterClosure("a-ebere"));
+    const session = store.getState().session;
+    expect(session.active).toBe("a-femi");
+    expect(session.pupils.map((p) => p.account)).toEqual(["a-femi"]);
+    expect(session.notice).toBe("Ebere's account was deleted and has been removed from this device.");
+    expect(accessFor("a-ebere")).toBe("");
+    expect(await keptAnswer("a-ebere", "/portal/student/results/")).toBeNull();
+    expect(pushChoiceFor("a-ebere")).toBeNull();
+    expect(calls.find((c) => c.key === "POST /user/auth/device/sign-out/")?.body).toEqual({ account: "a-ebere" });
+  });
+
+  it("with nobody else on the phone, opens the sign-in screen", async () => {
+    api();
+    await putPupil(pupil("a-ebere"));
+    const { store } = makeStore();
+    await store.dispatch(bootSession());
+    await store.dispatch(leaveAfterClosure("a-ebere"));
+    expect(store.getState().session.status).toBe("signed-out");
+    expect(store.getState().session.pupils).toEqual([]);
+  });
+});
+
 describe("signing in", () => {
   it("the same child signing in again replaces their old entry rather than listing them twice", async () => {
     const { calls, fetchMock } = api();
@@ -419,9 +452,9 @@ describe("notifications and the pupils on the phone", () => {
     await setActiveAccount("a-ebere");
     const { store } = makeStore();
     await store.dispatch(bootSession());
-    await store.dispatch(showPupilFromPush("a-stranger"));
+    expect(await store.dispatch(showPupilFromPush("a-stranger"))).toBe(false);
     expect(store.getState().session.active).toBe("a-ebere");
-    await store.dispatch(showPupilFromPush("a-femi"));
+    expect(await store.dispatch(showPupilFromPush("a-femi"))).toBe(true);
     expect(store.getState().session.active).toBe("a-femi");
   });
 

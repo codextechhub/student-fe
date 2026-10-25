@@ -2,6 +2,7 @@ import { Bell, Share, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { NativePushSetting } from "@/native/native-push-setting";
 import { isNativeApp } from "@/native/platform";
 import type { TurnOnResult } from "@/push/push";
 import { usePush } from "@/push/use-push";
@@ -63,14 +64,19 @@ export function PushOffer() {
  * It says where things stand (on, off, blocked by the browser, needing the
  * Home Screen app on an iPhone, or not available here) and offers the one
  * action that applies. Turning it off stops this pupil's notifications only:
- * a brother or sister signed in on the same phone keeps theirs.
+ * a brother or sister signed in on the same phone keeps theirs. The store app
+ * has its own card for native push (`NativePushSetting`).
  */
 export function PushSetting() {
+  return isNativeApp() ? <NativePushSetting /> : <WebPushSetting />;
+}
+
+function WebPushSetting() {
   const { state, busy, turnOn, turnOff } = usePush();
   const offline = useAppSelector((s) => s.connectivity.offline);
   const several = useAppSelector((s) => s.session.pupils.length > 1);
   const firstName = useShowingFirstName();
-  if (state === "loading" || isNativeApp()) return null;
+  if (state === "loading") return null;
 
   return (
     <section className="profile-surface profile-notifications">

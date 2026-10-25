@@ -33,3 +33,14 @@ export function nativePlatform(): "ios" | "android" | "" {
   const platform = Capacitor.getPlatform();
   return platform === "ios" || platform === "android" ? platform : "";
 }
+
+/**
+ * Whether this is a debug build of the store app, which is what lets it log
+ * what a release build keeps quiet (a Firebase token, for one).
+ *
+ * Capacitor sets the flag from the native project: a debuggable Android
+ * build, an iPhone build with `CAPACITOR_DEBUG` on.
+ */
+export function isDebugBuild(): boolean {
+  return isNativeApp() && (Capacitor as unknown as { DEBUG?: boolean }).DEBUG === true;
+}

@@ -8,12 +8,16 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  native: false,
+  openCheckout: vi.fn(),
   canPay: true,
   start: vi.fn(),
   offline: false,
   transfer: { state: "ISSUED", bank_name: "Wema Bank", account_number: "0123456789", account_name: "TEST-MANAGED-ACCOUNT", as_of: "2026-10-18T00:00:00Z" },
 }));
 
+vi.mock("@/native/platform", () => ({ isNativeApp: () => mocks.native }));
+vi.mock("@/native/checkout", () => ({ openCheckout: (...args: unknown[]) => mocks.openCheckout(...args) }));
 vi.mock("@/redux/hooks", () => ({
   useAppSelector: (pick: (s: unknown) => unknown) => pick({ connectivity: { offline: mocks.offline }, session: { active: "amaka", pupils: [{ account: "amaka", fullName: "Amaka Balogun" }] } }),
   useAppDispatch: () => vi.fn(),
@@ -43,6 +47,8 @@ let root: Root;
 beforeEach(() => {
   container = document.createElement("div"); document.body.appendChild(container); root = createRoot(container);
   mocks.canPay = true;
+  mocks.native = false;
+  mocks.openCheckout.mockReset().mockResolvedValue(undefined);
   mocks.offline = false;
   mocks.start.mockReset().mockReturnValue({ unwrap: async () => ({ checkout_url: "https://checkout.example/abc", reference: "R", amount: 1, balance_after: 0 }) });
   vi.stubGlobal("location", { ...window.location, assign: vi.fn() });
@@ -92,6 +98,24 @@ describe("paying a bill by card", () => {
     await go();
     expect(mocks.start).toHaveBeenCalledWith({ invoiceRef: 251, amount: 1_168_750 });
     expect(window.location.assign).toHaveBeenCalledWith("https://checkout.example/abc");
+  });
+
+  it("opens the gateway in the in-app browser in the store app, leaving the web view where it is", async () => {
+    mocks.native = true;
+    render();
+    choose("Card");
+    await go();
+    expect(mocks.openCheckout).toHaveBeenCalledWith("https://checkout.example/abc", "R");
+    expect(window.location.assign).not.toHaveBeenCalled();
+  });
+
+  it("says so when the store app cannot open the payment page", async () => {
+    mocks.native = true;
+    mocks.openCheckout.mockRejectedValue(new Error("no browser"));
+    render();
+    choose("Card");
+    await go();
+    expect(container.querySelector("[role=alert]")?.textContent).toBe("The payment page couldn't be opened. Try again.");
   });
 
   it("shows the server's refusal word for word", async () => {

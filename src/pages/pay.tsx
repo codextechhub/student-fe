@@ -8,6 +8,8 @@ import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { formatDate, formatNaira, parseNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { openCheckout } from "@/native/checkout";
+import { isNativeApp } from "@/native/platform";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { baseApi } from "@/redux/services/base-api";
 import {
@@ -91,11 +93,21 @@ function CardPayment({ fees, invoice }: { fees: Fees; invoice: Invoice }) {
     const found = problem();
     if (found || !amount) return setError(found || "Enter an amount.");
     setError("");
+    let checkout;
     try {
-      const checkout = await start({ invoiceRef: invoice.invoice_ref, amount }).unwrap();
-      window.location.assign(checkout.checkout_url);
+      checkout = await start({ invoiceRef: invoice.invoice_ref, amount }).unwrap();
     } catch (failure) {
-      setError(refusal(failure).message);
+      return setError(refusal(failure).message);
+    }
+    if (!isNativeApp()) {
+      window.location.assign(checkout.checkout_url);
+      return;
+    }
+    // The store app opens the checkout in the phone's in-app browser and keeps the app where it is.
+    try {
+      await openCheckout(checkout.checkout_url, checkout.reference);
+    } catch {
+      setError("The payment page couldn't be opened. Try again.");
     }
   };
 

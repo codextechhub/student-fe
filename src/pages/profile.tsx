@@ -4,6 +4,7 @@ import { Dialog } from "radix-ui";
 import { toast } from "sonner";
 
 import { ChangePassword } from "@/components/change-password";
+import { DeleteAccountCard } from "@/components/delete-account-card";
 import { InstallSetting } from "@/components/install-offer";
 import { PageShell } from "@/components/layout/page-shell";
 import { PupilAvatar } from "@/components/pupil-avatar";
@@ -20,6 +21,7 @@ import {
   type Profile,
 } from "@/redux/services/portal-api";
 
+import "./delete-account.css";
 import "./profile.css";
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -56,6 +58,7 @@ export function ProfilePage() {
         <ChangePassword />
         <InstallSetting />
         <PushSetting />
+        <DeleteAccountCard />
       </div>
     </PageShell>
   );

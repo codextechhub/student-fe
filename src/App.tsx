@@ -5,12 +5,14 @@ import { InstallListener } from "@/components/install-offer";
 import { SessionBoot, SignedIn } from "@/components/session/session-gate";
 import { AppShell } from "@/components/shell/app-shell";
 import { UpdateBar } from "@/components/update-bar";
+import { NativeCheckoutReturn } from "@/native/native-checkout";
 import { NativeLinks } from "@/native/native-links";
 import { NativePushListener } from "@/native/native-push";
 import { isNativeApp, routerBasename } from "@/native/platform";
 import { SplashGate } from "@/native/splash-gate";
 import { VersionGate } from "@/native/version-gate";
 import { AttendancePage } from "@/pages/attendance";
+import { DeleteAccountPage } from "@/pages/delete-account";
 import { FeesPage } from "@/pages/fees";
 import { HomePage } from "@/pages/home";
 import { MessagesPage } from "@/pages/messages";
@@ -37,10 +39,11 @@ import { currentSchoolSlug } from "@/utils/school-host";
  * for a signed-in pupil, and remounts when the pupil showing changes.
  *
  * The store app is the same app on its own origin: the basename is `/`, there
- * is no install offer, service worker or Web Push (`NativePushListener` is
- * where native push goes), the splash screen stays up until the first real
+ * is no install offer, service worker or Web Push (`NativePushListener` does
+ * native push instead), the splash screen stays up until the first real
  * screen is drawn (`SplashGate`), links from a school's website open the right
- * screen (`NativeLinks`), the version check can block or nudge (`VersionGate`),
+ * screen (`NativeLinks`), a card payment's checkout browser hands back to the
+ * result screen (`NativeCheckoutReturn`), the version check can block or nudge (`VersionGate`),
  * and until a school code has been entered the only
  * screen is the one that asks for it. Choosing a school reloads the app, so
  * this reads the school once per load.
@@ -86,6 +89,7 @@ export default function App() {
             <Route path="messages/new" element={<MessagesPage />} />
             <Route path="messages/:id" element={<MessagesPage />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="profile/delete-account" element={<DeleteAccountPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
@@ -95,6 +99,7 @@ export default function App() {
           <NativePushListener />
           <SplashGate />
           <NativeLinks />
+          <NativeCheckoutReturn />
           <VersionGate />
         </>
       ) : (
