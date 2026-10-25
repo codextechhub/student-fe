@@ -8,8 +8,9 @@
  * kind of event, so a newer push of the same kind replaces the older one.
  *
  * Tapping a notification opens the screen it is about: a notice opens
- * Notices, a released result Results, a confirmed payment Fees, a message the
- * conversation it names (`/student/messages/<id>`). When the push
+ * Notices, a released result Results, a message the
+ * conversation it names (`/student/messages/<id>`), a confirmed payment its
+ * receipt (`/student/fees/receipts/<id>`). When the push
  * names the pupil's device-session `account`, the app is asked to show that
  * pupil first, so a sibling's notification never opens on the wrong child.
  * Only an address inside `/student/` is ever opened.
@@ -26,11 +27,15 @@ const SCREEN_FOR_TAG = {
 /** The only address a message push may name: one conversation inside the app. */
 const CONVERSATION_PATH = /^\/student\/messages\/\d+$/;
 
+/** The only address a payment push may name: one receipt inside the app. */
+const RECEIPT_PATH = /^\/student\/fees\/receipts\/\d+$/;
+
 const APP_ROOT = "/student/";
 
 /** The in-app path a notification opens, never outside the student app. */
 function screenFor(data) {
   if (data && data.tag === "messages.new_message_pupil" && CONVERSATION_PATH.test(data.url || "")) return data.url;
+  if (data && data.tag === "billing.payment_received" && RECEIPT_PATH.test(data.url || "")) return data.url;
   const screen = SCREEN_FOR_TAG[data && data.tag] || "";
   return APP_ROOT + screen;
 }
@@ -44,14 +49,23 @@ self.addEventListener("push", (event) => {
   }
   const title = data.title || "Your school";
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: data.body || "",
-      tag: data.tag || undefined,
-      renotify: Boolean(data.tag),
-      icon: APP_ROOT + "icons/icon-192.png",
-      badge: APP_ROOT + "icons/badge-96.png",
-      data: { tag: data.tag || "", account: data.account || "", notificationId: data.notification_id || "", url: data.url || "" },
-    }),
+    (async () => {
+      await self.registration.showNotification(title, {
+        body: data.body || "",
+        tag: data.tag || undefined,
+        renotify: Boolean(data.tag),
+        icon: APP_ROOT + "icons/icon-192.png",
+        badge: APP_ROOT + "icons/badge-96.png",
+        data: { tag: data.tag || "", account: data.account || "", notificationId: data.notification_id || "", url: data.url || "" },
+      });
+      // An open app is told what arrived, so a Fees screen can look for a transfer at once.
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const client of windows) {
+        if (new URL(client.url).pathname.startsWith(APP_ROOT)) {
+          client.postMessage({ type: "xvs-push-arrived", tag: data.tag || "", url: data.url || "" });
+        }
+      }
+    })(),
   );
 });
 

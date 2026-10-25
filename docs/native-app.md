@@ -266,6 +266,10 @@ store app.
 
 ## Card payments
 
+Card is a per-school setting, off by default: the fees answers carry
+`card_payments`. When it is false the app is transfer-only and none of the
+below runs (see "Fees by transfer" after this section). When it is true:
+
 In a browser the fees screen sends the page to the gateway and the gateway
 returns to `/student/fees/paid?reference=...`. In the store app that would
 carry the web view away, so `pages/pay.tsx` opens the checkout with
@@ -283,6 +287,33 @@ and nothing about how the browser was left marks a payment paid. On an iPhone
 the return link may load inside the Safari view instead of opening the app (a
 universal link does not fire for a redirect in a Safari view); the pupil taps
 Done and the second route takes over.
+
+## Fees by transfer
+
+Where `card_payments` is false (the default), the Fees screen leads with the
+pupil's own account number (bank, number with a Copy button, account name) and
+there is no card button, method choice or part-payment minimum. The Pay route
+shows the same transfer view only. An answer that does not carry the setting
+reads as card on (`lib/card-payments.ts`).
+
+While Fees or Pay is in front, `components/fees/use-deposit-watch.ts` asks for
+deposits since the server's moment of the screen's fresh account read: every 5
+seconds while the app is visible and focused, never while it is away, and not
+after 10 minutes without a touch (the next touch starts it again). A transfer
+shows "On its way: amount" until booked, then "Received: amount" with "View
+receipt", and the fees and home reads are marked stale so the balance
+refreshes. Three things look at once instead of waiting for the interval
+(`lib/deposit-signal.ts`): the app returning to the foreground (store app,
+`appStateChange`), a "Payment received" push arriving while the app is open
+(store app: `notificationReceived`, on both phones; web: the service worker
+posts `xvs-push-arrived` to the open page), and a touch after a long idle. A
+tap on that push opens `/student/fees/receipts/<id>`; the store app strips
+`/student` (`push-routing.ts`) and the web service worker allows exactly that
+shape.
+
+A stale screen that starts a card checkout after the school turned card off
+gets a 409 `CARD_PAYMENTS_OFF`: the fees are read again and the Pay screen
+falls to the transfer view with a plain line, not an error.
 
 ## Later phases
 

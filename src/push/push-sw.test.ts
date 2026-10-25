@@ -58,6 +58,44 @@ describe("a push arriving", () => {
   });
 });
 
+describe("a Payment received push", () => {
+  const PAID = { title: "Amaka: Payment received", body: "", tag: "billing.payment_received", url: "/student/fees/receipts/77", account: "a-amaka" };
+
+  it("tells the app that is open what arrived, and no other tab of the school's site", async () => {
+    const open = { url: "https://lagoon-view.xvs.codexng.com/student/fees", postMessage: vi.fn(), focus: vi.fn() };
+    const school = { url: "https://lagoon-view.xvs.codexng.com/overview", postMessage: vi.fn(), focus: vi.fn() };
+    const { self, listeners } = loadWorker([school, open]);
+    await fire(listeners.push, { data: { json: () => PAID } });
+    expect(self.registration.showNotification).toHaveBeenCalled();
+    expect(open.postMessage).toHaveBeenCalledWith({ type: "xvs-push-arrived", tag: "billing.payment_received", url: "/student/fees/receipts/77" });
+    expect(school.postMessage).not.toHaveBeenCalled();
+  });
+
+  it("opens the receipt it names on a tap, in the open app or a new window", async () => {
+    const notification = { data: { tag: PAID.tag, url: PAID.url, account: "a-amaka" }, close: vi.fn() };
+    const open = { url: "https://lagoon-view.xvs.codexng.com/student/", postMessage: vi.fn(), focus: vi.fn(async () => undefined) };
+    const inApp = loadWorker([open]);
+    await fire(inApp.listeners.notificationclick, { notification });
+    expect(open.postMessage).toHaveBeenCalledWith({ type: "xvs-push-open", path: "/student/fees/receipts/77", account: "a-amaka" });
+
+    const closed = loadWorker([]);
+    await fire(closed.listeners.notificationclick, { notification });
+    expect(closed.self.clients.openWindow).toHaveBeenCalledWith("/student/fees/receipts/77?pupil=a-amaka");
+  });
+
+  it("opens Fees when it names no receipt, and never an address outside the app or beyond one receipt", async () => {
+    const opened = async (url: string) => {
+      const { self, listeners } = loadWorker([]);
+      await fire(listeners.notificationclick, { notification: { data: { tag: PAID.tag, account: "", url }, close: vi.fn() } });
+      return self.clients.openWindow.mock.calls[0]?.[0];
+    };
+    expect(await opened("")).toBe("/student/fees");
+    expect(await opened("https://evil.example/student/fees/receipts/1")).toBe("/student/fees");
+    expect(await opened("/parent/fees/receipts/1")).toBe("/student/fees");
+    expect(await opened("/student/fees/receipts/1/../../messages")).toBe("/student/fees");
+  });
+});
+
 describe("a tap on the notification", () => {
   let notification: { data: unknown; close: ReturnType<typeof vi.fn> };
   beforeEach(() => {

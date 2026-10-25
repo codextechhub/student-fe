@@ -26,7 +26,7 @@
 .pay-method strong, .pay-method small { display: block; }
 .pay-method strong { font-size: 13px; font-weight: 700; }
 .pay-method small { margin-top: 3px; color: #8895a8; font-size: 11px; }
-.pay-card-panel, .pay-watch { min-width: 0; margin-top: 11px; padding: 16px; border: 1px solid #ebeff6; border-radius: 18px; background: white; box-shadow: 0 7px 20px #2638590c; }
+.pay-card-panel { min-width: 0; margin-top: 11px; padding: 16px; border: 1px solid #ebeff6; border-radius: 18px; background: white; box-shadow: 0 7px 20px #2638590c; }
 .pay-card-panel h3 { margin: 0 0 12px; color: #233757; font-size: 18px; font-weight: 650; letter-spacing: -.03em; }
 .pay-panel-intro { margin: 5px 0 17px; color: #718097; font-size: 12px; line-height: 1.45; }
 .pay-amount-options .pay-method { flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; min-height: 58px; border-radius: 13px; }
@@ -49,13 +49,6 @@
 .pay-secure svg { flex: none; margin-top: 1px; }
 .pay-transfer { margin-top: 13px; }
 .pay-transfer-note { margin: 12px 0 0; padding: 11px 12px; border-radius: 12px; background: #f6f8fc; color: #6d7b91; font-size: 12px; line-height: 1.5; }
-.pay-watch h3 { margin: 0; color: #263a5c; font-size: 14px; font-weight: 650; }
-.pay-watch ul { display: grid; gap: 8px; margin: 13px 0 0; padding: 0; list-style: none; }
-.pay-watch-message { margin: 13px 0 0; padding: 11px 12px; border-radius: 11px; background: #f1f4fc; color: #5a6d8d; font-size: 12px; line-height: 1.45; }
-.pay-watch ul .pay-watch-message { margin: 0; }
-.pay-watch-message.is-pending { background: #fff5e9; color: #95621f; }
-.pay-watch-message.is-received { background: #e9f8f2; color: #227956; }
-.pay-watch-message a { display: block; width: fit-content; margin-top: 9px; color: inherit; font-size: 12px; font-weight: 700; text-decoration: underline; }
 .pay-note { padding: 16px; border: 1px solid #ebeff6; border-radius: 16px; background: white; color: #53627a; font-size: 14px; line-height: 1.5; }
 .pay-loading { height: 200px; border-radius: 27px; background: #e9edfa; animation: pay-pulse 1.4s ease-in-out infinite alternate; }
 @keyframes pay-pulse { to { opacity: .48; } }
@@ -63,3 +56,5 @@
 @media (min-width: 760px) { .pay-layout { grid-template-columns: minmax(0, .88fr) minmax(360px, 1.12fr); align-items: start; } }
 @media (max-width: 370px) { .pay-page { padding-right: 15px; padding-left: 15px; } .pay-bill { padding: 21px; } .pay-method { gap: 7px; padding: 10px; } .pay-method-icon { width: 33px; height: 33px; } }
 @media (prefers-reduced-motion: reduce) { .pay-loading { animation: none; } }
+
+.pay-card-off { margin: 0 0 11px; padding: 11px 12px; border-radius: 12px; background: #fff5e9; color: #95621f; font-size: 13px; line-height: 1.5; }

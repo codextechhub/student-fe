@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { showPupilFromPush } from "@/auth/device-session";
 import { Button } from "@/components/ui/button";
+import { isPaymentPush, requestDepositCheck } from "@/lib/deposit-signal";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 
 import { nativePlatform } from "./platform";
@@ -32,7 +33,9 @@ import { tapTarget } from "./push-routing";
  *   waits for the session to open first, because switching pupils while the
  *   app is still choosing whom to show would race it.
  * - **An open app.** The iPhone shows the banner itself. Android shows nothing
- *   for an app in front, so a toast stands in.
+ *   for an app in front, so a toast stands in. A "Payment received" push (or the
+ *   app returning to the front) also tells a Fees or Pay screen to look for the
+ *   transfer at once (`deposit-signal`).
  * - **The offer.** A pupil who has not chosen is shown a short explanation
  *   before the phone's own permission prompt (`NativePushOffer`).
  */
@@ -66,14 +69,16 @@ export function NativePushListener() {
     void readPermission();
     void onTokenChange(tokenChanged).then(keep, () => undefined);
     void onTap(tapped).then(keep, () => undefined);
-    if (nativePlatform() === "android") {
-      void onForeground(({ title, body }) => {
-        if (title || body) toast(title || body, title && body ? { description: body } : undefined);
-      }).then(keep, () => undefined);
-    }
+    void onForeground(({ title, body, data }) => {
+      if (isPaymentPush(data)) requestDepositCheck();
+      if (nativePlatform() === "android" && (title || body)) toast(title || body, title && body ? { description: body } : undefined);
+    }).then(keep, () => undefined);
     void import("@capacitor/app").then(async ({ App }) => {
       const handle = await App.addListener("appStateChange", ({ isActive }) => {
-        if (isActive) returned();
+        if (isActive) {
+          returned();
+          requestDepositCheck();
+        }
       });
       keep(() => void handle.remove());
     });

@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, Building2, CreditCard, Lock, Wallet } from "lucide-react";
 import { Link, useParams } from "react-router";
 
-import { GetTransferAccount } from "@/components/fees/get-transfer-account";
-import { TransferAccountCard } from "@/components/fees/transfer-account-card";
+import { TransferPanel } from "@/components/fees/transfer-panel";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
+import { cardPaymentsOn, isCardPaymentsOff } from "@/lib/card-payments";
 import { formatDate, formatNaira, parseNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { openCheckout } from "@/native/checkout";
@@ -14,11 +14,8 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { baseApi } from "@/redux/services/base-api";
 import {
   refusal,
-  useDepositsQuery,
   useFeesQuery,
-  useMeQuery,
   useStartPaymentMutation,
-  useTransferAccountQuery,
   type Fees,
   type Invoice,
 } from "@/redux/services/portal-api";
@@ -26,13 +23,29 @@ import {
 import "./fees.css";
 import "./pay.css";
 
-/** One bill, paid on the gateway or into the pupil's permanent bank account. */
+/**
+ * One bill, paid on the gateway or into the pupil's permanent bank account.
+ *
+ * Where the school takes no card payments the page shows the transfer view
+ * only, with no method choice. A screen that was open before the school
+ * turned card off finds out when its card checkout is refused: the fees are
+ * read again and the page falls to the transfer view with a plain line, not
+ * an error.
+ */
 export function PayPage() {
   const { invoiceRef } = useParams();
+  const dispatch = useAppDispatch();
   const { data: fees, isLoading } = useFeesQuery();
   const offline = useAppSelector((s) => s.connectivity.offline);
   const [method, setMethod] = useState<"card" | "transfer">("card");
+  const [refused, setRefused] = useState(false);
   const invoice = fees?.invoices.find((item) => String(item.invoice_ref) === invoiceRef);
+  const cardOn = !!fees && cardPaymentsOn(fees) && !refused;
+
+  const cardTurnedOff = () => {
+    setRefused(true);
+    dispatch(baseApi.util.invalidateTags(["Fees", "Home"]));
+  };
 
   return (
     <PageShell className="pay-page">
@@ -48,13 +61,13 @@ export function PayPage() {
               <div className="pay-guardian"><Wallet size={17} aria-hidden="true" /><p><strong>Fees are normally paid by a parent or guardian.</strong> You can pay here if they can&apos;t use their own app right now.</p></div>
             </div>
             <div className="pay-detail">
-              {!fees.can_pay ? <Note>Your school doesn&apos;t take payments from pupils here. Ask your parent or guardian to pay.</Note> : invoice.balance <= 0 ? <Note>This bill is fully paid. Thank you.</Note> : offline ? <Note>You&apos;re offline. You can pay when you&apos;re back online.</Note> : <>
+              {!fees.can_pay ? <Note>Your school doesn&apos;t take payments from pupils here. Ask your parent or guardian to pay.</Note> : invoice.balance <= 0 ? <Note>This bill is fully paid. Thank you.</Note> : !cardOn ? <TransferOnly turnedOff={refused} /> : offline ? <Note>You&apos;re offline. You can pay when you&apos;re back online.</Note> : <>
                 <div className="pay-section-heading"><h2>How would you like to pay?</h2></div>
                 <div className="pay-methods" role="radiogroup" aria-label="How would you like to pay?">
                   <MethodButton active={method === "card"} onClick={() => setMethod("card")} icon={<CreditCard size={19} />} label="Card" description="Secure checkout" />
                   <MethodButton active={method === "transfer"} onClick={() => setMethod("transfer")} icon={<Building2 size={19} />} label="Bank transfer" description="Pay from any bank" />
                 </div>
-                {method === "card" ? <CardPayment fees={fees} invoice={invoice} /> : <TransferPayment />}
+                {method === "card" ? <CardPayment fees={fees} invoice={invoice} onCardOff={cardTurnedOff} /> : <TransferPayment />}
               </>}
             </div>
           </div>
@@ -72,7 +85,7 @@ function MethodButton({ active, onClick, icon, label, description }: { active: b
   return <button type="button" role="radio" aria-checked={active} onClick={onClick} className={cn("pay-method", active && "is-active")}><span className="pay-method-icon">{icon}</span><span><strong>{label}</strong>{description && <small>{description}</small>}</span></button>;
 }
 
-function CardPayment({ fees, invoice }: { fees: Fees; invoice: Invoice }) {
+function CardPayment({ fees, invoice, onCardOff }: { fees: Fees; invoice: Invoice; onCardOff: () => void }) {
   const [mode, setMode] = useState<"full" | "part">("full");
   const [typed, setTyped] = useState("");
   const [error, setError] = useState("");
@@ -97,6 +110,7 @@ function CardPayment({ fees, invoice }: { fees: Fees; invoice: Invoice }) {
     try {
       checkout = await start({ invoiceRef: invoice.invoice_ref, amount }).unwrap();
     } catch (failure) {
+      if (isCardPaymentsOff(failure)) return onCardOff();
       return setError(refusal(failure).message);
     }
     if (!isNativeApp()) {
@@ -125,36 +139,15 @@ function CardPayment({ fees, invoice }: { fees: Fees; invoice: Invoice }) {
   </section>;
 }
 
-/** How often the page asks whether a transfer has arrived. */
-const WATCH_EVERY_MS = 5_000;
-
-function TransferPayment() {
-  const { data: account, isLoading, isError, error } = useTransferAccountQuery();
-  const { data: me } = useMeQuery();
-  const signedInName = useAppSelector((s) => s.session.pupils.find((p) => p.account === s.session.active)?.fullName);
-
-  if (isLoading) return <div className="pay-loading" role="status" aria-label="Loading transfer account" />;
-  if (isError || !account) return <Note>{refusal(error).message || "Your account number can't be shown right now."}</Note>;
-  if (account.state === "UNAVAILABLE") return <Note>{account.message}</Note>;
-  if (account.state === "NONE") return <GetTransferAccount />;
-
-  return <div className="pay-transfer"><TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Pay into this account" /><p className="pay-transfer-note">Transfer any amount from a bank app. There is no card-payment minimum for a bank transfer.</p><DepositWatch since={account.as_of} /></div>;
+/** The whole page body where the school takes no card: the account number, and arrivals under it. */
+function TransferOnly({ turnedOff }: { turnedOff: boolean }) {
+  return <div className="pay-transfer">
+    <div className="pay-section-heading"><h2>Pay by bank transfer</h2></div>
+    {turnedOff && <p className="pay-card-off" role="status">Your school takes fee payments by bank transfer. Pay into the account number below.</p>}
+    <TransferPanel title="Pay into this account" lead />
+  </div>;
 }
 
-/** The server's deposit stream refreshes fees after a confirmed transfer. */
-function DepositWatch({ since }: { since: string }) {
-  const dispatch = useAppDispatch();
-  const { data } = useDepositsQuery(since, { pollingInterval: WATCH_EVERY_MS, skipPollingIfUnfocused: true, refetchOnFocus: true });
-  const deposits = data?.deposits ?? [];
-  const confirmed = deposits.filter((deposit) => deposit.status === "CONFIRMED").length;
-  const seen = useRef(0);
-
-  useEffect(() => {
-    if (confirmed > seen.current) {
-      seen.current = confirmed;
-      dispatch(baseApi.util.invalidateTags(["Fees", "Home"]));
-    }
-  }, [confirmed, dispatch]);
-
-  return <section className="pay-watch" aria-label="Transfer activity"><h3>Transfer activity</h3>{deposits.length === 0 ? <p className="pay-watch-message" role="status">Waiting for your transfer. Keep this page open to see it arrive.</p> : <ul role="status">{deposits.map((deposit) => <li key={deposit.reference} className={cn("pay-watch-message", deposit.status === "CONFIRMED" ? "is-received" : "is-pending")}>{formatNaira(deposit.amount)} {deposit.status === "CONFIRMED" ? "received. Thank you." : "on its way. Waiting for the bank to confirm."}{deposit.has_receipt && deposit.payment_ref && <Link to={`/fees/receipts/${deposit.payment_ref}`}>View receipt</Link>}</li>)}</ul>}</section>;
+function TransferPayment() {
+  return <div className="pay-transfer"><TransferPanel title="Pay into this account" waiting note={<p className="pay-transfer-note">Transfer any amount from a bank app. There is no card-payment minimum for a bank transfer.</p>} /></div>;
 }

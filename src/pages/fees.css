@@ -191,3 +191,23 @@
   .fees-bill-row .fees-invoice-title strong { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .fees-simple-items .fees-invoice-toggle svg, .fees-secondary-button svg { transition: none; } }
+
+/* Transfer-only: the account number leads, and arrivals show under it. */
+.fees-transfer-lead { display: grid; gap: 10px; min-width: 0; }
+.student-transfer-card.is-lead .student-transfer-bank.is-bank { margin-top: 11px; color: #3a4d6e; font-size: 13px; font-weight: 650; }
+.student-transfer-number.is-lead { cursor: default; }
+.student-transfer-copy { display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: 40px; padding: 8px 13px; border: 0; border-radius: 11px; background: #2d4778; color: white; font-size: 13px; font-weight: 700; cursor: pointer; }
+.student-transfer-copy svg { width: 15px; height: 15px; color: white; }
+.student-transfer-copy:focus-visible { outline: 3px solid #5975ff; outline-offset: 3px; }
+.transfer-panel { display: grid; gap: 11px; min-width: 0; }
+.transfer-note { margin: 0; padding: 14px 16px; border: 1px solid #ebeff6; border-radius: 16px; background: white; color: #53627a; font-size: 14px; line-height: 1.5; }
+.transfer-loading { height: 200px; border-radius: 27px; background: #e9edfa; animation: fees-pulse 1.4s ease-in-out infinite alternate; }
+.transfer-activity { min-width: 0; }
+.transfer-activity ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.transfer-activity-item, .transfer-activity-waiting { margin: 0; padding: 12px 14px; border-radius: 12px; background: #f1f4fc; color: #5a6d8d; font-size: 13px; line-height: 1.45; }
+.transfer-activity-item strong { font-weight: 700; }
+.transfer-activity-item.is-pending { background: #fff5e9; color: #95621f; }
+.transfer-activity-item.is-received { background: #e9f8f2; color: #227956; }
+.transfer-activity-item a { display: block; width: fit-content; margin-top: 8px; color: inherit; font-size: 12px; font-weight: 700; text-decoration: underline; }
+.fees-card-off-note { margin: 0; color: #718097; font-size: 12px; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) { .transfer-loading { animation: none; } }

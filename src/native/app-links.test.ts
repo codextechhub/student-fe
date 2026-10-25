@@ -35,6 +35,13 @@ describe("parseSchoolLink", () => {
   });
 });
 
+describe("a receipt link", () => {
+  it("opens the receipt screen without the /student prefix", () => {
+    expect(parseSchoolLink("https://meridian.xvs.codexng.com/student/fees/receipts/77")).toEqual({ code: "meridian", path: "/fees/receipts/77" });
+    expect(decideLink("https://meridian.xvs.codexng.com/student/fees/receipts/77", "meridian")).toEqual({ kind: "go", path: "/fees/receipts/77" });
+  });
+});
+
 describe("decideLink", () => {
   const link = "https://meridian.xvs.codexng.com/student/fees";
 

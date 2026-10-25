@@ -12,6 +12,10 @@ describe("a tapped notification's destination", () => {
     expect(tapTarget({ url: "/student/fees/receipts/9?from=push#top" }).path).toBe("/fees/receipts/9?from=push#top");
   });
 
+  it("opens the receipt a Payment received notification names, in the router's own path", () => {
+    expect(tapTarget({ tag: "billing.payment_received", url: "/student/fees/receipts/77", account: "a-amaka" })).toEqual({ account: "a-amaka", path: "/fees/receipts/77" });
+  });
+
   it("opens the home screen for the student app's own root", () => {
     expect(appPath("/student")).toBe("/");
     expect(appPath("/student/")).toBe("/");

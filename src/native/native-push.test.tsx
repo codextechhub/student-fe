@@ -69,6 +69,7 @@ vi.mock("./push-register", async () => ({
   forgetPupilDevice: vi.fn(async () => undefined),
 }));
 
+import { onDepositCheck } from "@/lib/deposit-signal";
 import { pushChoiceFor, setPushChoice } from "@/push/push-choice";
 
 import { NativePushListener } from "./native-push";
@@ -202,7 +203,30 @@ describe("an open app", () => {
   it("leaves the banner to the iPhone", async () => {
     mocks.platform = "ios";
     await mount();
-    expect(mocks.foreground).toBeNull();
+    await act(async () => mocks.foreground!({ title: "Femi: A new notice", body: "Open the app to read it.", data: {} }));
+    expect(mocks.toast).not.toHaveBeenCalled();
+  });
+
+  it("tells a watching Fees screen to look for the transfer when Payment received arrives, on either phone", async () => {
+    const checks = vi.fn();
+    const stop = onDepositCheck(checks);
+    for (const platform of ["android", "ios"] as const) {
+      mocks.platform = platform;
+      await mount();
+      await act(async () => mocks.foreground!({ title: "Ebere: Payment received", body: "", data: { tag: "billing.payment_received", url: "/student/fees/receipts/9" } }));
+      expect(checks).toHaveBeenCalledTimes(1);
+      checks.mockClear();
+      await act(async () => mocks.foreground!({ title: "Femi: A new notice", body: "", data: { tag: "notices.published", url: "/student/notices" } }));
+      expect(checks).not.toHaveBeenCalled();
+    }
+    stop();
+  });
+
+  it("opens the receipt a Payment received notification names, without the /student prefix", async () => {
+    await mount();
+    await tap({ url: "/student/fees/receipts/9", account: "a-femi", tag: "billing.payment_received" });
+    expect(mocks.shown).toHaveBeenCalledWith("a-femi");
+    expect(mocks.navigate).toHaveBeenCalledWith("/fees/receipts/9");
   });
 });
 

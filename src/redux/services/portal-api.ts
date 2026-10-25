@@ -93,6 +93,8 @@ export type Home = {
         } | null;
         open_invoice_count: number;
         can_pay: boolean;
+        /** Whether the school takes card payments; absent from a copy saved before the school sent it. */
+        card_payments?: boolean;
       })
     | Unavailable;
   notices: ({ available: true; latest: Notice | null; unread_count: number }) | Unavailable;
@@ -292,7 +294,10 @@ export type DebitNote = {
  * never reduced by credit; `credit` is what the school holds for the pupil;
  * `balance` is `owing` less `credit`, kept for older readers. `can_pay` is the
  * school's choice to let pupils pay here; `min_part_payment` its smallest card
- * part payment, in kobo.
+ * part payment, in kobo. `card_payments` is the school's choice to take card
+ * payments at all: when it is false the family pays only by transfer into the
+ * pupil's own account number. It is absent from an answer saved before the
+ * school sent it, which reads as card on (see `lib/card-payments`).
  */
 export type Fees = {
   balance: number;
@@ -304,6 +309,7 @@ export type Fees = {
   /** Absent from a copy saved before the school sent charges. */
   debit_notes?: DebitNote[];
   can_pay: boolean;
+  card_payments?: boolean;
   min_part_payment: number;
 };
 
@@ -479,6 +485,8 @@ export const portalApi = baseApi.injectEndpoints({
     deposits: build.query<{ as_of: string; deposits: Deposit[] }, string>({
       query: (since) => `/portal/student/fees/transfer-account/deposits/?since=${encodeURIComponent(since)}`,
       transformResponse: unwrap<{ as_of: string; deposits: Deposit[] }>,
+      // A watch is a live look, never kept for offline and never answered from a copy.
+      extraOptions: { live: true },
     }),
     paymentStatus: build.query<PaymentStatus, string>({
       query: (reference) => `/payments/public/collections/${encodeURIComponent(reference)}/status/`,

@@ -180,6 +180,7 @@ describe("addresses", () => {
   it("opens a screen inside the app, and the app's home for anything else", () => {
     expect(routerPath("/student/results")).toBe("/results");
     expect(routerPath("/student/")).toBe("/");
+    expect(routerPath("/student/fees/receipts/77")).toBe("/fees/receipts/77");
     expect(routerPath("/overview")).toBe("/");
     expect(routerPath("https://elsewhere.example/student/")).toBe("/");
   });
