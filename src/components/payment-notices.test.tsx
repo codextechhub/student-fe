@@ -21,32 +21,16 @@ const row = (over: Record<string, unknown> = {}) => ({
   event_type_label: "Payment received",
   channel: "IN_APP",
   subject: "₦500.00 received from Tunde Bello",
-  body: "Receipt RCP-0007, 25 Oct 2026, applied to INV-0012.",
-  action_url: "/finance",
+  action_url: "/student/fees/receipts/42",
   is_read: false,
   created_at: "2026-10-25T09:30:00Z",
   ...over,
 });
 
-const PAYMENT = {
-  payment_ref: 42,
-  reference: "COL-1",
-  amount: 50000,
-  status: "CONFIRMED",
-  status_label: "Confirmed",
-  method: "TRANSFER",
-  method_label: "Bank transfer",
-  paid_on: "2026-10-25",
-  payer_name: "",
-  receipt_number: "RCP-0007",
-  invoice_number: "INV-0012",
-  has_receipt: true,
-};
-
 type Calls = { url: string; method: string; body: string }[];
 
-/** A school that answers the feed with `feed` and the pupil's payments with `payments`. */
-function school(feed: unknown[], payments: unknown[] = [PAYMENT]) {
+/** A school that answers the feed with `feed`. */
+function school(feed: unknown[]) {
   const calls: Calls = [];
   const impl = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const request = input instanceof Request ? input : null;
@@ -58,7 +42,6 @@ function school(feed: unknown[], payments: unknown[] = [PAYMENT]) {
       new Response(JSON.stringify(data), { status: 200, headers: { "content-type": "application/json" } });
     if (url.includes("/notify/mark-read/")) return json({ data: { updated_count: 1 } });
     if (url.includes("/notify/")) return json({ data: feed });
-    if (url.includes("/fees/payments/")) return json({ data: payments });
     return json({ data: {} });
   });
   return { impl: impl as unknown as typeof fetch, calls };
@@ -111,7 +94,7 @@ describe("PaymentNotices", () => {
     await settle();
     const text = last.container.textContent ?? "";
     expect(text).toContain("Payments");
-    expect(text).toContain("Payment received, ₦500.00");
+    expect(text).toContain("₦500.00 received from Tunde Bello");
     expect(text).toContain("25 Oct 2026");
     expect(last.container.querySelector("a")?.getAttribute("href")).toBe("/fees/receipts/42");
     const feed = calls.find((c) => c.url.includes("/notify/") && !c.url.includes("mark-read"));
@@ -119,12 +102,17 @@ describe("PaymentNotices", () => {
     expect(feed?.url).toContain("is_read=false");
   });
 
-  it("opens Fees when the receipt is not among the payments yet", async () => {
-    const { impl } = school([row()], []);
-    vi.stubGlobal("fetch", impl);
-    last = render();
-    await settle();
-    expect(last.container.querySelector("a")?.getAttribute("href")).toBe("/fees");
+  it("opens Fees when the notice names no receipt in this app", async () => {
+    for (const action_url of ["", "/finance", "/parent/fees/receipts/42"]) {
+      const { impl } = school([row({ action_url })]);
+      vi.stubGlobal("fetch", impl);
+      last = render();
+      await settle();
+      expect(last.container.querySelector("a")?.getAttribute("href")).toBe("/fees");
+      act(() => last!.root.unmount());
+      last.container.remove();
+      last = null;
+    }
   });
 
   it("marks the notice read when it is opened and takes it off the screen", async () => {
@@ -139,17 +127,15 @@ describe("PaymentNotices", () => {
     const marked = calls.find((c) => c.url.includes("/notify/mark-read/"));
     expect(marked?.method).toBe("POST");
     expect(JSON.parse(marked!.body)).toEqual({ ids: [row().id] });
-    expect(last.container.textContent).not.toContain("Payment received, ₦500.00");
+    expect(last.container.textContent).not.toContain("₦500.00 received from Tunde Bello");
   });
 
   it("draws nothing when there is no unread payment notice", async () => {
-    const { impl, calls } = school([]);
+    const { impl } = school([]);
     vi.stubGlobal("fetch", impl);
     last = render();
     await settle();
     expect(last.container.textContent).toBe("");
-    // With nothing to match, the pupil's payments are not read.
-    expect(calls.some((c) => c.url.includes("/fees/payments/"))).toBe(false);
   });
 
   it("leaves out notices that are not payments, and payments already read", async () => {
