@@ -76,6 +76,8 @@
 .home-notice { display: flex; gap: 13px; padding: 17px; }
 .home-notice-link { text-decoration: none; transition: transform .2s, border-color .2s, box-shadow .2s; }
 .home-notice .home-empty { padding: 2px 0; }
+/* Unread payment notices, one tile each. */
+.home-payments { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .home-notice-icon { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 13px; background: #e8eef8; color: #4a659d; }
 .home-notice-body { display: block; min-width: 0; flex: 1; }
 .home-notice-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }

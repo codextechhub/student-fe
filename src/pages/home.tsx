@@ -2,6 +2,7 @@ import { Bell, CheckCircle2, ChevronRight, Wallet } from "lucide-react";
 import { Link } from "react-router";
 
 import { InstallOffer } from "@/components/install-offer";
+import { PaymentNotices } from "@/components/payment-notices";
 import { PageShell } from "@/components/layout/page-shell";
 import { PushOffer } from "@/components/push-settings";
 import { feeFigures } from "@/lib/fee-figures";
@@ -69,6 +70,7 @@ export function HomePage() {
                   <FeesCard block={home.fees} />
                 </div>
               </section>
+              <PaymentNotices />
               <NoticeSection block={home.notices} />
             </>
           )}

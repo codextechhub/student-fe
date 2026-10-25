@@ -110,7 +110,7 @@ export function useDepositWatch(since: string): { deposits: Deposit[] } {
     const fresh = deposits.filter((deposit) => deposit.status === "CONFIRMED" && !booked.current.has(deposit.reference));
     if (fresh.length === 0) return;
     for (const deposit of fresh) booked.current.add(deposit.reference);
-    dispatch(baseApi.util.invalidateTags(["Fees", "Home"]));
+    dispatch(baseApi.util.invalidateTags(["Fees", "Home", "PaymentNotices"]));
   }, [deposits, dispatch]);
 
   return { deposits };

@@ -137,7 +137,7 @@ describe("a transfer arriving", () => {
     render();
     expect(container.textContent).toBe("CONFIRMED");
     expect(mocks.dispatch).toHaveBeenCalledTimes(1);
-    expect(mocks.dispatch).toHaveBeenCalledWith({ type: "invalidate", tags: ["Fees", "Home"] });
+    expect(mocks.dispatch).toHaveBeenCalledWith({ type: "invalidate", tags: ["Fees", "Home", "PaymentNotices"] });
 
     render();
     expect(mocks.dispatch).toHaveBeenCalledTimes(1);
