@@ -22,6 +22,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Links from a school's website open the app: /student/* on every school address. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="*.xvs.codexng.com" />
+                <data android:host="*.xvs-staging.codexng.com" />
+                <data android:pathPrefix="/student" />
+            </intent-filter>
+
         </activity>
 
         <provider

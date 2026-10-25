@@ -98,11 +98,113 @@ The install offer, the update bar, Web Push and everything that registers a
 service worker. `src/native/native-push.tsx` is where native push goes later;
 it renders nothing today.
 
+## Start-up, splash and icons
+
+- **What a cold start costs.** On the iPhone simulator the page is drawn about
+  two seconds after launch: roughly 1.5 seconds for the phone to start the web
+  view process and load the page, then about 0.3 seconds for the app's own
+  start-up (reading the school code, opening the pupil list, mounting React).
+  The app's JavaScript was measured and is not the slow part: the secure
+  storage plugin answers its first call in 50 to 90 ms. The log line
+  `Making the view blank because of a JS prompt before the first paint` is
+  Capacitor's own bridge asking the native side, with `prompt()`, whether its
+  cookie and HTTP patches are on; the native side answers at once, WebKit
+  blanks a view that has not painted yet, and the page paints about 150 ms
+  later. The cost is the blank that shows until then, so the app covers it.
+- **The splash.** `@capacitor/splash-screen` shows the XVS crest from launch.
+  The app hides it itself (`src/native/splash.ts`, `splash-gate.tsx`) after the
+  first real screen is painted: the school choice, the sign-in, the pupil's
+  home, or the "can't reach your school" notice, never the loading mark. If the
+  app never gets that far the plugin removes the splash after 8 seconds
+  (`launchShowDuration` in `capacitor.config.ts`). The web view's own colour
+  before it paints is the app's page background, so nothing flashes black.
+- **Icons and splash art.** The sources are in `assets/` and are drawn from the
+  XVS crest in `public/svg/`, never the bare CodeX mark. `npm run store-art`
+  redraws them (`scripts/render-store-art.mjs`, which needs Google Chrome) and
+  runs `@capacitor/assets` to write every size into `ios/` and `android/`
+  (`--ios --android` only: it must not touch the web manifest). Commit the
+  results.
+
+## Version check
+
+On the store app only, at start and when the app returns to the foreground
+(at most every four hours), `src/native/app-version.ts` asks the public
+`GET /v1/app-versions/?app=com.codexng.xvs.student&platform=<ios|android>&version=<x.y.z>`
+and reads `status`:
+
+- `update_required`: a full screen, "This version of XVS Student is no longer
+  supported. Update it to keep using it.", with one button that opens
+  `store_url` in the phone's store (`@capacitor/app-launcher`).
+- `update_available`: a small dismissible note with an Update button. A
+  dismissal is remembered in `@capacitor/preferences` against that `latest`
+  version, so the note stays away until a newer one is published.
+- `current`, a 404 (no policy set), being offline, or any failure: nothing
+  happens.
+
+The version it sends is what `@capacitor/app` `getInfo()` reports, which is the
+native project's version. **To release a new version, bump both**:
+`MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in
+`ios/App/App.xcodeproj/project.pbxproj` (two occurrences each, Debug and
+Release), and `versionName` and `versionCode` in `android/app/build.gradle`.
+Both are `1.0.0`, build 1 today. `package.json`'s version is not used.
+
+## Links that open the app
+
+The school's website publishes Android's `assetlinks.json` and iPhone's
+`apple-app-site-association` on every school address, claiming `/student/*`
+for this app (school-fe's `docs/app-links.md`). The app side:
+
+- **iOS**: `ios/App/App/App.entitlements` carries Associated Domains,
+  `applinks:` and `webcredentials:` for `*.xvs.codexng.com` and
+  `*.xvs-staging.codexng.com`, set as `CODE_SIGN_ENTITLEMENTS` on the App
+  target. The App ID in the Apple Developer account needs the Associated
+  Domains capability.
+- **Android**: an `autoVerify` intent filter on `MainActivity` for `https`,
+  both wildcard hosts, path prefix `/student`.
+- **In the app** (`src/native/app-links.ts`, `native-links.tsx`): `appUrlOpen`
+  gives the link; the host's left label is the school code and the path after
+  `/student` is the screen (the store app's router starts at `/`). The same
+  school navigates. Another school, or any school when none is chosen yet,
+  shows "This link is for <School name>. Switch to that school?" and only a tap
+  saves the code and reloads, as the school choice does. Anything that is not
+  a school's `/student` address is ignored.
+
+The links verify only once the store values are set in school-fe's Render
+settings (the Apple team and bundle id, the Android certificate fingerprints).
+Until then:
+
+```bash
+adb shell am start -a android.intent.action.VIEW -d "https://meridian.xvs-staging.codexng.com/student/fees"
+xcrun simctl openurl booted "https://meridian.xvs-staging.codexng.com/student/fees"
+```
+
+Until the domain verifies, neither phone hands the link to the app: Android
+opens it in the browser (the intent filter matches, but an unverified link is
+not made the app's), and the simulator opens Safari. That is expected, not a
+fault. Once the store values are set and the app is installed from a build
+signed with the matching key, the same commands open the app on the fees screen.
+To exercise the in-app handling before then, call the handler's decisions in
+`src/native/app-links.test.ts`, or on Android turn verification off per app in
+Settings, Apps, XVS Student, Open by default, and add the school hosts.
+
+## Building for Android on this Mac
+
+Android Studio's bundled JDK is 25, which Gradle 8.14 cannot run on (`Unsupported
+class file major version 69`), so the Gradle wrapper is 9.1.0, the first
+release that runs on Java 25 and that the Android Gradle plugin 8.13 builds
+with. `android/local.properties` points at the SDK
+(`sdk.dir=$HOME/Library/Android/sdk`) and is not committed.
+
+```bash
+export ANDROID_HOME=~/Library/Android/sdk
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+npm run cap:sync && cd android && ./gradlew assembleDebug
+```
+
 ## Later phases
 
-Native push (APNs and FCM) at `NativePushListener`; a minimum-version check;
-deep links; the account deletion screen; file sharing of receipts and report
-cards; Paystack checkout in an in-app browser (until then a payment leaves the
-app for the checkout page through the WebView, and "Forgot password" opens the
-phone's browser); camera for the profile photo; app icons and the splash
-screen, which are still Capacitor's defaults.
+Native push (APNs and FCM) at `NativePushListener`; the account deletion
+screen; file sharing of receipts and report cards; Paystack checkout in an
+in-app browser (until then a payment leaves the app for the checkout page
+through the WebView, and "Forgot password" opens the phone's browser); camera
+for the profile photo.

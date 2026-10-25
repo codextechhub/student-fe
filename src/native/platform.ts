@@ -22,3 +22,14 @@ export function isNativeApp(): boolean {
 export function routerBasename(): string {
   return isNativeApp() ? "/" : "/student";
 }
+
+/**
+ * Which phone the store app is on, or "" in a browser.
+ *
+ * The version check asks the API about the store this build is published in.
+ */
+export function nativePlatform(): "ios" | "android" | "" {
+  if (!isNativeApp()) return "";
+  const platform = Capacitor.getPlatform();
+  return platform === "ios" || platform === "android" ? platform : "";
+}
