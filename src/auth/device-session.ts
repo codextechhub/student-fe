@@ -1,5 +1,7 @@
 import type { ThunkDispatch, UnknownAction } from "@reduxjs/toolkit";
 
+import { putCredential } from "@/native/credentials";
+import { isNativeApp } from "@/native/platform";
 import { wipePupil } from "@/offline/offline-copy";
 import { pushChoiceFor, setPushChoice } from "@/push/push-choice";
 import { wentOffline } from "@/redux/features/connectivity-slice";
@@ -9,7 +11,8 @@ import type { Me } from "@/redux/services/portal-api";
 import { currentSchoolSlug } from "@/utils/school-host";
 
 import { accessFor, dropAccess, setAccess } from "./access-tokens";
-import { API_BASE, authPost, withTenant } from "./api";
+import { API_BASE, authPost, requestCredentials, withTenant } from "./api";
+import { deviceSignOut, forgetCredential } from "./device-credential";
 import {
   deletePupil,
   getActiveAccount,
@@ -49,7 +52,7 @@ export type SignInResult = { ok: true } | { ok: false; message: string; staff?: 
 async function fetchMe(account: string): Promise<Me | "ended" | "unreachable"> {
   const ask = () =>
     fetch(`${API_BASE}${withTenant("/portal/student/me/")}`, {
-      credentials: "include",
+      credentials: requestCredentials(),
       headers: { accept: "application/json", Authorization: `Bearer ${accessFor(account)}` },
     });
   let response: Response;
@@ -96,7 +99,7 @@ async function adopt(account: string, me: Me): Promise<DevicePupil> {
   const pupil = pupilFrom(account, me);
   for (const other of await listPupils()) {
     if (other.studentId === pupil.studentId && other.account !== account) {
-      await authPost("/user/auth/device/sign-out/", { account: other.account });
+      await deviceSignOut(other.account);
       dropAccess(other.account);
       await deletePupil(other.account);
       const choice = pushChoiceFor(other.account);
@@ -139,6 +142,7 @@ export type EndReason = "ended" | "password-changed";
 async function forget(account: string, why: EndReason = "ended"): Promise<string> {
   const pupil = (await listPupils()).find((p) => p.account === account);
   dropAccess(account);
+  await forgetCredential(account);
   await deletePupil(account);
   await wipePupil(account);
   setPushChoice(account, null);
@@ -248,11 +252,29 @@ function refusalSentence(status: number, code: string, message: string): SignInR
   return { ok: false, message: message || "You can't sign in right now. Ask the school office for help." };
 }
 
+/**
+ * Puts a new sign-in's credential in the phone's secure storage, in the store app.
+ *
+ * Without it the sign-in would last only until the app is closed, so a
+ * credential that cannot be kept ends the sign-in at once, on the API's side
+ * too, rather than leaving a session nobody can reach.
+ */
+async function keepNativeCredential(account: string, refresh: string | undefined): Promise<boolean> {
+  try {
+    if (!refresh) throw new Error("No credential came with the sign-in.");
+    await putCredential(account, refresh);
+    return true;
+  } catch {
+    if (refresh) await authPost("/user/auth/device/sign-out/", { account, refresh });
+    return false;
+  }
+}
+
 /** Signs a pupil in on this phone and shows them; the pupils already here stay signed in. */
 export const signInPupil =
   (identifier: string, password: string) =>
   async (dispatch: Dispatch): Promise<SignInResult> => {
-    const result = await authPost<{ account: string; access: string }>("/user/auth/login/", {
+    const result = await authPost<{ account: string; access: string; refresh?: string }>("/user/auth/login/", {
       identifier: identifier.trim(),
       password,
       tenant: currentSchoolSlug(),
@@ -262,7 +284,10 @@ export const signInPupil =
       const { status, code, message } = result.refusal;
       return refusalSentence(status, code, message);
     }
-    const { account, access } = result.data;
+    const { account, access, refresh } = result.data;
+    if (isNativeApp() && !(await keepNativeCredential(account, refresh))) {
+      return { ok: false, message: "This phone could not keep your sign-in safe, so you were not signed in. Try again." };
+    }
     setAccess(account, access);
     const me = await fetchMe(account);
     if (me === "unreachable") return refusalSentence(0, "", "");
@@ -317,7 +342,7 @@ export const showPupilFromPush =
 export const signOutPupil =
   (account: string) =>
   async (dispatch: Dispatch, getState: GetState): Promise<void> => {
-    await authPost("/user/auth/device/sign-out/", { account });
+    await deviceSignOut(account);
     dropAccess(account);
     await deletePupil(account);
     await wipePupil(account);
@@ -368,7 +393,7 @@ export const endPupil =
 export const signOutAfterPasswordChange =
   (account: string) =>
   async (dispatch: Dispatch): Promise<void> => {
-    await authPost("/user/auth/device/sign-out/", { account });
+    await deviceSignOut(account);
     await dispatch(endPupil(account, "password-changed"));
   };
 

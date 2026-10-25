@@ -11,11 +11,16 @@ import App from "./App";
 import { captureInstallPrompt } from "./install/install-prompt";
 import { checkRelatedApps } from "./install/installed";
 import { applySchoolApp } from "./lib/school-app";
+import { isNativeApp } from "./native/platform";
+import { loadSchoolCode } from "./native/school-code";
 import { schoolApi } from "./redux/services/school-api";
 import { store } from "./redux/store";
 
-// Before React mounts: the browser's install prompt can come first.
-captureInstallPrompt();
+const native = isNativeApp();
+
+// Before React mounts: the browser's install prompt can come first. The store
+// app is already installed and has no install prompt.
+if (!native) captureInstallPrompt();
 
 /** The school's public name through the store, so the sign-in screen's own read is the same one. */
 async function readSchoolName(slug: string): Promise<string> {
@@ -28,12 +33,19 @@ async function readSchoolName(slug: string): Promise<string> {
 }
 
 // The browser is asked about the installed app once the school's manifest is on the page.
-void applySchoolApp(readSchoolName).then(checkRelatedApps);
+// The store app has no manifest to point at and no installed app to look for.
+if (!native) void applySchoolApp(readSchoolName).then(checkRelatedApps);
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <Provider store={store}>
-      <App />
-    </Provider>
-  </StrictMode>,
-);
+/** The store app knows its school only from what was kept, so that is read before anything draws. */
+async function start() {
+  if (native) await loadSchoolCode();
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <Provider store={store}>
+        <App />
+      </Provider>
+    </StrictMode>,
+  );
+}
+
+void start();

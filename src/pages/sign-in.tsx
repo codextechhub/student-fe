@@ -9,12 +9,22 @@ import { useSchoolName } from "@/lib/use-school-name";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { noticeCleared } from "@/redux/features/session-slice";
 import { schoolLogoUrl } from "@/utils/school-brand";
-import { currentSchoolSlug } from "@/utils/school-host";
+import { isNativeApp } from "@/native/platform";
+import { currentSchoolSlug, schoolWebAddress } from "@/utils/school-host";
 
 import "./sign-in.css";
 
 const SCHOOL_SIGN_IN = "/accounts";
 const FORGOT_PASSWORD = "/accounts/forgot-password";
+
+/**
+ * Where a link to the school's own website goes. In a browser it is a path on
+ * the address the pupil is already at; the store app has no such address, so
+ * it is the school's website, which the phone opens in its own browser.
+ */
+function schoolLink(path: string, slug: string) {
+  return isNativeApp() ? { href: `${schoolWebAddress(slug)}${path}`, target: "_blank", rel: "noreferrer" } : { href: path };
+}
 
 /** Signing in a first pupil, or adding another without ending the pupil already on this phone. */
 export function SignInPage() {
@@ -94,13 +104,14 @@ export function SignInPage() {
                     </button>
                   </div>
                 </div>
-                <a className="signin-forgot" href={FORGOT_PASSWORD}>Forgot password?</a>
-                {error && <div className="signin-error" role="alert">{error.message}{error.staff && <><br /><a href={SCHOOL_SIGN_IN}>Go to the school&apos;s sign-in</a></>}</div>}
+                <a className="signin-forgot" {...schoolLink(FORGOT_PASSWORD, slug)}>Forgot password?</a>
+                {error && <div className="signin-error" role="alert">{error.message}{error.staff && <><br /><a {...schoolLink(SCHOOL_SIGN_IN, slug)}>Go to the school&apos;s sign-in</a></>}</div>}
                 <button type="submit" className="signin-submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}<ArrowRight size={18} aria-hidden="true" /></button>
                 {adding && <Link to="/" className="signin-cancel">Cancel and return to {showing?.firstName ?? "the current pupil"}</Link>}
               </form>
             )}
             <p className="signin-helper">Trouble signing in? <strong>Ask your class teacher or the school office.</strong></p>
+            {isNativeApp() && <Link to="/school" className="signin-change-school">Change school</Link>}
           </div>
         </section>
       </div>

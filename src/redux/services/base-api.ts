@@ -7,9 +7,10 @@ import {
 } from "@reduxjs/toolkit/query/react";
 
 import { accessFor } from "@/auth/access-tokens";
-import { API_BASE, withTenant } from "@/auth/api";
+import { API_BASE, requestCredentials, withTenant } from "@/auth/api";
 import { getCsrfToken } from "@/auth/csrf";
 import { refreshAccess } from "@/auth/refresh";
+import { isNativeApp } from "@/native/platform";
 import { keepAnswer, keptAnswer } from "@/offline/offline-copy";
 import {
   reachedSchool,
@@ -23,12 +24,13 @@ type StateWithSession = { session: SessionState; connectivity: ConnectivityState
 
 const raw = fetchBaseQuery({
   baseUrl: API_BASE,
-  credentials: "include",
+  credentials: requestCredentials(),
   prepareHeaders: async (headers, { getState, type }) => {
     const active = (getState() as StateWithSession).session.active;
     const access = active ? accessFor(active) : "";
     if (access) headers.set("Authorization", `Bearer ${access}`);
-    if (type === "mutation") {
+    // CSRF guards cookies; the store app sends none.
+    if (type === "mutation" && !isNativeApp()) {
       const csrf = await getCsrfToken();
       if (csrf) headers.set("X-CSRFToken", csrf);
     }

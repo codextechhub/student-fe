@@ -5,13 +5,20 @@
  * account the API knows the sign-in by, and the pupil record's id so that the
  * same child signing in twice replaces their old entry rather than appearing
  * twice. No token is ever stored: the credential is an httpOnly cookie the
- * page cannot read.
+ * page cannot read (in the store app, an entry in the phone's secure storage).
  *
  * IndexedDB is per origin, and each school has its own address, so Bright
  * Star's pupils and Greenfield's never share a list. Where IndexedDB cannot be
  * opened (some private windows), the list lives in memory for the session:
  * the pupil stays signed in until the page closes and then signs in again.
+ *
+ * The store app has one origin for every school, so its list is kept in a
+ * database named for the school it is set to: changing school shows that
+ * school's pupils, and leaves the others' signed in.
  */
+import { isNativeApp } from "@/native/platform";
+import { currentSchoolSlug } from "@/utils/school-host";
+
 export type DevicePupil = {
   account: string;
   studentId: number;
@@ -26,6 +33,8 @@ const PUPILS = "pupils";
 const META = "meta";
 const ACTIVE_KEY = "active";
 
+const dbName = () => (isNativeApp() ? `${DB_NAME}-${currentSchoolSlug()}` : DB_NAME);
+
 let dbPromise: Promise<IDBDatabase | null> | null = null;
 const memory = { pupils: new Map<string, DevicePupil>(), active: null as string | null };
 
@@ -35,7 +44,7 @@ function openDb(): Promise<IDBDatabase | null> {
     if (typeof indexedDB === "undefined") return resolve(null);
     let request: IDBOpenDBRequest;
     try {
-      request = indexedDB.open(DB_NAME, DB_VERSION);
+      request = indexedDB.open(dbName(), DB_VERSION);
     } catch {
       return resolve(null);
     }

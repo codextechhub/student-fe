@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">XVS Student</string>
+    <string name="title_activity_main">XVS Student</string>
+    <string name="package_name">com.codexng.xvs.student</string>
+    <string name="custom_url_scheme">com.codexng.xvs.student</string>
+</resources>

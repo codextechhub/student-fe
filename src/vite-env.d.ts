@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly VITE_APP_BASE_DOMAIN?: string;
   /** The school to assume on a bare `localhost` in development only. */
   readonly VITE_DEV_SCHOOL_SLUG?: string;
+  /** The store app's API origin at build time (`npm run build:native`); staging's when unset. */
+  readonly VITE_NATIVE_API_ORIGIN?: string;
   /** The API's CSRF cookie name where a deployment renames it; `csrftoken` when unset. */
   readonly VITE_CSRF_COOKIE_NAME?: string;
 }

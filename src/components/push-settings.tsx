@@ -2,6 +2,7 @@ import { Bell, Share, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { isNativeApp } from "@/native/platform";
 import type { TurnOnResult } from "@/push/push";
 import { usePush } from "@/push/use-push";
 import { useAppSelector } from "@/redux/hooks";
@@ -69,7 +70,7 @@ export function PushSetting() {
   const offline = useAppSelector((s) => s.connectivity.offline);
   const several = useAppSelector((s) => s.session.pupils.length > 1);
   const firstName = useShowingFirstName();
-  if (state === "loading") return null;
+  if (state === "loading" || isNativeApp()) return null;
 
   return (
     <section className="profile-surface profile-notifications">

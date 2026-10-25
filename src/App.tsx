@@ -5,6 +5,8 @@ import { InstallListener } from "@/components/install-offer";
 import { SessionBoot, SignedIn } from "@/components/session/session-gate";
 import { AppShell } from "@/components/shell/app-shell";
 import { UpdateBar } from "@/components/update-bar";
+import { NativePushListener } from "@/native/native-push";
+import { isNativeApp, routerBasename } from "@/native/platform";
 import { AttendancePage } from "@/pages/attendance";
 import { FeesPage } from "@/pages/fees";
 import { HomePage } from "@/pages/home";
@@ -17,9 +19,11 @@ import { ProfilePage } from "@/pages/profile";
 import { ReceiptPage } from "@/pages/receipt";
 import { ReportCardPage } from "@/pages/report-card";
 import { ResultsPage } from "@/pages/results";
+import { SchoolChoicePage } from "@/pages/school-choice";
 import { SignInPage } from "@/pages/sign-in";
 import { PushListener } from "@/push/push-listener";
 import { TimetablePage } from "@/pages/timetable";
+import { currentSchoolSlug } from "@/utils/school-host";
 
 /**
  * The student app's routes, all under `/student/`.
@@ -28,13 +32,29 @@ import { TimetablePage } from "@/pages/timetable";
  * `/fees` is served at `/student/fees` and never collides with a school-fe
  * address on the same origin. Every screen but sign-in sits in the app shell,
  * for a signed-in pupil, and remounts when the pupil showing changes.
+ *
+ * The store app is the same app on its own origin: the basename is `/`, there
+ * is no install offer, service worker or Web Push (`NativePushListener` is
+ * where native push goes), and until a school code has been entered the only
+ * screen is the one that asks for it. Choosing a school reloads the app, so
+ * this reads the school once per load.
  */
 export default function App() {
+  const native = isNativeApp();
+  if (native && !currentSchoolSlug()) {
+    return (
+      <BrowserRouter basename={routerBasename()}>
+        <SchoolChoicePage />
+        <Toaster position="top-center" richColors closeButton />
+      </BrowserRouter>
+    );
+  }
   return (
-    <BrowserRouter basename="/student">
+    <BrowserRouter basename={routerBasename()}>
       <SessionBoot>
         <Routes>
           <Route path="/sign-in" element={<SignInPage />} />
+          {native && <Route path="/school" element={<SchoolChoicePage />} />}
           <Route
             element={
               <SignedIn>
@@ -61,9 +81,15 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </SessionBoot>
-      <PushListener />
-      <InstallListener />
-      <UpdateBar />
+      {native ? (
+        <NativePushListener />
+      ) : (
+        <>
+          <PushListener />
+          <InstallListener />
+          <UpdateBar />
+        </>
+      )}
       <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>
   );

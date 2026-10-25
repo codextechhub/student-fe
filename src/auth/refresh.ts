@@ -1,5 +1,9 @@
+import { getCredential, putCredential } from "@/native/credentials";
+import { isNativeApp } from "@/native/platform";
+
 import { setAccess, dropAccess } from "./access-tokens";
 import { authPost } from "./api";
+import { forgetCredential } from "./device-credential";
 
 /**
  * What a refresh came to.
@@ -34,6 +38,12 @@ const inFlight = new Map<string, Promise<RefreshOutcome>>();
  * cookie is in the browser's jar.
  *
  * Different pupils never wait on each other.
+ *
+ * In the store app there is no cookie: the pupil's credential is read from the
+ * phone's secure storage, sent in the body, and the rotated one the API
+ * answers with is stored in its place. A pupil with no credential stored has
+ * nothing to refresh with, so their sign-in is over. A storage that cannot be
+ * read decides nothing, as an unreachable school decides nothing.
  */
 export function refreshAccess(account: string): Promise<RefreshOutcome> {
   const running = inFlight.get(account);
@@ -51,11 +61,36 @@ function withAccountLock<T>(account: string, task: () => Promise<T>): Promise<T>
   return locks.request(`refresh:${account}`, task) as unknown as Promise<T>;
 }
 
+/** What a refresh sends: the account, and in the store app the credential kept for it. */
+async function refreshBody(account: string): Promise<{ account: string; refresh?: string } | "none" | "unreadable"> {
+  if (!isNativeApp()) return { account };
+  try {
+    const refresh = await getCredential(account);
+    return refresh ? { account, refresh } : "none";
+  } catch {
+    return "unreadable";
+  }
+}
+
 async function refreshOnce(account: string, mayRetry: boolean): Promise<RefreshOutcome> {
-  const result = await authPost<{ access?: string }>("/user/auth/device/refresh/", { account });
+  const body = await refreshBody(account);
+  if (body === "unreadable") return { ok: false, reason: "server" };
+  if (body === "none") {
+    dropAccess(account);
+    return { ok: false, reason: "ended" };
+  }
+  const result = await authPost<{ access?: string; refresh?: string }>("/user/auth/device/refresh/", body);
   if (result.ok) {
     const access = result.data.access ?? "";
     if (!access) return { ok: false, reason: "server" };
+    if (isNativeApp()) {
+      if (!result.data.refresh) return { ok: false, reason: "server" };
+      try {
+        await putCredential(account, result.data.refresh);
+      } catch {
+        // Not kept: this launch carries on with its access token, and the next one asks for a sign-in.
+      }
+    }
     setAccess(account, access);
     return { ok: true, access };
   }
@@ -67,6 +102,7 @@ async function refreshOnce(account: string, mayRetry: boolean): Promise<RefreshO
   }
   if (status === 401 && (ENDED.has(code) || !code)) {
     dropAccess(account);
+    await forgetCredential(account);
     return { ok: false, reason: "ended" };
   }
   if (status === 0) return { ok: false, reason: "offline" };

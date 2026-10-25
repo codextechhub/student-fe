@@ -1,0 +1,24 @@
+import { Capacitor } from "@capacitor/core";
+
+/**
+ * Whether this page is running inside the store app (the Capacitor shell on an
+ * iPhone or an Android phone) rather than in a browser.
+ *
+ * Every native-only branch in the app asks here and nowhere else, so the web
+ * app is the same app with this answering false: no native code runs, and none
+ * of the native plugins is loaded.
+ */
+export function isNativeApp(): boolean {
+  return Capacitor.isNativePlatform();
+}
+
+/**
+ * The router's basename.
+ *
+ * The web app lives under `/student/` on a school's own address, beside
+ * school-fe. The store app is served from its own origin (`capacitor://localhost`
+ * on iOS, `https://localhost` on Android) and owns its root.
+ */
+export function routerBasename(): string {
+  return isNativeApp() ? "/" : "/student";
+}
