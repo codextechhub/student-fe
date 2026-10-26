@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, FileText, Info, Plus, Receipt as ReceiptIcon, SlidersHorizontal } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Building2, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, FileText, Info, Plus, Receipt as ReceiptIcon, SlidersHorizontal } from "lucide-react";
 import { Popover } from "radix-ui";
 import { Link } from "react-router";
 
@@ -7,6 +7,7 @@ import { GetTransferAccount } from "@/components/fees/get-transfer-account";
 import { TransferAccountCard } from "@/components/fees/transfer-account-card";
 import { TransferPanel } from "@/components/fees/transfer-panel";
 import { PageShell } from "@/components/layout/page-shell";
+import { ScreenTitle } from "@/components/layout/screen";
 import { cardPaymentsOn } from "@/lib/card-payments";
 import { feeFigures } from "@/lib/fee-figures";
 import { formatDate, formatNaira } from "@/lib/format";
@@ -20,7 +21,12 @@ import {
 import "./fees.css";
 
 /**
- * One balance, a short bill list, and supporting information on demand.
+ * Fees (design 2g): one balance on the deep blue card, the bills as one card
+ * of rows, and payment history and the account number on demand below.
+ *
+ * The balance card's "Pay a bill" brings the bills into view (a pupil with two
+ * open bills chooses which), and "Account number" opens the account number
+ * where it lives, under Payment history.
  *
  * The pupil's account number is never above the bills. It sits behind a
  * "Show account number" disclosure under Payment history, so the bills stay
@@ -59,24 +65,36 @@ export function FeesPage() {
     window.requestAnimationFrame(() => document.getElementById(TRANSFER_PANEL_ID)?.scrollIntoView?.({ behavior: "smooth", block: "nearest" }));
   };
   const filterActive = billYear !== "all" || billStatus !== "all" || paymentYear !== "all";
+  const showBills = () => document.getElementById("fees-bills-heading")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  const figure = formatNaira(owing > 0 ? owing : credit);
+  const kobo = figure.lastIndexOf(".");
+  const term = [me?.term?.name, me?.session?.name].filter(Boolean).join(" · ");
 
   return (
     <PageShell className="fees-page">
       <div className="fees-wrap">
+        <ScreenTitle eyebrow={term || undefined} title="Fees" />
         {isLoading && !fees && <div className="fees-loading" role="status" aria-label="Loading fees" />}
-        {isError && !fees && <div className="fees-notice" role="alert">Your fees can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button></div>}
+        {isError && !fees && <div className="screen-card fees-notice" role="alert">Your fees can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button></div>}
         {fees && (
           <div className="fees-layout fees-simple-layout">
-            <section className="fees-hero fees-simple-hero" aria-label="Fee balance">
-              <div>
+            <section className="fees-hero" aria-label="Fee balance">
+              <div className="screen-orb fees-hero-orb" aria-hidden="true" />
+              <div className="fees-hero-body">
                 <span className="fees-hero-label">{owing > 0 ? "Balance to pay" : credit > 0 ? "In credit" : hasBills ? "All paid" : "No bills yet"}</span>
-                <strong className="fees-hero-value">{formatNaira(owing > 0 ? owing : credit)}</strong>
+                <strong className="fees-hero-value">{kobo > 0 ? <>{figure.slice(0, kobo)}<small>{figure.slice(kobo)}</small></> : figure}</strong>
                 <p className="fees-hero-note">{owing > 0 ? (fees.next_due ? "Next bill due " + formatDate(fees.next_due) : "Open bills and charges on your account") : credit > 0 ? "Credit available for your next bill" : hasBills ? "Nothing to pay right now" : "Your account is ready when needed"}</p>
                 {owing > 0 && credit > 0 && <p className="fees-hero-credit">{formatNaira(credit)} credit held by the school. Ask the school to apply it before you pay.</p>}
+                {((owing > 0 && fees.can_pay) || canShowTransfer) && (
+                  <div className="fees-hero-actions">
+                    {owing > 0 && fees.can_pay && <button type="button" className="fees-hero-pay" onClick={showBills}>Pay a bill</button>}
+                    {canShowTransfer && <button type="button" className="fees-hero-account" onClick={showTransfer}><Building2 size={17} aria-hidden="true" />Account number</button>}
+                  </div>
+                )}
               </div>
             </section>
 
-            {fees.can_pay && <div className="fees-guardian"><Info size={17} aria-hidden="true" /><p><strong>Your parent or guardian usually pays school fees.</strong> {cardOn ? "If they can't pay in their app right now, you can pay a bill here." : "If they can't pay in their app right now, you can pay by transfer to your account number."}</p></div>}
+            {fees.can_pay && <div className="info-note fees-guardian"><Info size={18} aria-hidden="true" /><p><strong>Your parent or guardian usually pays school fees.</strong> {cardOn ? "If they can't pay in their app right now, you can pay a bill here." : "If they can't pay in their app right now, you can pay by transfer to your account number."}</p></div>}
 
             <section aria-labelledby="fees-bills-heading">
               <div className="fees-detail-top fees-simple-detail-top">
@@ -96,20 +114,20 @@ export function FeesPage() {
                   </Popover.Root>
                 )}
               </div>
-              {!currentFees ? <div className="fees-surface fees-empty" role="status">{isError ? <>Bills can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button></> : "Loading bills…"}</div>
-                : !hasBills ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div>
-                : currentFees.items.length === 0 ? <div className="fees-surface fees-empty">No bills match these filters.</div>
-                : <ul className="fees-invoices fees-simple-items">{currentFees.items.map((item) => item.kind === "invoice"
+              {!currentFees ? <div className="screen-card fees-empty" role="status">{isError ? <>Bills can&apos;t be shown right now. <button type="button" onClick={() => refetch()}>Try again</button></> : "Loading bills…"}</div>
+                : !hasBills ? <div className="screen-card fees-empty">No bills yet. They will appear here when the school issues one.</div>
+                : currentFees.items.length === 0 ? <div className="screen-card fees-empty">No bills match these filters.</div>
+                : <ul className="screen-card fees-invoices">{currentFees.items.map((item) => item.kind === "invoice"
                     ? <InvoiceCard key={"invoice-" + item.invoice_ref} invoice={item} canPay={fees.can_pay && (!cardOn || !offline)} offline={cardOn && offline} />
                     : <ChargeCard key={"charge-" + item.note_ref} charge={item} transfer={account?.state} canShowTransfer={canShowTransfer} onShowTransfer={showTransfer} />)}</ul>}
               {currentFees && <PageControls label="School bills" page={currentFees.pagination} onChange={setBillPage} />}
             </section>
 
-            <div className="fees-secondary">
-              <DisclosureButton title="Payment history" description="Payments and receipts" open={historyOpen} controls="fees-payment-history" onClick={() => setHistoryOpen((value) => !value)} />
+            <div className="screen-card fees-secondary">
+              <DisclosureButton icon={<ReceiptIcon size={18} aria-hidden="true" />} tone="good" title="Payment history" description="Payments and receipts" open={historyOpen} controls="fees-payment-history" onClick={() => setHistoryOpen((value) => !value)} />
               <section className="fees-secondary-panel" id="fees-payment-history" hidden={!historyOpen} aria-label="Payment history">
                 {historyOpen && <>
-                  <h2>Payment history</h2><p>Confirmed payments and transfers on their way.</p>
+                  <p className="fees-secondary-lead">Confirmed payments and transfers on their way.</p>
                   <div className="fees-history">{paymentsError && !currentPayments ? <p className="fees-empty">Payments can&apos;t be shown right now. <button type="button" onClick={() => refetchPayments()}>Try again</button></p>
                     : !currentPayments ? <p className="fees-empty" role="status">Loading payments…</p>
                     : currentPayments.pagination.total === 0 ? <p className="fees-empty">{paymentYear === "all" ? "No payments yet." : "No payments match this year."}</p>
@@ -117,7 +135,7 @@ export function FeesPage() {
                   {currentPayments && <PageControls label="Payment history" page={currentPayments.pagination} onChange={setPaymentPage} />}
                 </>}
               </section>
-              {canShowTransfer && <DisclosureButton title="Show account number" description="Your own account number for bank transfers" open={transferOpen} controls={TRANSFER_PANEL_ID} onClick={() => setTransferOpen((value) => !value)} />}
+              {canShowTransfer && <DisclosureButton icon={<Building2 size={18} aria-hidden="true" />} title="Show account number" description="Your own account number for bank transfers" open={transferOpen} controls={TRANSFER_PANEL_ID} onClick={() => setTransferOpen((value) => !value)} />}
               {canShowTransfer && <section className="fees-secondary-panel fees-account-section" id={TRANSFER_PANEL_ID} hidden={!transferOpen} aria-label="Account number">
                 {transferOpen && (cardOn
                   ? <>
@@ -137,11 +155,12 @@ export function FeesPage() {
 
 const TRANSFER_PANEL_ID = "fees-transfer-account";
 
-function DisclosureButton({ title, description, open, controls, onClick }: {
-  title: string; description: string; open: boolean; controls: string; onClick: () => void;
+function DisclosureButton({ icon, tone, title, description, open, controls, onClick }: {
+  icon: ReactNode; tone?: "good"; title: string; description: string; open: boolean; controls: string; onClick: () => void;
 }) {
   return <button type="button" className="fees-secondary-button" aria-expanded={open} aria-controls={controls} onClick={onClick}>
-    <span><strong>{title}</strong><small>{description}</small></span><ChevronDown className={cn(open && "is-open")} size={18} aria-hidden="true" />
+    <span className={cn("icon-tile", tone === "good" && "icon-tile--good")}>{icon}</span>
+    <span className="fees-secondary-text"><strong>{title}</strong><small>{description}</small></span><ChevronDown className={cn(open && "is-open")} size={18} aria-hidden="true" />
   </button>;
 }
 
@@ -163,9 +182,9 @@ function PageControls({ label, page, onChange }: { label: string; page: PageInfo
 function InvoiceCard({ invoice, canPay, offline }: { invoice: Invoice; canPay: boolean; offline: boolean }) {
   const [open, setOpen] = useState(false);
   const panelId = "fees-invoice-" + invoice.invoice_ref;
-  return <li className="fees-invoice fees-surface">
+  return <li className="fees-invoice">
     <div className="fees-bill-row">
-      <span className="fees-bill-icon"><FileText size={19} aria-hidden="true" /></span>
+      <span className="icon-tile fees-bill-icon"><FileText size={19} aria-hidden="true" /></span>
       <div className="fees-invoice-title"><strong>{invoice.title}</strong><small>School bill · {invoice.status_label}</small></div>
       <div className={cn("fees-bill-balance", invoice.balance <= 0 && "is-clear")}><strong>{invoice.balance > 0 ? formatNaira(invoice.balance) : "All paid"}</strong><small>{invoice.balance > 0 && invoice.due_date ? "Due " + formatDate(invoice.due_date) : invoice.balance > 0 ? "Outstanding" : "Nothing due"}</small></div>
       <div className="fees-bill-actions">
@@ -187,9 +206,9 @@ function ChargeCard({ charge, transfer, canShowTransfer, onShowTransfer }: {
 }) {
   const [open, setOpen] = useState(false);
   const panelId = "fees-charge-" + charge.note_ref;
-  return <li className="fees-invoice fees-surface fees-charge">
+  return <li className="fees-invoice fees-charge">
     <div className="fees-bill-row">
-      <span className="fees-bill-icon"><Plus size={19} aria-hidden="true" /></span>
+      <span className="icon-tile icon-tile--grey fees-bill-icon"><Plus size={19} aria-hidden="true" /></span>
       <div className="fees-invoice-title"><strong>{charge.reason || "Additional charge"}</strong><small>Added charge · {charge.status_label}</small></div>
       <div className={cn("fees-bill-balance", charge.balance <= 0 && "is-clear")}><strong>{charge.balance > 0 ? formatNaira(charge.balance) : "All paid"}</strong><small>{charge.date ? "Added " + formatDate(charge.date) : charge.balance > 0 ? "Outstanding" : "Nothing due"}</small></div>
       <div className="fees-bill-actions"><button type="button" className="fees-invoice-toggle" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen((value) => !value)}>Details <ChevronDown className={cn(open && "is-open")} size={15} aria-hidden="true" /></button></div>

@@ -163,6 +163,26 @@ describe("fees account number", () => {
     expect(container.textContent).not.toContain("Pay bill");
   });
 
+  it("offers Pay a bill and the account number on the balance card when there is something to pay", () => {
+    mocks.balance = 50_000;
+    mocks.owing = 50_000;
+    mocks.invoices = [{ invoice_ref: 3, number: "IV-3", title: "Third Term", due_date: null, lines: [], total: 100_000, paid: 50_000, balance: 50_000, status: "PARTIAL", status_label: "Part paid" }];
+    render();
+    expect(container.querySelector(".fees-hero-pay")?.textContent).toBe("Pay a bill");
+    act(() => (container.querySelector(".fees-hero-account") as HTMLButtonElement).click());
+    expect(container.querySelector("#fees-transfer-account")?.hasAttribute("hidden")).toBe(false);
+    expect(container.textContent).toContain("0123456789");
+  });
+
+  it("offers no Pay a bill where the school has turned payment off", () => {
+    mocks.canPay = false;
+    mocks.balance = 50_000;
+    mocks.owing = 50_000;
+    mocks.invoices = [{ invoice_ref: 3, number: "IV-3", title: "Third Term", due_date: null, lines: [], total: 100_000, paid: 50_000, balance: 50_000, status: "PARTIAL", status_label: "Part paid" }];
+    render();
+    expect(container.querySelector(".fees-hero-pay")).toBeNull();
+  });
+
   it("filters bills by year and balance without changing the account total", () => {
     mocks.balance = 50_000;
     mocks.owing = 50_000;
