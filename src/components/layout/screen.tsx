@@ -42,13 +42,12 @@ export function ScreenTitle({
  * The top of a screen opened from another (`isDetailPath`): a round back
  * button, the title and a line under it in the middle, and an optional round
  * action on the right. It stays at the top and turns frosted once the screen
- * scrolls under it. The screen opens at its top, not where the screen it was
- * opened from had been scrolled to. A `<header>`, so it never prints.
+ * scrolls under it. (The app shell opens every screen at its top.) A
+ * `<header>`, so it never prints.
  */
 export function DetailBar({ title, subtitle, back, backLabel, action }: { title: string; subtitle?: string; back: string; backLabel: string; action?: ReactNode }) {
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState(() => window.scrollY > 4);
   useEffect(() => {
-    window.scrollTo(0, 0);
     const update = () => setScrolled(window.scrollY > 4);
     window.addEventListener("scroll", update, { passive: true });
     return () => window.removeEventListener("scroll", update);

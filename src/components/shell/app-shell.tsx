@@ -1,6 +1,6 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { Inbox } from "lucide-react";
-import { Link, NavLink, Outlet, useLocation } from "react-router";
+import { Link, NavLink, Outlet, useLocation, useNavigationType } from "react-router";
 
 import { refreshShowingPupil } from "@/auth/device-session";
 import { SchoolMark } from "@/components/school-mark";
@@ -56,6 +56,7 @@ const LARGE_TITLE_PAST = 56;
  */
 export function AppShell() {
   const { pathname } = useLocation();
+  useTopOfNewScreen(pathname);
   const [scrolled, setScrolled] = useState(() => window.scrollY > 8);
   const [titlePast, setTitlePast] = useState(() => window.scrollY > LARGE_TITLE_PAST);
   useEffect(() => {
@@ -109,6 +110,24 @@ export function AppShell() {
       {!detail && !conversationOpen && <TabBar badges={badges} />}
     </div>
   );
+}
+
+/**
+ * Opens each screen at its top. The screens scroll the window, which keeps
+ * its place across a change of address, so without this Results opened from
+ * halfway down Home would open halfway down. Back and Forward leave the
+ * scroll where the browser puts it, and a change of the query alone (the
+ * Inbox's filter) is the same screen, so neither moves. It runs before the
+ * new screen is painted, so the old position never shows.
+ */
+function useTopOfNewScreen(pathname: string) {
+  const navigation = useNavigationType();
+  const shown = useRef(pathname);
+  useLayoutEffect(() => {
+    if (shown.current === pathname) return;
+    shown.current = pathname;
+    if (navigation !== "POP") window.scrollTo(0, 0);
+  }, [pathname, navigation]);
 }
 
 /** The showing pupil's avatar at the top right of every screen: it opens Profile. */

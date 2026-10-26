@@ -7,7 +7,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Provider } from "react-redux";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { MemoryRouter, Route, Routes, useNavigate } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { connectivityReducer } from "@/redux/features/connectivity-slice";
@@ -39,7 +39,8 @@ function render(at: string) {
           <Route element={<AppShell />}>
             <Route index element={<p>home</p>} />
             <Route path="notices" element={<p>notices</p>} />
-            <Route path="inbox" element={<p>inbox</p>} />
+            <Route path="inbox" element={<Steer />} />
+            <Route path="timetable" element={<p>timetable</p>} />
             <Route path="profile" element={<p>profile</p>} />
             <Route path="messages" element={<p>list</p>} />
             <Route path="messages/:id" element={<p>thread</p>} />
@@ -50,12 +51,28 @@ function render(at: string) {
   ));
 }
 
+/** Moves about the way a pupil does: the Inbox's filter, and Back. */
+function Steer() {
+  const navigate = useNavigate();
+  return (
+    <>
+      <button type="button" onClick={() => navigate("/inbox?show=notices", { replace: true })}>Notices filter</button>
+      <button type="button" onClick={() => navigate(-1)}>Back</button>
+    </>
+  );
+}
+
+const scrollTo = vi.fn();
+const press = (text: string) => act(() => [...container.querySelectorAll<HTMLElement>("a, button")].find((el) => el.textContent === text)!.click());
+
 beforeEach(() => {
+  scrollTo.mockReset();
+  vi.stubGlobal("scrollTo", scrollTo);
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 });
-afterEach(() => { act(() => root.unmount()); container.remove(); });
+afterEach(() => { act(() => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
 
 describe("the app shell", () => {
   it("keeps the header and the tab bar on the Inbox", () => {
@@ -118,5 +135,26 @@ describe("the app shell", () => {
     render("/profile");
     expect(container.querySelector("header a[href='/profile']")).toBeNull();
     expect(container.querySelector("header button")?.textContent).toBe("Switch pupil");
+  });
+
+  it("opens a new screen at its top", () => {
+    render("/");
+    expect(scrollTo).not.toHaveBeenCalled();
+    press("Timetable");
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
+  it("stays where it is when only the Inbox's filter changes, and on Back", () => {
+    render("/");
+    press("Timetable");
+    scrollTo.mockReset();
+    act(() => container.querySelector<HTMLAnchorElement>(".tab-bar-inbox")!.click());
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    scrollTo.mockReset();
+    press("Notices filter");
+    expect(scrollTo).not.toHaveBeenCalled();
+    press("Back");
+    expect(container.textContent).toContain("timetable");
+    expect(scrollTo).not.toHaveBeenCalled();
   });
 });
