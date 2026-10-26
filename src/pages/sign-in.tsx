@@ -12,6 +12,7 @@ import { schoolLogoUrl } from "@/utils/school-brand";
 import { isNativeApp } from "@/native/platform";
 import { currentSchoolSlug, schoolWebAddress } from "@/utils/school-host";
 
+import "@/components/layout/screen.css";
 import "./sign-in.css";
 
 const SCHOOL_SIGN_IN = "/accounts";
@@ -26,7 +27,12 @@ function schoolLink(path: string, slug: string) {
   return isNativeApp() ? { href: `${schoolWebAddress(slug)}${path}`, target: "_blank", rel: "noreferrer" } : { href: path };
 }
 
-/** Signing in a first pupil, or adding another without ending the pupil already on this phone. */
+/**
+ * Signing in a first pupil, or adding another without ending the pupil
+ * already on this phone (design 2a): the school's crest and name on the deep
+ * blue, the welcome under them, and the form on a white card that rises over
+ * the blue on a phone and sits beside it on a wide screen.
+ */
 export function SignInPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -69,17 +75,18 @@ export function SignInPage() {
       <div className="signin-stage">
         <section className="signin-welcome" aria-label="Welcome">
           <div className="signin-welcome-copy">
-            {schoolName && <p className="signin-school-name">{schoolName}</p>}
+            <div className="signin-school">
+              <SchoolMark logo={slug ? schoolLogoUrl(slug) : null} size={40} animate={false} surface="blue" alt={schoolName || "School crest"} />
+              {schoolName && <p className="signin-school-name">{schoolName}</p>}
+            </div>
             <h1>{adding ? "Make room for one more." : <>Your school day <span>starts here.</span></>}</h1>
             <p>{adding ? `Add another pupil to this device. ${showing?.firstName ?? "The current pupil"} stays signed in.` : "Classes, results, attendance and fees in one clear place."}</p>
             {adding && showing && <span className="signin-showing"><PupilAvatar name={showing.fullName} photo={showing.photo} size={29} />{showing.firstName}<ChevronDown size={15} aria-hidden="true" /></span>}
           </div>
-          <p className="signin-welcome-foot"><LockKeyhole size={17} aria-hidden="true" />One device can hold more than one pupil</p>
         </section>
 
         <section className="signin-area" aria-label={adding ? "Add another pupil" : "Sign in"}>
           <div className="signin-card">
-            <div className="signin-form-mark"><SchoolMark logo={slug ? schoolLogoUrl(slug) : null} size={48} animate={false} alt={schoolName || "School crest"} /></div>
             <h2>{adding ? "Add another pupil" : "Sign in to your school"}</h2>
             {!adding && <p className="signin-card-intro">Your student account, in the same school space.</p>}
             {adding && <>
@@ -112,6 +119,7 @@ export function SignInPage() {
             )}
             <p className="signin-helper">Trouble signing in? <strong>Ask your class teacher or the school office.</strong></p>
             {isNativeApp() && <Link to="/school" className="signin-change-school">Change school</Link>}
+            <p className="signin-device-note"><LockKeyhole size={15} aria-hidden="true" />One device can hold more than one pupil</p>
           </div>
         </section>
       </div>
