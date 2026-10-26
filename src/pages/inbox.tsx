@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { PageShell } from "@/components/layout/page-shell";
 import { ScreenTitle } from "@/components/layout/screen";
+import { Segmented } from "@/components/layout/segmented";
 import { formatRowWhen } from "@/lib/format";
 import { inboxShow, mergeInbox, type InboxEntry, type InboxShow, type InboxSource } from "@/lib/inbox";
 import { initialsOf } from "@/lib/initials";
@@ -116,13 +117,13 @@ export function InboxPage() {
           action={<Link to={show === "all" ? "/inbox/new" : `/inbox/new?show=${show}`} className="inbox-new"><PenSquare size={16} aria-hidden="true" />New message</Link>}
         />
 
-        <div className="inbox-filters" role="group" aria-label="Show">
-          {FILTERS.map((filter) => (
-            <button key={filter.key} type="button" aria-pressed={show === filter.key} onClick={() => choose(filter.key)}>
-              {filter.label}{counts[filter.key] > 0 && ` · ${counts[filter.key]}`}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          className="inbox-filters"
+          label="Show"
+          value={show}
+          onChange={choose}
+          options={FILTERS.map((filter) => ({ key: filter.key, label: counts[filter.key] > 0 ? `${filter.label} · ${counts[filter.key]}` : filter.label }))}
+        />
 
         {withMessages && (
           <p className="inbox-oversight" role="note">

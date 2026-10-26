@@ -7,11 +7,8 @@
 .inbox-new:hover { background: #425b8f; }
 .inbox-new:focus-visible { outline: 3px solid #5975ff; outline-offset: 3px; }
 
-/* The switch: All, Notices, Messages, each with its unread count. */
-.inbox-filters { display: grid; grid-template-columns: 1fr 1.2fr 1.3fr; gap: 3px; margin-top: 4px; padding: 3px; border-radius: 13px; background: rgba(118, 128, 150, .14); }
-.inbox-filters button { height: 34px; padding: 0 6px; border: 0; border-radius: 10px; background: transparent; color: var(--xs-muted); font-size: 13.5px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color .2s, color .2s; }
-.inbox-filters button[aria-pressed="true"] { background: #fff; box-shadow: 0 2px 6px rgba(34, 49, 83, .1); color: var(--xs-ink); font-weight: 600; }
-.inbox-filters button:focus-visible { outline: 3px solid #5975ff; outline-offset: 1px; }
+/* The switch (Segmented, in screen.css): All, Notices, Messages, each with its unread count. */
+.inbox-filters { grid-template-columns: 1fr 1.2fr 1.3fr; margin-top: 4px; }
 
 .inbox-oversight { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 11px 14px; border-radius: 16px; background: var(--xs-note); color: var(--xs-ink-2); font-size: 12.5px; line-height: 1.45; }
 .inbox-oversight > svg { flex: none; margin-top: 1px; color: var(--xs-brand); }
@@ -51,5 +48,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .inbox-loading { animation: none; }
-  .inbox-row, .inbox-filters button { transition: none; }
+  .inbox-row { transition: none; }
 }

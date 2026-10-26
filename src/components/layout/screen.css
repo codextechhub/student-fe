@@ -75,6 +75,13 @@
 .chip--brand { color: var(--xs-brand); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
+/* The switch between views of one screen: the chosen option's white pill slides to the one tapped. */
+.segmented { position: relative; display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; gap: 3px; padding: 3px; border-radius: 13px; background: rgba(118, 128, 150, .14); }
+.segmented-pill { position: absolute; top: 3px; bottom: 3px; left: 0; border-radius: 10px; background: #fff; box-shadow: 0 2px 6px rgba(34, 49, 83, .1); transition: transform .32s cubic-bezier(.3, .7, .2, 1), width .32s cubic-bezier(.3, .7, .2, 1); }
+.segmented button { position: relative; z-index: 1; height: 34px; padding: 0 6px; border: 0; border-radius: 10px; background: transparent; color: var(--xs-muted); font-size: 13.5px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: color .2s; }
+.segmented button[aria-pressed="true"] { color: var(--xs-ink); font-weight: 600; }
+.segmented button:focus-visible { outline: 3px solid #5975ff; outline-offset: 1px; }
+
 /* The blue note: a word of explanation in the flow of a screen. */
 .info-note { display: flex; gap: 11px; align-items: flex-start; padding: 13px 15px; border-radius: 18px; background: var(--xs-note); color: var(--xs-ink-2); font-size: 13px; line-height: 1.5; }
 .info-note > svg { flex: none; margin-top: 1px; color: var(--xs-brand); }
@@ -117,5 +124,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .live-dot { animation: none; }
+  .segmented-pill, .segmented button { transition: none; }
   a.screen-card, button.screen-card, .xs-button { transition: none; }
 }
