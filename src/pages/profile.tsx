@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
-import { Camera, ImagePlus, Info, LockKeyhole, Pencil, Trash2 } from "lucide-react";
+import { Camera, ChevronRight, ImagePlus, LockKeyhole, Trash2, UserPlus } from "lucide-react";
 import { Dialog } from "radix-ui";
+import { Link } from "react-router";
 import { toast } from "sonner";
 
 import { ChangePassword } from "@/components/change-password";
@@ -10,6 +11,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { PupilAvatar } from "@/components/pupil-avatar";
 import { PushSetting } from "@/components/push-settings";
 import { formatDate } from "@/lib/format";
+import { classLine } from "@/lib/pupil-lines";
 import { useAppSelector } from "@/redux/hooks";
 import {
   refusal,
@@ -21,13 +23,20 @@ import {
   type Profile,
 } from "@/redux/services/portal-api";
 
-import "./delete-account.css";
 import "./profile.css";
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** School-managed fields stay read-only; contact, photo and push settings retain their own permissions. */
+/**
+ * Profile (design 2l), opened from the avatar at the top of every screen,
+ * where "Switch pupil" takes the avatar's place. The pupil's photo, name and
+ * school, then their own contact details (editable), the details the school
+ * manages (read-only), and the settings as one list: password, notifications,
+ * installing the app, adding another pupil; deleting the account apart.
+ * School-managed fields stay read-only; contact, photo and push settings
+ * keep their own permissions.
+ */
 export function ProfilePage() {
   const { data: profile, isLoading, isError, refetch } = useProfileQuery();
   const { data: me } = useMeQuery();
@@ -47,6 +56,7 @@ export function ProfilePage() {
             <PhotoCard
               profile={profile}
               schoolName={me?.school.name ?? ""}
+              className={me ? classLine(me) : ""}
               offline={offline}
             />
             <div className="profile-cards">
@@ -55,16 +65,25 @@ export function ProfilePage() {
             </div>
           </>
         )}
-        <ChangePassword />
-        <InstallSetting />
-        <PushSetting />
-        <DeleteAccountCard />
+        <div className="profile-settings-column">
+          <div className="screen-card profile-settings">
+            <ChangePassword />
+            <PushSetting />
+            <InstallSetting />
+            <Link to="/sign-in?add=1" className="settings-row">
+              <span className="settings-icon is-violet"><UserPlus size={16} aria-hidden="true" /></span>
+              <span className="settings-label">Add another pupil</span>
+              <ChevronRight className="settings-chevron" size={17} aria-hidden="true" />
+            </Link>
+          </div>
+          <DeleteAccountCard />
+        </div>
       </div>
     </PageShell>
   );
 }
 
-function PhotoCard({ profile, schoolName, offline }: { profile: Profile; schoolName: string; offline: boolean }) {
+function PhotoCard({ profile, schoolName, className, offline }: { profile: Profile; schoolName: string; className: string; offline: boolean }) {
   const picker = useRef<HTMLInputElement>(null);
   const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
   const [upload, { isLoading: uploading }] = useUploadPhotoMutation();
@@ -102,11 +121,11 @@ function PhotoCard({ profile, schoolName, offline }: { profile: Profile; schoolN
   return (
     <section className="profile-hero" aria-label="Pupil identity">
       <div className="profile-hero-photo">
-        <div className="profile-hero-avatar"><PupilAvatar name={name} photo={profile.photo_url} size={104} /></div>
+        <div className="profile-hero-avatar"><PupilAvatar name={name} photo={profile.photo_url} size={96} /></div>
         {profile.photo_editable && (
           <Dialog.Root open={photoMenuOpen} onOpenChange={setPhotoMenuOpen}>
             <Dialog.Trigger className="profile-camera" type="button" aria-label="Profile photo options" disabled={offline || uploading || removing}>
-              <Camera size={18} aria-hidden="true" />
+              <Camera size={17} aria-hidden="true" />
             </Dialog.Trigger>
             <Dialog.Portal>
               <Dialog.Overlay className="profile-photo-overlay" />
@@ -138,8 +157,12 @@ function PhotoCard({ profile, schoolName, offline }: { profile: Profile; schoolN
         )}
       </div>
       <div className="profile-hero-content">
-        <h2>{name}</h2>
+        <h1>{name}</h1>
         {schoolName && <p className="profile-hero-school">{schoolName}</p>}
+        <div className="chips profile-hero-chips">
+          {className && <span className="chip chip--brand">{className}</span>}
+          {profile.managed_by_school.admission_number && <span className="chip profile-admission">{profile.managed_by_school.admission_number}</span>}
+        </div>
       </div>
     </section>
   );
@@ -157,20 +180,19 @@ function SchoolDetails({ profile }: { profile: Profile }) {
     : "None";
 
   return (
-    <section className="profile-surface profile-card profile-school">
-      <div className="profile-card-heading">
-        <span className="profile-card-icon"><LockKeyhole size={18} aria-hidden="true" /></span>
-        <div><h2>Managed by the school</h2><p>Your official school details</p></div>
-      </div>
-      <dl className="profile-rows">
+    <section className="profile-group profile-school" aria-labelledby="profile-school-heading">
+      <h2 id="profile-school-heading" className="profile-group-label"><LockKeyhole size={14} aria-hidden="true" />Managed by the school</h2>
+      <dl className="screen-card profile-stack">
         <DetailRow label="Full name" value={managed.full_name} />
-        <DetailRow label="Admission number" value={managed.admission_number} />
+        <div className="profile-pair">
+          <DetailRow label="Admission number" value={managed.admission_number} />
+          <DetailRow label="Date of birth" value={managed.date_of_birth ? formatDate(managed.date_of_birth) : "None"} />
+        </div>
         <DetailRow label="Class and year" value={[managed.class_name, managed.session_name].filter(Boolean).join(" · ")} />
-        <DetailRow label="Date of birth" value={managed.date_of_birth ? formatDate(managed.date_of_birth) : "None"} />
         <DetailRow label="School email" value={managed.school_email} />
         <DetailRow label="Parent or guardian" value={guardianLine} />
       </dl>
-      <p className="profile-school-tip"><Info size={17} aria-hidden="true" /><span>Need to correct one of these? Ask the school office.</span></p>
+      <p className="profile-group-note">Need to correct one of these? Ask the school office.</p>
     </section>
   );
 }
@@ -212,16 +234,13 @@ function EditableDetails({ profile, offline }: { profile: Profile; offline: bool
   };
 
   return (
-    <section className="profile-surface profile-card profile-contact">
-      <div className="profile-card-top">
-        <div className="profile-card-heading">
-          <span className="profile-card-icon"><Pencil size={19} aria-hidden="true" /></span>
-          <div><h2>Your contact details</h2><p>You can keep these up to date</p></div>
-        </div>
-        {!editing && <button type="button" className="profile-edit-button" onClick={start} disabled={offline}>Edit details</button>}
+    <section className="profile-group profile-contact" aria-labelledby="profile-contact-heading">
+      <div className="profile-group-top">
+        <h2 id="profile-contact-heading" className="profile-group-label">Your contact details</h2>
+        {!editing && <button type="button" className="profile-edit-button" onClick={start} disabled={offline} aria-label="Edit your contact details">Edit</button>}
       </div>
       {editing ? (
-        <form className="profile-form" onSubmit={submit} noValidate>
+        <form className="screen-card profile-form" onSubmit={submit} noValidate>
           <div className="profile-field">
             <label htmlFor="profile-phone">Phone number</label>
             <input id="profile-phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} aria-invalid={!!errors.phone} onChange={(event) => {
@@ -246,7 +265,7 @@ function EditableDetails({ profile, offline }: { profile: Profile; offline: bool
             <button type="submit" className="profile-save" disabled={!changed || invalidEmail || isLoading || offline}>{isLoading ? "Saving…" : "Save changes"}</button>
           </div>
         </form>
-      ) : <dl className="profile-rows">
+      ) : <dl className="screen-card profile-rows">
         <DetailRow label="Phone number" value={profile.editable.phone} />
         <DetailRow label="Personal email" value={profile.editable.email} />
       </dl>}

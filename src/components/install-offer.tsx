@@ -64,9 +64,12 @@ export function InstallSetting() {
   if (installed) return null;
 
   return (
-    <section aria-label="Install the app" className="min-w-0 rounded-xl border border-border p-4">
-      <h2 className="mb-2 text-sm font-semibold text-foreground">Install the app</h2>
-      <div className="flex min-w-0 flex-wrap items-start gap-3">
+    <section aria-label="Install the app" className="settings-item">
+      <div className="settings-row">
+        <span className="settings-icon is-green"><Smartphone size={16} aria-hidden="true" /></span>
+        <h2 className="settings-label">Install the app</h2>
+      </div>
+      <div className="settings-panel flex min-w-0 flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1 basis-56">
           <InstallHow situation={situation} appName={appName} />
         </div>

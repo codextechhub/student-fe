@@ -2,6 +2,7 @@ import { Bell, Share, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { NativePushSetting } from "@/native/native-push-setting";
 import { isNativeApp } from "@/native/platform";
 import type { TurnOnResult } from "@/push/push";
@@ -78,45 +79,38 @@ function WebPushSetting() {
   const firstName = useShowingFirstName();
   if (state === "loading") return null;
 
+  const choosable = state === "on" || state === "off" || state === "undecided";
+  const word = state === "blocked" ? "Blocked" : state === "install-first" ? "Add the app first" : "Unavailable";
+  const set = async (on: boolean) => {
+    if (on) return sayTurnOn(await turnOn(), firstName);
+    if (await turnOff()) toast.success(`Notifications are off for ${firstName} on this device.`);
+    else toast.error("Notifications couldn't be turned off. Try again in a moment.");
+  };
+
   return (
-    <section className="profile-surface profile-notifications">
-      <div className="profile-card-heading">
-        <span className="profile-card-icon"><Bell size={19} aria-hidden="true" /></span>
-        <div><h2>Notifications on this device</h2><p>A setting for {firstName} on this device</p></div>
+    <section className="settings-item" aria-labelledby="push-heading">
+      <div className="settings-row">
+        <span className="settings-icon is-amber"><Bell size={16} aria-hidden="true" /></span>
+        <span className="settings-label" id="push-heading">Notifications</span>
+        {choosable
+          ? <ToggleSwitch on={state === "on"} disabled={busy || offline} onChange={(on) => void set(on)} label={`Notifications for ${firstName} on this device`} />
+          : <span className="settings-value">{word}</span>}
       </div>
-      <div className="profile-notification-body">
-        <div>
-          {state === "on" && <p><strong>On.</strong> You&apos;ll hear about new notices, released results and confirmed payments.</p>}
-          {(state === "off" || state === "undecided") && <p><strong>Off.</strong> Turn on notifications to hear about new notices, released results and confirmed payments.</p>}
-          {state === "blocked" && <p><strong>Blocked.</strong> This browser has been told not to show notifications. Allow them in browser settings, then come back here.</p>}
-          {state === "install-first" && <><p><strong>Add the app first.</strong></p><InstallSteps /></>}
-          {state === "unavailable" && <p><strong>Unavailable.</strong> Notifications aren&apos;t available on this device.</p>}
-        </div>
-        {state === "on" && (
-          <Button
-            disabled={busy || offline}
-            onClick={async () => {
-              if (await turnOff()) toast.success(`Notifications are off for ${firstName} on this device.`);
-              else toast.error("Notifications couldn't be turned off. Try again in a moment.");
-            }}
-          >
-            {busy ? "Turning off" : "Turn off"}
-          </Button>
-        )}
-        {(state === "off" || state === "undecided") && (
-          <Button disabled={busy || offline} onClick={async () => sayTurnOn(await turnOn(), firstName)}>
-            {busy ? "Turning on" : "Turn on"}
-          </Button>
-        )}
+      <div className="settings-panel settings-help">
+        {state === "on" && <p>You&apos;ll hear about new notices, released results and confirmed payments.</p>}
+        {(state === "off" || state === "undecided") && <p>Turn on to hear about new notices, released results and confirmed payments.</p>}
+        {state === "blocked" && <p>This browser has been told not to show notifications. Allow them in browser settings, then come back here.</p>}
+        {state === "install-first" && <InstallSteps />}
+        {state === "unavailable" && <p>Notifications aren&apos;t available on this device.</p>}
+        <p>Notifications never show marks or amounts. {several ? "Each pupil on this device chooses for themselves." : "This setting applies to you on this device."}</p>
       </div>
-      <p className="profile-notification-help">Notifications never show marks or amounts. {several ? "Each pupil on this device chooses for themselves." : "This setting applies to you on this device."}</p>
     </section>
   );
 }
 
 function InstallSteps() {
   return (
-    <p className="mt-0.5 text-xs text-muted-foreground">
+    <p>
       On an iPhone, notifications come to the app on your Home Screen. Tap{" "}
       <Share className="inline size-3.5 align-text-bottom" aria-label="Share" />, then <span className="font-medium">Add to Home Screen</span>,
       and open the app from there.

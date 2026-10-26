@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { useAppSelector } from "@/redux/hooks";
 
 import { turnOff, turnOn, useNativePush } from "./native-push-state";
@@ -47,23 +47,24 @@ export function NativePushSetting() {
     }
   };
 
+  const choosable = state === "on" || state === "off" || state === "undecided";
+
   return (
-    <section className="profile-surface profile-notifications">
-      <div className="profile-card-heading">
-        <span className="profile-card-icon"><Bell size={19} aria-hidden="true" /></span>
-        <div><h2>Notifications on this device</h2><p>A setting for {firstName} on this device</p></div>
+    <section className="settings-item" aria-labelledby="push-heading">
+      <div className="settings-row">
+        <span className="settings-icon is-amber"><Bell size={16} aria-hidden="true" /></span>
+        <span className="settings-label" id="push-heading">Notifications</span>
+        {choosable
+          ? <ToggleSwitch on={state === "on"} disabled={busy || offline} onChange={(next) => void (next ? on() : off())} label={`Notifications for ${firstName} on this device`} />
+          : <span className="settings-value">{state === "blocked" ? "Blocked" : "Unavailable"}</span>}
       </div>
-      <div className="profile-notification-body">
-        <div>
-          {state === "on" && <p><strong>On.</strong> You&apos;ll hear about new notices, released results, confirmed payments and messages.</p>}
-          {(state === "off" || state === "undecided") && <p><strong>Off.</strong> Turn on notifications to hear about new notices, released results, confirmed payments and messages.</p>}
-          {state === "blocked" && <p><strong>Blocked.</strong> Notifications are not allowed for this app. Open your phone&apos;s Settings, find XVS Student, allow notifications, then come back here.</p>}
-          {state === "unavailable" && <p><strong>Unavailable.</strong> Your school doesn&apos;t send notifications to phones yet.</p>}
-        </div>
-        {state === "on" && <Button disabled={busy || offline} onClick={() => void off()}>{busy ? "Turning off" : "Turn off"}</Button>}
-        {(state === "off" || state === "undecided") && <Button disabled={busy || offline} onClick={() => void on()}>{busy ? "Turning on" : "Turn on"}</Button>}
+      <div className="settings-panel settings-help">
+        {state === "on" && <p>You&apos;ll hear about new notices, released results, confirmed payments and messages.</p>}
+        {(state === "off" || state === "undecided") && <p>Turn on to hear about new notices, released results, confirmed payments and messages.</p>}
+        {state === "blocked" && <p>Notifications are not allowed for this app. Open your phone&apos;s Settings, find XVS Student, allow notifications, then come back here.</p>}
+        {state === "unavailable" && <p>Your school doesn&apos;t send notifications to phones yet.</p>}
+        <p>Notifications never show marks or amounts. {several ? "Each pupil on this device chooses for themselves." : "This setting applies to you on this device."}</p>
       </div>
-      <p className="profile-notification-help">Notifications never show marks or amounts. {several ? "Each pupil on this device chooses for themselves." : "This setting applies to you on this device."}</p>
     </section>
   );
 }

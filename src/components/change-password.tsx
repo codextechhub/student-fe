@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
-import { CircleCheck, KeyRound } from "lucide-react";
+import { ChevronRight, CircleCheck, KeyRound } from "lucide-react";
 
 import { signOutAfterPasswordChange } from "@/auth/device-session";
 import { Button } from "@/components/ui/button";
@@ -35,8 +35,8 @@ const RULES_FALLBACK =
 type Field = "current_password" | "password" | "confirm_password";
 
 /**
- * The profile shows only the Change password action until the pupil opens
- * the form. Cancel clears typed passwords and closes it.
+ * The Change password row in Profile's settings list, which opens the form
+ * under itself. Cancel, or the row again, clears typed passwords and closes it.
  *
  * Every refusal is shown under the box it is about, never as a toast. A
  * mismatch is caught here before anything is sent, and Save stays off until
@@ -105,16 +105,14 @@ export function ChangePassword() {
   const rules = policy?.requirements ?? [];
 
   return (
-    <section aria-labelledby="password-heading" className="profile-surface profile-card profile-password">
-      <div className="profile-card-top">
-        <div className="profile-card-heading">
-          <span className="profile-card-icon"><KeyRound size={19} aria-hidden="true" /></span>
-          <div><h2 id="password-heading">Password</h2><p>Keep your account secure</p></div>
-        </div>
-        {!open && <button type="button" className="profile-edit-button" onClick={() => setOpen(true)}>Change password</button>}
-      </div>
+    <section aria-labelledby="password-heading" className="settings-item">
+      <button type="button" className="settings-row" aria-expanded={open} aria-controls="profile-password-form" onClick={() => (open ? close() : setOpen(true))}>
+        <span className="settings-icon is-brand"><KeyRound size={16} aria-hidden="true" /></span>
+        <span className="settings-label" id="password-heading">Change password</span>
+        <ChevronRight className="settings-chevron" size={17} aria-hidden="true" />
+      </button>
 
-      {open && <form id="profile-password-form" onSubmit={submit} noValidate className="profile-password-form">
+      {open && <form id="profile-password-form" onSubmit={submit} noValidate className="settings-panel profile-password-form">
         <div className="min-w-0 space-y-4">
           <Box
             id="current_password"
