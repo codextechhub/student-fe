@@ -45,15 +45,14 @@ const LARGE_TITLE_PAST = 56;
  * An open Messages conversation is the one screen that does not scroll as a
  * page. The shell is held to the visible height (`100dvh`, narrowed to
  * `visualViewport` so the message box rides above the phone keyboard), the
- * conversation fills the screen, and on a phone the shell's own header (crest,
- * title, avatar) and the tab bar both step aside, so the conversation's
- * header with its back arrow is the top of the screen, as in a messaging app.
- * Both return on the list.
+ * conversation fills the screen, and the shell's own header (crest, title,
+ * avatar) and the tab bar both step aside at every size, so the
+ * conversation's header with its back arrow is the top of the screen, as in a
+ * messaging app. Both return on the Inbox.
  *
  * A screen opened from another (the report card, `isDetailPath`) draws its
  * own back bar and action bar, so the header and the tab bar step aside for
- * it at every size. From 800px,
- * where the list sits beside the thread, the shell header and tab bar stay.
+ * it at every size too.
  */
 export function AppShell() {
   const { pathname } = useLocation();
@@ -96,7 +95,7 @@ export function AppShell() {
       className={cn("app-shell flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onDesignPage && "app-shell--design", conversationOpen && "app-shell--conversation", detail && "app-shell--detail", viewport?.keyboard && "is-keyboard")}
       style={viewport ? ({ "--vv-top": `${viewport.top}px`, "--vv-height": `${viewport.height}px` } as CSSProperties) : undefined}
     >
-      <header data-hidden-on-phone={conversationOpen || undefined} data-hidden={detail || undefined} className={cn("app-shell-head sticky top-0 z-30 flex min-h-[58px] min-w-0 items-center gap-3 border-b px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 transition-[background-color,backdrop-filter,border-color] duration-200 sm:min-h-[66px] lg:px-6", onDesignPage ? scrolled ? "border-[#dbe0eb] bg-[#f5f7fc]/70 backdrop-blur-xl backdrop-saturate-150" : "border-transparent bg-transparent" : scrolled ? "border-border bg-background/75 backdrop-blur-xl" : "border-border bg-background")}>
+      <header data-hidden={detail || conversationOpen || undefined} className={cn("app-shell-head sticky top-0 z-30 flex min-h-[58px] min-w-0 items-center gap-3 border-b px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 transition-[background-color,backdrop-filter,border-color] duration-200 sm:min-h-[66px] lg:px-6", onDesignPage ? scrolled ? "border-[#dbe0eb] bg-[#f5f7fc]/70 backdrop-blur-xl backdrop-saturate-150" : "border-transparent bg-transparent" : scrolled ? "border-border bg-background/75 backdrop-blur-xl" : "border-border bg-background")}>
         <SchoolMark logo={me?.school.logo_url || null} size={onDesignPage ? 34 : 28} animate={false} alt={where} className={onDesignPage ? "max-h-7 sm:max-h-[34px]" : undefined} />
         <div className="min-w-0 flex-1">
           <p className={cn("app-shell-title truncate font-semibold text-foreground", onDesignPage ? "text-base" : "text-sm")} data-hidden={(current && LARGE_TITLE.has(current.key) && !titlePast) || undefined}>{screenTitle}</p>
@@ -107,7 +106,7 @@ export function AppShell() {
       <PullToRefresh disabled={conversationOpen}>
         <Outlet />
       </PullToRefresh>
-      {!detail && <TabBar badges={badges} hiddenOnPhone={conversationOpen} />}
+      {!detail && !conversationOpen && <TabBar badges={badges} />}
     </div>
   );
 }
@@ -138,15 +137,15 @@ function Count({ value, className }: { value?: number; className: string }) {
  * both unread counts so nothing new is hidden behind it, and turns blue while
  * the Inbox, or a notice or conversation, is open. It clears the home
  * indicator on phones that have one, and the page scrolls on underneath.
- * `hiddenOnPhone` takes it off screens narrower than 800px (an open
- * conversation); `app-shell.css` holds the breakpoint and the bar's look.
+ * The shell leaves it out of a screen with bars of its own (an open
+ * conversation, a screen opened from another); `app-shell.css` holds its look.
  */
-function TabBar({ badges, hiddenOnPhone }: { badges: Partial<Record<NavItem["key"], number>>; hiddenOnPhone: boolean }) {
+function TabBar({ badges }: { badges: Partial<Record<NavItem["key"], number>> }) {
   const { pathname } = useLocation();
   const inboxShowing = INBOX.some((item) => item.key === itemFor(pathname)?.key);
   const inboxCount = INBOX.reduce((sum, item) => sum + (badges[item.key] ?? 0), 0);
   return (
-    <nav aria-label="Screens" data-hidden-on-phone={hiddenOnPhone || undefined} className="app-shell-tabs">
+    <nav aria-label="Screens" className="app-shell-tabs">
       <div className="tab-bar">
         {TABS.map((item) => {
           const Icon = item.icon;

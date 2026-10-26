@@ -1,4 +1,6 @@
-import { Loader2, Send } from "lucide-react";
+import { ArrowUp, Loader2, Send } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 
 import { MESSAGE_MAX } from "@/redux/services/messages-api";
 
@@ -13,6 +15,10 @@ const COUNT_FROM = MESSAGE_MAX - 500;
  * the send would keep). Enter makes a new line, as it does on a phone; Ctrl or Cmd with Enter
  * sends. A long paste is kept whole and flagged rather than cut, so nothing
  * the pupil wrote vanishes without a word.
+ *
+ * `compact` is the conversation's own reply bar (design 2k): a rounded box
+ * that grows as the pupil writes, a round Send beside it, and any word about
+ * the limit or being offline above them.
  */
 export function MessageBox({
   id,
@@ -25,6 +31,7 @@ export function MessageBox({
   sendDisabled = false,
   sendLabel = "Send",
   autoFocus = false,
+  compact = false,
 }: {
   id: string;
   label: string;
@@ -37,22 +44,35 @@ export function MessageBox({
   sendDisabled?: boolean;
   sendLabel?: string;
   autoFocus?: boolean;
+  compact?: boolean;
 }) {
   const length = value.length;
   const over = length > MESSAGE_MAX;
   const empty = value.trim().length === 0;
+  const help = blocked ||
+    (over
+      ? `${(length - MESSAGE_MAX).toLocaleString("en-NG")} too many characters. A message can be ${MESSAGE_MAX.toLocaleString("en-NG")} characters at most.`
+      : length >= COUNT_FROM
+        ? `${length.toLocaleString("en-NG")} of ${MESSAGE_MAX.toLocaleString("en-NG")} characters`
+        : "");
+  const send = (
+    <button type="button" className={cn("messages-send", compact && "is-round")} onClick={onSend} disabled={busy || empty || over || sendDisabled || !!blocked} aria-label={compact ? (busy ? "Sending" : sendLabel) : undefined}>
+      {busy ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : compact ? <ArrowUp size={20} aria-hidden="true" /> : <Send size={17} aria-hidden="true" />}
+      <span className={compact ? "sr-only" : undefined}>{busy ? "Sending…" : sendLabel}</span>
+    </button>
+  );
   return (
-    <div className="messages-box">
+    <div className={cn("messages-box", compact && "is-compact")}>
       <label htmlFor={id} className="messages-box-label">{label}</label>
       <textarea
         id={id}
         value={value}
-        rows={2}
+        rows={compact ? 1 : 2}
         autoFocus={autoFocus}
         disabled={!!blocked}
         aria-invalid={over}
         aria-describedby={`${id}-help`}
-        placeholder={blocked ? "" : "Write your message"}
+        placeholder={blocked ? "" : compact ? "Your reply" : "Write your message"}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
@@ -62,18 +82,8 @@ export function MessageBox({
         }}
       />
       <div className="messages-box-bar">
-        <p id={`${id}-help`} className={over ? "is-over" : undefined} role={over ? "alert" : undefined}>
-          {blocked ||
-            (over
-              ? `${(length - MESSAGE_MAX).toLocaleString("en-NG")} too many characters. A message can be ${MESSAGE_MAX.toLocaleString("en-NG")} characters at most.`
-              : length >= COUNT_FROM
-                ? `${length.toLocaleString("en-NG")} of ${MESSAGE_MAX.toLocaleString("en-NG")} characters`
-                : "")}
-        </p>
-        <button type="button" className="messages-send" onClick={onSend} disabled={busy || empty || over || sendDisabled || !!blocked}>
-          {busy ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <Send size={17} aria-hidden="true" />}
-          {busy ? "Sending…" : sendLabel}
-        </button>
+        <p id={`${id}-help`} className={over ? "is-over" : undefined} role={over ? "alert" : undefined}>{help}</p>
+        {send}
       </div>
     </div>
   );

@@ -33,15 +33,8 @@
   min-height: 0;
 }
 
-@media (max-width: 799px) {
-  .app-shell--conversation {
-    padding-bottom: 0;
-  }
-
-  .app-shell-tabs[data-hidden-on-phone],
-  .app-shell-head[data-hidden-on-phone] {
-    display: none;
-  }
+.app-shell--conversation {
+  padding-bottom: 0;
 }
 
 /* A screen with a large title keeps its name out of the header until the large title has gone under it. */

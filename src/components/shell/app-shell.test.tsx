@@ -1,12 +1,7 @@
 /**
- * The frame around an open conversation.
- *
- * On the list the header and the floating tab bar are there as always. Opening
- * a conversation holds the shell to the visible height and marks both to step
- * aside on a phone, so the conversation's own header is the top of the screen.
- * The 800px breakpoint is in `app-shell.css`, which happy-dom does not apply, so
- * these tests hold the mark the stylesheet reads. That the mark hides only below
- * 800px is checked in a real browser, not here.
+ * The frame around the screens: the header and the split tab bar, which step
+ * aside for an open conversation (held to the visible height) and for a
+ * screen opened from another, at every size.
  */
 import { configureStore } from "@reduxjs/toolkit";
 import { act } from "react";
@@ -63,17 +58,17 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); container.remove(); });
 
 describe("the app shell", () => {
-  it("keeps the tab bar on the list of messages", () => {
-    render("/messages");
-    expect(container.querySelector("nav")?.hasAttribute("data-hidden-on-phone")).toBe(false);
-    expect(container.querySelector("header")?.hasAttribute("data-hidden-on-phone")).toBe(false);
+  it("keeps the header and the tab bar on the Inbox", () => {
+    render("/inbox");
+    expect(container.querySelector("nav")).not.toBeNull();
+    expect(container.querySelector("header")?.hasAttribute("data-hidden")).toBe(false);
     expect(container.querySelector(".app-shell")?.classList.contains("app-shell--conversation")).toBe(false);
   });
 
-  it("holds an open conversation to the screen and marks the tab bar to step aside on a phone", () => {
+  it("holds an open conversation to the screen, the header and tab bar stepping aside at every size", () => {
     render("/messages/41");
-    expect(container.querySelector("nav")?.getAttribute("data-hidden-on-phone")).toBe("true");
-    expect(container.querySelector("header")?.getAttribute("data-hidden-on-phone")).toBe("true");
+    expect(container.querySelector("nav")).toBeNull();
+    expect(container.querySelector("header")?.getAttribute("data-hidden")).toBe("true");
     expect(container.querySelector(".app-shell")?.classList.contains("app-shell--conversation")).toBe(true);
   });
 

@@ -1,10 +1,12 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowLeft, ChevronUp, Lock } from "lucide-react";
+import { ArrowDown, ChevronLeft, ChevronUp, Lock } from "lucide-react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 
 import { attemptFor, type SendAttempt } from "@/lib/client-token";
 import { dayKey, formatDayLabel, formatTimeOfDay } from "@/lib/format";
+import { initialsOf } from "@/lib/initials";
+import { toneFor } from "@/lib/name-hue";
 import { usePageVisible } from "@/lib/page-visible";
 import { betterReceipt } from "@/lib/receipts";
 import { sendRefusalMessage } from "@/lib/send-refusal";
@@ -261,6 +263,7 @@ export function MessageThread({ id }: { id: number }) {
     <section className="messages-thread" aria-label={name ? `Conversation with ${name}` : "Conversation"}>
       <header className="messages-thread-head">
         <BackLink />
+        {name && <span className="messages-thread-avatar" style={toneFor(name)} aria-hidden="true">{initialsOf(name)}</span>}
         <div className="messages-thread-title">
           <h2>{name || " "}</h2>
           {row?.counterpart?.label && <p>{row.counterpart.label}</p>}
@@ -304,11 +307,11 @@ export function MessageThread({ id }: { id: number }) {
   );
 }
 
-/** The way back to the Inbox, shown where the list is not beside the thread. */
+/** The way back to the Inbox. */
 function BackLink() {
   return (
     <Link to="/inbox" className="messages-back" aria-label="Inbox">
-      <ArrowLeft size={20} aria-hidden="true" />
+      <ChevronLeft size={22} aria-hidden="true" />
     </Link>
   );
 }
@@ -366,6 +369,7 @@ function Composer({ id, offline, text, onChange, onSend, busy }: {
   return (
     <div className="messages-composer">
       <MessageBox
+        compact
         id={`reply-${id}`}
         label="Your reply"
         value={text}

@@ -1,8 +1,8 @@
 /**
  * The Messages screens, drawn from canned reads.
  *
- * Tunde writes to his Mathematics teacher. The list says in plain words that
- * his parent and the school can read it; the thread puts the school's reason
+ * Tunde writes to his Mathematics teacher. The new-message sheet says in plain
+ * words that his parent and the school can read it; the thread puts the school's reason
  * where the box would be when he can't write; and a send that does not get
  * through is retried with the same token, so it can never be stored twice.
  */
@@ -45,6 +45,7 @@ vi.mock("@/redux/services/messages-api", async (importOriginal) => ({
 }));
 
 import { MessagesPage } from "./messages";
+import { NewMessageSheet } from "./messages-new";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 let container: HTMLDivElement;
@@ -102,9 +103,9 @@ function render(at: string) {
     <Provider store={store}>
       <MemoryRouter initialEntries={[at]}>
         <Routes>
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/messages/new" element={<MessagesPage />} />
+          <Route path="/messages/new" element={<NewMessageSheet open />} />
           <Route path="/messages/:id" element={<MessagesPage />} />
+          <Route path="*" element={<p>elsewhere</p>} />
         </Routes>
       </MemoryRouter>
     </Provider>,
@@ -118,28 +119,6 @@ function type(field: HTMLTextAreaElement, text: string) {
 }
 
 const sendButton = () => [...container.querySelectorAll("button")].find((b) => b.textContent?.includes("Send")) as HTMLButtonElement;
-
-describe("the conversation list", () => {
-  it("says plainly that a parent and the school can read, and shows who, what and how many unread", () => {
-    render("/messages");
-    expect(container.querySelector(".messages-oversight")?.textContent).toBe(NOTICE);
-    const text = container.querySelector(".messages-row")!.textContent!;
-    expect(text).toContain("Mrs Funke Okoro");
-    expect(text).toContain("Mathematics");
-    expect(text).toContain("Please bring your workbook");
-    expect(container.querySelector(".messages-badge")?.textContent).toBe("2");
-    expect(container.textContent).toContain("2 unread");
-    expect(container.querySelector('a[href="/messages/41"]')).not.toBeNull();
-    expect(container.querySelector('a[href="/messages/new"]')).not.toBeNull();
-  });
-
-  it("invites a first message when there are no conversations, notice still showing", () => {
-    mocks.conversations = { rows: [], unreadCount: 0, oversightNotice: NOTICE, next: null };
-    render("/messages");
-    expect(container.textContent).toContain("No messages yet");
-    expect(container.querySelector(".messages-oversight")?.textContent).toBe(NOTICE);
-  });
-});
 
 describe("a thread", () => {
   it("reads oldest to newest, marks the unread conversation read, and offers the box", () => {
