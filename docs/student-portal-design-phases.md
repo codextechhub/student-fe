@@ -40,6 +40,12 @@ the backend documents win: they record the owner's later decisions.
    pill above the bottom edge with the screen showing raised inside it, More
    once there are too many tabs. Content may still use two panes where they
    help (notices, fees) on wide screens.
+   **Changed 26 October 2026 (owner, the redesign's option 3b):** the split
+   bar. Home, Timetable, Results and Fees are the tabs; a round Inbox button
+   beside the pill opens Notices and Messages as two tiles and carries both
+   unread counts. Profile opens from the avatar at the top of every screen,
+   with "Switch pupil" in its place on Profile; Attendance opens from its
+   card on Home. There is no More.
 10. Assignments are not built, and are hidden. Messages were hidden until
     the backend's Messaging module shipped (Phase 8, 21 October 2026).
 11. **Paying offers two choices, Card and Bank transfer.** Card goes to

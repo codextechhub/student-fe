@@ -16,15 +16,17 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { connectivityReducer } from "@/redux/features/connectivity-slice";
+import { sessionReducer, sessionSettled } from "@/redux/features/session-slice";
 
 vi.mock("@/auth/device-session", () => ({ refreshShowingPupil: () => ({ type: "test/refresh" }) }));
-vi.mock("@/components/session/pupil-switcher", () => ({ PupilSwitcher: () => null }));
+vi.mock("@/components/session/pupil-switcher", () => ({ PupilSwitcher: () => <button type="button">Switch pupil</button> }));
+vi.mock("@/components/pupil-avatar", () => ({ PupilAvatar: () => null }));
 vi.mock("@/components/school-mark", () => ({ SchoolMark: () => null }));
 vi.mock("@/redux/services/portal-api", () => ({
   useMeQuery: () => ({ data: undefined }),
-  useNoticesQuery: () => ({ data: undefined }),
+  useNoticesQuery: () => ({ data: { unreadCount: 3 } }),
 }));
-vi.mock("@/redux/services/messages-api", () => ({ useUnreadMessagesQuery: () => ({ data: 0 }) }));
+vi.mock("@/redux/services/messages-api", () => ({ useUnreadMessagesQuery: () => ({ data: 1 }) }));
 
 import { AppShell } from "./app-shell";
 
@@ -33,12 +35,16 @@ let container: HTMLDivElement;
 let root: Root;
 
 function render(at: string) {
-  const store = configureStore({ reducer: { connectivity: connectivityReducer } });
+  const store = configureStore({ reducer: { connectivity: connectivityReducer, session: sessionReducer } });
+  store.dispatch(sessionSettled({ status: "signed-in", pupils: [{ account: "a1", studentId: 1, fullName: "Tolulope Adeyemi", firstName: "Tolulope", photo: "" }], active: "a1" }));
   act(() => root.render(
     <Provider store={store}>
       <MemoryRouter initialEntries={[at]}>
         <Routes>
           <Route element={<AppShell />}>
+            <Route index element={<p>home</p>} />
+            <Route path="notices" element={<p>notices</p>} />
+            <Route path="profile" element={<p>profile</p>} />
             <Route path="messages" element={<p>list</p>} />
             <Route path="messages/:id" element={<p>thread</p>} />
           </Route>
@@ -68,5 +74,30 @@ describe("the app shell", () => {
     expect(container.querySelector("nav")?.getAttribute("data-hidden-on-phone")).toBe("true");
     expect(container.querySelector("header")?.getAttribute("data-hidden-on-phone")).toBe("true");
     expect(container.querySelector(".app-shell")?.classList.contains("app-shell--conversation")).toBe(true);
+  });
+
+  it("holds four tabs and an Inbox button carrying unread notices and messages", () => {
+    render("/");
+    const tabs = [...container.querySelectorAll(".tab-bar a")].map((a) => a.textContent);
+    expect(tabs).toEqual(["Home", "Timetable", "Results", "Fees"]);
+    const inbox = container.querySelector(".tab-bar-inbox");
+    expect(inbox?.getAttribute("aria-label")).toBe("Inbox, 4 unread");
+    expect(inbox?.hasAttribute("data-showing")).toBe(false);
+  });
+
+  it("marks the Inbox button while Notices or Messages is open", () => {
+    render("/notices");
+    expect(container.querySelector(".tab-bar-inbox")?.hasAttribute("data-showing")).toBe(true);
+  });
+
+  it("leads to Profile from the avatar", () => {
+    render("/");
+    expect(container.querySelector("header a[href='/profile']")).not.toBeNull();
+  });
+
+  it("offers the pupil switcher in the avatar's place on Profile", () => {
+    render("/profile");
+    expect(container.querySelector("header a[href='/profile']")).toBeNull();
+    expect(container.querySelector("header button")?.textContent).toBe("Switch pupil");
   });
 });

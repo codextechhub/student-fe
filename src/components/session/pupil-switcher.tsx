@@ -9,7 +9,11 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 
 import "./pupil-switcher.css";
 
-/** Shows the pupils on this phone; switching and signing out stay scoped to the selected device account. */
+/**
+ * Shows the pupils on this phone; switching and signing out stay scoped to the
+ * selected device account. It opens from "Switch pupil" at the top of Profile,
+ * which the avatar on every other screen leads to.
+ */
 export function PupilSwitcher() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -45,8 +49,8 @@ export function PupilSwitcher() {
   return (
     <Dialog.Root open={open} onOpenChange={(next) => !busy && setOpen(next)}>
       <Dialog.Trigger asChild>
-        <button type="button" className="pupil-switcher-trigger" aria-label={`${showing.fullName}. Switch pupil or sign out`}>
-          <PupilAvatar name={showing.fullName} photo={showing.photo} size={32} />
+        <button type="button" className="pupil-switcher-trigger" aria-label="Switch pupil or sign out">
+          Switch pupil
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
