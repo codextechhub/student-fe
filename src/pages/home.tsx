@@ -16,7 +16,6 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { noticeCleared } from "@/redux/features/session-slice";
 import {
   useHomeQuery,
-  useMarkNoticeReadMutation,
   useMeQuery,
   type Home,
   type TodayPeriod,
@@ -219,11 +218,9 @@ export function FeesCard({ block }: { block: Home["fees"] }) {
   );
 }
 
-/** The school's latest notice. It reads as it opens, as it does from the Inbox. */
+/** The school's latest notice; its own screen marks it read as it opens. */
 function NoticeSection({ block }: { block: Home["notices"] }) {
   const latest = block.available ? block.latest : null;
-  const [markRead] = useMarkNoticeReadMutation();
-  const offline = useAppSelector((s) => s.connectivity.offline);
   return (
     <section className="home-notices" aria-labelledby="home-notice-title">
       <div className="screen-section">
@@ -233,11 +230,7 @@ function NoticeSection({ block }: { block: Home["notices"] }) {
       {!block.available ? <div className="screen-card home-notice"><UnavailableLine block={block} /></div> : !latest ? (
         <div className="screen-card home-notice"><p className="home-empty">No notices yet.</p></div>
       ) : (
-        <Link
-          to={`/notices/${latest.id}`}
-          className="screen-card home-notice"
-          onClick={() => { if (latest.unread && !offline) markRead(latest.id).unwrap().catch(() => {}); }}
-        >
+        <Link to={`/notices/${latest.id}`} className="screen-card home-notice">
           <span className="icon-tile home-notice-icon"><Bell size={19} aria-hidden="true" /></span>
           <span className="home-notice-body">
             <span className="home-notice-top">

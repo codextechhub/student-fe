@@ -107,18 +107,10 @@ describe("the Inbox", () => {
     expect(rows()).toEqual(["Conversation with Mr. Okafor, 1 unread"]);
   });
 
-  it("marks an unread notice read as it opens, and opens it", () => {
+  it("opens a notice on its own screen", () => {
     render("/inbox");
     act(() => (container.querySelector('a[href="/notices/1"]') as HTMLAnchorElement).click());
-    expect(mocks.markRead).toHaveBeenCalledWith(1);
     expect(where).toBe("/notices/1");
-  });
-
-  it("leaves a notice unread when it is opened offline", () => {
-    mocks.offline = true;
-    render("/inbox");
-    act(() => (container.querySelector('a[href="/notices/1"]') as HTMLAnchorElement).click());
-    expect(mocks.markRead).not.toHaveBeenCalled();
   });
 
   it("opens a conversation without marking it read from the list", () => {

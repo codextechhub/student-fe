@@ -22,7 +22,6 @@ import {
 import {
   refusal,
   useMarkAllNoticesReadMutation,
-  useMarkNoticeReadMutation,
   useNoticesQuery,
   type Notice,
   type NoticePage,
@@ -41,8 +40,8 @@ const FILTERS: { key: InboxShow; label: string }[] = [
  * The screen behind the Inbox button: the school's notices and the pupil's
  * conversations in one list, newest first, with a switch for All, Notices or
  * Messages (kept in the address, so Back returns to it). A notice opens the
- * notice and is marked read as it opens; a conversation opens the thread,
- * which marks itself read as the pupil reads it.
+ * notice, whose screen marks it read; a conversation opens the thread, which
+ * marks itself read as the pupil reads it.
  *
  * "Mark all as read" covers notices only. Marking a conversation read tells
  * the teacher the pupil has read it (the ticks in a thread), so a
@@ -188,17 +187,10 @@ function Row({ entry }: { entry: InboxEntry }) {
 }
 
 function NoticeRow({ notice }: { notice: Notice }) {
-  const [markRead] = useMarkNoticeReadMutation();
-  const offline = useAppSelector((s) => s.connectivity.offline);
-  // Opening a notice from the Inbox reads it. Offline it stays unread, to be read again later.
-  const open = () => {
-    if (notice.unread && !offline) markRead(notice.id).unwrap().catch(() => {});
-  };
   return (
     <li>
       <Link
         to={`/notices/${notice.id}`}
-        onClick={open}
         className={cn("inbox-row", notice.unread && "is-unread")}
         aria-label={`Notice: ${notice.title}${notice.unread ? ", unread" : ""}`}
       >
