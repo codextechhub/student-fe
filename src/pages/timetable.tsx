@@ -6,7 +6,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { ScreenTitle } from "@/components/layout/screen";
 import { Calendar } from "@/components/ui/calendar";
 import { formatClock } from "@/lib/format";
-import { dotFor } from "@/lib/name-hue";
+import { useSubjectColours } from "@/lib/use-subject-colours";
 import { useTimetableQuery, type Timetable, type TimetableCell } from "@/redux/services/portal-api";
 
 import "./timetable.css";
@@ -145,6 +145,7 @@ function DaySchedule({ timetable, isCurrentWeek, selectedDate }: { timetable: Ti
   const day = timetable.days.find((item) => item.day_of_week === selectedDayNumber);
   const dayName = new Intl.DateTimeFormat("en-NG", { weekday: "long", timeZone: "UTC" }).format(dateFromKey(selectedDate));
   const todayStates = timetable.today?.periods ?? [];
+  const colours = useSubjectColours();
   const lessons = day?.cells.filter((cell) => cell.kind !== "BREAK").length ?? 0;
   if (timetable.days.length === 0) return null;
 
@@ -169,7 +170,7 @@ function DaySchedule({ timetable, isCurrentWeek, selectedDate }: { timetable: Ti
             return (
               <li key={key} className={`timetable-lesson${state === "now" ? " is-now" : ""}${state === "done" ? " is-done" : ""}`}>
                 <span className="timetable-lesson-time"><span>{formatClock(cell.start_time)}</span><span>{formatClock(cell.end_time)}</span></span>
-                <span className="timetable-lesson-bar" style={{ background: cell.subject ? dotFor(cell.subject) : "#cfd6e2" }} aria-hidden="true" />
+                <span className="timetable-lesson-bar" style={{ background: cell.subject ? colours.dot(cell.subject) : "#cfd6e2" }} aria-hidden="true" />
                 <span className="timetable-lesson-detail"><strong>{cellTitle(cell)}</strong><span>{cellMeta(cell)}</span></span>
                 {(state === "now" || state === "next") && <span className={`timetable-lesson-badge is-${state}`}>{state === "now" ? "Now" : "Next"}</span>}
               </li>
@@ -183,6 +184,7 @@ function DaySchedule({ timetable, isCurrentWeek, selectedDate }: { timetable: Ti
 
 /** The whole week, three lessons a day, beside the day on a wide screen. */
 function WeekSummary({ timetable, isCurrentWeek, selectedWeek, selectedDate }: { timetable: Timetable; isCurrentWeek: boolean; selectedWeek: Date; selectedDate: string }) {
+  const colours = useSubjectColours();
   if (timetable.days.length === 0) return null;
   return (
     <section className="screen-card timetable-summary" aria-labelledby="timetable-summary-title">
@@ -192,7 +194,7 @@ function WeekSummary({ timetable, isCurrentWeek, selectedWeek, selectedDate }: {
           <div key={day.day_of_week} className={`timetable-summary-day${isCurrentWeek && day.is_today ? " is-today" : ""}${dateKey(addDays(selectedWeek, day.day_of_week - 1)) === selectedDate ? " is-selected" : ""}`}>
             <strong>{day.day_label} · {shortDate(addDays(selectedWeek, day.day_of_week - 1))}{isCurrentWeek && day.is_today ? " · Today" : ""}</strong>
             {day.cells.filter((cell) => cell.kind !== "BREAK").length ? (
-              <ul>{day.cells.filter((cell) => cell.kind !== "BREAK").slice(0, 3).map((cell) => <li key={`${cell.start_time}-${cell.label}`}><span style={{ background: cell.subject ? dotFor(cell.subject) : "#cfd6e2" }} aria-hidden="true" />{cellTitle(cell)}</li>)}</ul>
+              <ul>{day.cells.filter((cell) => cell.kind !== "BREAK").slice(0, 3).map((cell) => <li key={`${cell.start_time}-${cell.label}`}><span style={{ background: cell.subject ? colours.dot(cell.subject) : "#cfd6e2" }} aria-hidden="true" />{cellTitle(cell)}</li>)}</ul>
             ) : <span>No classes</span>}
           </div>
         ))}

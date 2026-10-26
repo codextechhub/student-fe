@@ -9,9 +9,9 @@ import { ScreenTitle } from "@/components/layout/screen";
 import { PushOffer } from "@/components/push-settings";
 import { feeFigures } from "@/lib/fee-figures";
 import { formatClock, formatDate, formatLongDate, formatNaira, formatRowWhen } from "@/lib/format";
-import { dotFor } from "@/lib/name-hue";
 import { classLine, rateLine, todayLine } from "@/lib/pupil-lines";
 import { periodProgress, todayPlan } from "@/lib/today";
+import { useSubjectColours } from "@/lib/use-subject-colours";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { noticeCleared } from "@/redux/features/session-slice";
 import {
@@ -105,6 +105,7 @@ const nameOf = (period: TodayPeriod) => (period.kind === "BREAK" ? period.label 
 function Today({ block }: { block: Home["today"] }) {
   const periods = block.available && block.published ? block.periods : [];
   const plan = todayPlan(periods);
+  const colours = useSubjectColours();
   const message = !block.available
     ? block.message
     : !block.published
@@ -128,7 +129,7 @@ function Today({ block }: { block: Home["today"] }) {
               {plan.later.map((period) => (
                 <li key={`${period.start_time}-${period.label}`}>
                   <span className="home-later-time">{formatClock(period.start_time)}</span>
-                  <span className="home-later-dot" style={{ background: period.kind === "BREAK" ? "#cfd6e2" : dotFor(nameOf(period)) }} aria-hidden="true" />
+                  <span className="home-later-dot" style={{ background: period.kind === "BREAK" ? "#cfd6e2" : colours.dot(nameOf(period)) }} aria-hidden="true" />
                   <strong>{nameOf(period)}</strong>
                   {period.room && <span className="home-later-room">{period.room}</span>}
                 </li>

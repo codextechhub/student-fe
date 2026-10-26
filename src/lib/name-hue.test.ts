@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { hueFor, toneFor } from "./name-hue";
+import { hueFor, subjectHues, toneFor } from "./name-hue";
 
 describe("a name's colour", () => {
   it("is the same every time, whatever the spacing or case", () => {
@@ -11,5 +11,13 @@ describe("a name's colour", () => {
   it("spreads different names across the hues", () => {
     const names = ["Mr. Okafor", "Mrs. Bello", "Dr. Nwosu", "School office", "Ms. Eze", "Mme. Diallo"];
     expect(new Set(names.map(hueFor)).size).toBeGreaterThan(2);
+  });
+});
+
+describe("a class's subject colours", () => {
+  it("gives every subject its own hue, in alphabetical order", () => {
+    const hues = subjectHues(["Mathematics", "Civic Education", "Basic Science", "English Language", "Yoruba", "Mathematics"]);
+    expect([...hues.keys()]).toEqual(["basic science", "civic education", "english language", "mathematics", "yoruba"]);
+    expect(new Set(hues.values()).size).toBe(5);
   });
 });
