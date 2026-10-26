@@ -7,8 +7,8 @@ describe("the tab bar", () => {
     expect(TABS.map((t) => t.key)).toEqual(["home", "timetable", "results", "fees"]);
   });
 
-  it("puts Notices and Messages behind the Inbox button", () => {
-    expect(INBOX.map((t) => t.key)).toEqual(["notices", "messages"]);
+  it("puts the Inbox, Notices and Messages behind the Inbox button", () => {
+    expect(INBOX.map((t) => t.key)).toEqual(["inbox", "notices", "messages"]);
   });
 
   it("names the screen a path belongs to", () => {
@@ -17,6 +17,8 @@ describe("the tab bar", () => {
     expect(itemFor("/notices/12")?.key).toBe("notices");
     expect(itemFor("/")?.key).toBe("home");
     expect(itemFor("/timetable")?.key).toBe("timetable");
+    expect(itemFor("/inbox")?.key).toBe("inbox");
+    expect(itemFor("/inbox/new")?.key).toBe("inbox");
   });
 });
 

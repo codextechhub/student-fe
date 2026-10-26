@@ -170,7 +170,7 @@ function NoticeSection({ block }: { block: Home["notices"] }) {
   const latest = block.available ? block.latest : null;
   return (
     <section aria-labelledby="home-notice-title">
-      <SectionHeading title="From your school" subtitle="Latest announcement" id="home-notice-title" href={block.available ? "/notices" : undefined} linkLabel="See all" />
+      <SectionHeading title="From your school" subtitle="Latest announcement" id="home-notice-title" href={block.available ? "/inbox?show=notices" : undefined} linkLabel="See all" />
       {!block.available ? <div className="home-surface home-notice"><UnavailableLine block={block} /></div> : !latest ? (
         <div className="home-surface home-notice"><p className="home-empty">No notices yet.</p></div>
       ) : (

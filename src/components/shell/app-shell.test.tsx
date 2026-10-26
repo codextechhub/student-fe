@@ -44,6 +44,7 @@ function render(at: string) {
           <Route element={<AppShell />}>
             <Route index element={<p>home</p>} />
             <Route path="notices" element={<p>notices</p>} />
+            <Route path="inbox" element={<p>inbox</p>} />
             <Route path="profile" element={<p>profile</p>} />
             <Route path="messages" element={<p>list</p>} />
             <Route path="messages/:id" element={<p>thread</p>} />
@@ -85,8 +86,19 @@ describe("the app shell", () => {
     expect(inbox?.hasAttribute("data-showing")).toBe(false);
   });
 
-  it("marks the Inbox button while Notices or Messages is open", () => {
+  it("opens the Inbox from the Inbox button", () => {
+    render("/");
+    expect(container.querySelector(".tab-bar-inbox")?.getAttribute("href")).toBe("/inbox");
+  });
+
+  it("marks the Inbox button on the Inbox and on a notice or conversation opened from it", () => {
     render("/notices");
+    expect(container.querySelector(".tab-bar-inbox")?.hasAttribute("data-showing")).toBe(true);
+  });
+
+  it("keeps the Inbox's name out of the header while its large title shows", () => {
+    render("/inbox");
+    expect(container.querySelector(".app-shell-title")?.hasAttribute("data-hidden")).toBe(true);
     expect(container.querySelector(".tab-bar-inbox")?.hasAttribute("data-showing")).toBe(true);
   });
 

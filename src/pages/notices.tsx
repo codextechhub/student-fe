@@ -58,7 +58,7 @@ export function NoticesPage() {
             </>}
           </div>
           {shownId !== null && <div className={cn("notices-detail-panel", openId === null && "is-hidden-on-list")}>
-            <Link to="/notices" className="notices-detail-back"><ArrowLeft size={17} aria-hidden="true" />All notices</Link>
+            <Link to="/inbox" className="notices-detail-back"><ArrowLeft size={17} aria-hidden="true" />Inbox</Link>
             <NoticeDetail id={shownId} />
           </div>}
         </div>}
@@ -94,7 +94,7 @@ function NoticeDetail({ id }: { id: number }) {
   const [markRead, { isLoading }] = useMarkNoticeReadMutation();
   const offline = useAppSelector((s) => s.connectivity.offline);
 
-  if (isError) return <div className="notices-detail-error" role="alert">This notice isn&apos;t available any more. <Link to="/notices">Back to notices</Link></div>;
+  if (isError) return <div className="notices-detail-error" role="alert">This notice isn&apos;t available any more. <Link to="/inbox">Back to the inbox</Link></div>;
   if (!notice) return <div className="notices-detail-loading" role="status" aria-label="Loading notice" />;
 
   const read = async () => {

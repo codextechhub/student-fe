@@ -4,6 +4,7 @@ import { Link, useMatch, useParams } from "react-router";
 
 import { PageShell } from "@/components/layout/page-shell";
 import { formatWhen } from "@/lib/format";
+import { initialsOf } from "@/lib/initials";
 import { cn } from "@/lib/utils";
 import {
   OVERSIGHT_FALLBACK,
@@ -19,16 +20,6 @@ import "./messages.css";
 function conversationId(raw: string | undefined): number | null {
   const id = raw ? Number(raw) : null;
   return id !== null && Number.isSafeInteger(id) && id > 0 ? id : null;
-}
-
-/** The first letters of a name past any title, for the round mark beside a teacher. */
-function initialsOf(name: string): string {
-  const letters = name
-    .split(/\s+/)
-    .filter((word) => /^\p{L}/u.test(word) && !/^(mr|mrs|miss|ms|mx|dr|prof|engr|chief)\.?$/i.test(word))
-    .slice(0, 2)
-    .map((word) => Array.from(word)[0]);
-  return letters.join("").toUpperCase() || "?";
 }
 
 /**

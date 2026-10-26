@@ -19,16 +19,17 @@ import { MessageBox } from "./messages-box";
 /**
  * The sheet a new message is written in.
  *
- * It is the address `/messages/new`, so Back closes it and a link can open it.
+ * It is an address (`/inbox/new`), so Back closes it and a link can open it;
+ * closing it returns to `closeTo`, the list it was opened over.
  * It rises from the bottom of the screen on a phone and sits centred on a wide
  * one. The teachers are read only while it is open. The list of teachers
  * scrolls inside the sheet, so the box and Send stay in reach however many
  * teachers a pupil has.
  */
-export function NewMessageSheet({ open }: { open: boolean }) {
+export function NewMessageSheet({ open, closeTo = "/messages" }: { open: boolean; closeTo?: string }) {
   const navigate = useNavigate();
   return (
-    <Dialog.Root open={open} onOpenChange={(next) => { if (!next) navigate("/messages", { replace: true }); }}>
+    <Dialog.Root open={open} onOpenChange={(next) => { if (!next) navigate(closeTo, { replace: true }); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="messages-sheet-overlay" />
         <Dialog.Content className="messages-sheet" aria-describedby="new-message-notice">

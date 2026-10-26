@@ -304,10 +304,10 @@ export function MessageThread({ id }: { id: number }) {
   );
 }
 
-/** The way back to the list, shown where the list is not beside the thread. */
+/** The way back to the Inbox, shown where the list is not beside the thread. */
 function BackLink() {
   return (
-    <Link to="/messages" className="messages-back" aria-label="All messages">
+    <Link to="/inbox" className="messages-back" aria-label="Inbox">
       <ArrowLeft size={20} aria-hidden="true" />
     </Link>
   );

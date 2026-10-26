@@ -40,6 +40,10 @@
   }
 }
 
+/* A screen with a large title keeps its name out of the header until the large title has gone under it. */
+.app-shell-title { transition: opacity .2s; }
+.app-shell-title[data-hidden] { opacity: 0; }
+
 /* The avatar at the top right: the way to Profile. */
 .app-shell-avatar { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgba(74, 101, 157, .35); transition: box-shadow .2s; }
 .app-shell-avatar:hover { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgba(74, 101, 157, .7); }
@@ -53,29 +57,12 @@
 .tab-bar-tab:hover { color: #3d568c; }
 .tab-bar-tab.active { background: rgba(74, 101, 157, .13); color: #3d568c; font-weight: 600; }
 .tab-bar-label { max-width: 100%; overflow: hidden; font-size: 10.5px; line-height: 1; letter-spacing: -.01em; text-overflow: ellipsis; white-space: nowrap; }
-.tab-bar-inbox { position: relative; display: grid; place-items: center; flex: none; width: 62px; height: 62px; padding: 0; border-radius: 999px; color: #3d568c; cursor: pointer; transition: background-color .25s, color .25s; }
+.tab-bar-inbox { position: relative; display: grid; text-decoration: none; place-items: center; flex: none; width: 62px; height: 62px; padding: 0; border-radius: 999px; color: #3d568c; cursor: pointer; transition: background-color .25s, color .25s; }
 .tab-bar-inbox[data-showing] { background: rgba(74, 101, 157, .9); color: #fff; }
-.tab-bar-inbox-count, .inbox-sheet-count { display: grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box; border-radius: 99px; background: #4a659d; color: #fff; font-size: 10px; font-weight: 600; line-height: 1; }
+.tab-bar-inbox-count { display: grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box; border-radius: 99px; background: #4a659d; color: #fff; font-size: 10px; font-weight: 600; line-height: 1; }
 .tab-bar-inbox-count { position: absolute; top: 8px; right: 9px; border: 1.5px solid #fff; }
 .tab-bar-tab:focus-visible, .tab-bar-inbox:focus-visible { outline: 3px solid #5975ff; outline-offset: 2px; }
 
-/* The Inbox sheet: Notices and Messages as two tiles, rising from the bottom on a phone. */
-.inbox-sheet-overlay { position: fixed; z-index: 40; inset: 0; background: rgba(23, 36, 69, .38); }
-.inbox-sheet { position: fixed; z-index: 50; right: 8px; bottom: max(8px, env(safe-area-inset-bottom)); left: 8px; padding: 10px 10px 14px; border-radius: 30px; background: rgba(255, 255, 255, .96); box-shadow: 0 20px 50px rgba(23, 36, 69, .3); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); outline: none; }
-.inbox-sheet::before { content: ""; display: block; width: 38px; height: 5px; margin: 2px auto 12px; border-radius: 9px; background: #cfd8e8; }
-.inbox-sheet-title { margin: 0 12px 8px; color: #7a869d; font-size: 13px; font-weight: 600; }
-.inbox-sheet-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.inbox-sheet-tile { display: grid; gap: 18px; padding: 14px; border-radius: 20px; background: #f4f6fa; color: #223153; text-decoration: none; transition: background-color .2s; }
-.inbox-sheet-tile:hover { background: #ebeff6; }
-.inbox-sheet-tile:focus-visible { outline: 3px solid #5975ff; outline-offset: 2px; }
-.inbox-sheet-tile-top { display: flex; justify-content: space-between; align-items: center; }
-.inbox-sheet-count { min-width: 22px; height: 22px; font-size: 12px; }
-.inbox-sheet-tile-label { font-size: 15px; font-weight: 600; }
-
-@media (min-width: 640px) {
-  .inbox-sheet { right: auto; bottom: calc(96px + env(safe-area-inset-bottom)); left: 50%; width: 400px; transform: translateX(-50%); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .tab-bar-tab, .tab-bar-inbox, .app-shell-avatar, .inbox-sheet-tile { transition: none; }
+  .tab-bar-tab, .tab-bar-inbox, .app-shell-avatar, .app-shell-title { transition: none; }
 }

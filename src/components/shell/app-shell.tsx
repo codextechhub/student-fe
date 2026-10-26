@@ -1,6 +1,5 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Inbox } from "lucide-react";
-import { Dialog } from "radix-ui";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 
 import { refreshShowingPupil } from "@/auth/device-session";
@@ -21,6 +20,16 @@ import "./app-shell.css";
 
 /** How often the Messages badge asks the school for the unread count, in milliseconds. */
 const MESSAGE_BADGE_POLL_MS = 60_000;
+
+/**
+ * The screens that open on the redesign's large title. The header leaves
+ * their name out until the large title has scrolled away under it, as on an
+ * iPhone, so the name is never on screen twice.
+ */
+const LARGE_TITLE: ReadonlySet<NavItem["key"]> = new Set(["inbox"]);
+
+/** How far down, in px, a large title has gone under the header. */
+const LARGE_TITLE_PAST = 56;
 
 /**
  * The frame every signed-in screen sits in.
@@ -45,8 +54,12 @@ const MESSAGE_BADGE_POLL_MS = 60_000;
 export function AppShell() {
   const { pathname } = useLocation();
   const [scrolled, setScrolled] = useState(() => window.scrollY > 8);
+  const [titlePast, setTitlePast] = useState(() => window.scrollY > LARGE_TITLE_PAST);
   useEffect(() => {
-    const update = () => setScrolled(window.scrollY > 8);
+    const update = () => {
+      setScrolled(window.scrollY > 8);
+      setTitlePast(window.scrollY > LARGE_TITLE_PAST);
+    };
     window.addEventListener("scroll", update, { passive: true });
     return () => window.removeEventListener("scroll", update);
   }, []);
@@ -68,7 +81,7 @@ export function AppShell() {
   const current = itemFor(pathname);
   const conversationOpen = isConversationPath(pathname);
   const viewport = useVisualViewportBox(conversationOpen);
-  const onDesignPage = pathname === "/" || pathname === "/timetable" || pathname.startsWith("/results") || pathname === "/attendance" || pathname.startsWith("/profile") || pathname.startsWith("/fees") || pathname.startsWith("/notices") || pathname.startsWith("/messages");
+  const onDesignPage = pathname.startsWith("/inbox") || pathname === "/" || pathname === "/timetable" || pathname.startsWith("/results") || pathname === "/attendance" || pathname.startsWith("/profile") || pathname.startsWith("/fees") || pathname.startsWith("/notices") || pathname.startsWith("/messages");
   const badges: Partial<Record<NavItem["key"], number>> = { notices: unread, messages: unreadMessages };
   const where = [me?.school.name, me?.show_branch ? me?.branch?.name : null].filter(Boolean).join(" · ");
   const screenTitle = pathname.startsWith("/results/card/") ? "Report card" : pathname.startsWith("/fees/receipts/") ? "Payment receipt" : pathname.startsWith("/fees/pay/") ? "Pay a bill" : pathname === "/fees/paid" ? "Payment status" : pathname === "/profile/delete-account" ? "Delete my account" : current?.key === "fees" ? "My fees" : current?.key === "attendance" ? "My attendance" : current?.key === "timetable" ? "My timetable" : current?.key === "results" ? "My results" : current?.key === "profile" ? "My profile" : current?.label ?? "";
@@ -81,7 +94,7 @@ export function AppShell() {
       <header data-hidden-on-phone={conversationOpen || undefined} className={cn("app-shell-head sticky top-0 z-30 flex min-h-[58px] min-w-0 items-center gap-3 border-b px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 transition-[background-color,backdrop-filter,border-color] duration-200 sm:min-h-[66px] lg:px-6", onDesignPage ? scrolled ? "border-[#dbe0eb] bg-[#f5f7fc]/70 backdrop-blur-xl backdrop-saturate-150" : "border-transparent bg-transparent" : scrolled ? "border-border bg-background/75 backdrop-blur-xl" : "border-border bg-background")}>
         <SchoolMark logo={me?.school.logo_url || null} size={onDesignPage ? 34 : 28} animate={false} alt={where} className={onDesignPage ? "max-h-7 sm:max-h-[34px]" : undefined} />
         <div className="min-w-0 flex-1">
-          <p className={cn("truncate font-semibold text-foreground", onDesignPage ? "text-base" : "text-sm")}>{screenTitle}</p>
+          <p className={cn("app-shell-title truncate font-semibold text-foreground", onDesignPage ? "text-base" : "text-sm")} data-hidden={(current && LARGE_TITLE.has(current.key) && !titlePast) || undefined}>{screenTitle}</p>
         </div>
         {current?.key === "profile" ? <PupilSwitcher /> : <ProfileLink />}
       </header>
@@ -116,15 +129,14 @@ function Count({ value, className }: { value?: number; className: string }) {
  * The app's tab bar, at every size: the design's split bar. A frosted pill
  * floats above the bottom edge with Home, Timetable, Results and Fees, the
  * screen showing tinted inside it, and beside it a round Inbox button that
- * opens Notices and Messages as two tiles. The Inbox button carries both
- * unread counts so nothing new is hidden behind it, and turns blue while one
- * of its screens is open. It clears the home indicator on phones that have
- * one, and the page scrolls on underneath. `hiddenOnPhone` takes it off
- * screens narrower than 800px (an open conversation); `app-shell.css` holds
- * the breakpoint and the bar's look.
+ * opens the Inbox, one list of notices and messages. The Inbox button carries
+ * both unread counts so nothing new is hidden behind it, and turns blue while
+ * the Inbox, or a notice or conversation, is open. It clears the home
+ * indicator on phones that have one, and the page scrolls on underneath.
+ * `hiddenOnPhone` takes it off screens narrower than 800px (an open
+ * conversation); `app-shell.css` holds the breakpoint and the bar's look.
  */
 function TabBar({ badges, hiddenOnPhone }: { badges: Partial<Record<NavItem["key"], number>>; hiddenOnPhone: boolean }) {
-  const [inboxOpen, setInboxOpen] = useState(false);
   const { pathname } = useLocation();
   const inboxShowing = INBOX.some((item) => item.key === itemFor(pathname)?.key);
   const inboxCount = INBOX.reduce((sum, item) => sum + (badges[item.key] ?? 0), 0);
@@ -141,39 +153,16 @@ function TabBar({ badges, hiddenOnPhone }: { badges: Partial<Record<NavItem["key
           );
         })}
       </div>
-      <Dialog.Root open={inboxOpen} onOpenChange={setInboxOpen}>
-        <Dialog.Trigger className="tab-bar-inbox" data-showing={inboxShowing || undefined} aria-label={inboxCount ? `Inbox, ${inboxCount} unread` : "Inbox"}>
-          <Inbox size={23} aria-hidden="true" />
-          <Count value={inboxCount} className="tab-bar-inbox-count" />
-        </Dialog.Trigger>
-        <Dialog.Portal>
-          <Dialog.Overlay className="inbox-sheet-overlay" />
-          <Dialog.Content aria-describedby={undefined} className="inbox-sheet">
-            <Dialog.Title className="inbox-sheet-title">Inbox</Dialog.Title>
-            <div className="inbox-sheet-tiles">
-              {INBOX.map((item) => {
-                const Icon = item.icon;
-                const count = badges[item.key] ?? 0;
-                return (
-                  <Link
-                    key={item.key}
-                    to={item.path}
-                    onClick={() => setInboxOpen(false)}
-                    className="inbox-sheet-tile"
-                    aria-label={count ? `${item.label}, ${count} unread` : item.label}
-                  >
-                    <span className="inbox-sheet-tile-top">
-                      <span className={cn("icon-tile", item.key === "messages" && "icon-tile--violet")}><Icon size={19} aria-hidden="true" /></span>
-                      <Count value={count} className="inbox-sheet-count" />
-                    </span>
-                    <span className="inbox-sheet-tile-label">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <Link
+        to="/inbox"
+        className="tab-bar-inbox"
+        data-showing={inboxShowing || undefined}
+        aria-current={inboxShowing ? "page" : undefined}
+        aria-label={inboxCount ? `Inbox, ${inboxCount} unread` : "Inbox"}
+      >
+        <Inbox size={23} aria-hidden="true" />
+        <Count value={inboxCount} className="tab-bar-inbox-count" />
+      </Link>
     </nav>
   );
 }

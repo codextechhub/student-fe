@@ -1,15 +1,16 @@
-import { Award, Bell, CalendarDays, CircleCheck, Home, MessageSquare, User, Wallet, type LucideIcon } from "lucide-react";
+import { Award, Bell, CalendarDays, CircleCheck, Home, Inbox, MessageSquare, User, Wallet, type LucideIcon } from "lucide-react";
 
 /** One destination in the app's navigation. */
 export type NavItem = {
-  key: "home" | "timetable" | "results" | "attendance" | "notices" | "messages" | "fees" | "profile";
+  key: "home" | "timetable" | "results" | "attendance" | "inbox" | "notices" | "messages" | "fees" | "profile";
   label: string;
   path: string;
   icon: LucideIcon;
   /**
-   * Where the pupil reaches it: a tab on the bar, a tile behind the Inbox
-   * button, or neither (Attendance opens from its card on Home, Profile from
-   * the avatar at the top of every screen).
+   * Where the pupil reaches it: a tab on the bar, the Inbox button (the Inbox
+   * itself and the notice or conversation opened from it), or neither
+   * (Attendance opens from its card on Home, Profile from the avatar at the
+   * top of every screen).
    */
   place: "bar" | "inbox" | "off";
 };
@@ -21,14 +22,15 @@ export type NavItem = {
  * working screen that does nothing. Assignments are not built.
  *
  * The bar is the design's split bar (option 3b, the owner's choice): Home,
- * Timetable, Results and Fees as tabs, and beside them an Inbox button for
- * Notices and Messages, the way a pupil thinks of them.
+ * Timetable, Results and Fees as tabs, and beside them an Inbox button: one
+ * list of notices and messages, the way a pupil thinks of them.
  */
 export const NAV: NavItem[] = [
   { key: "home", label: "Home", path: "/", icon: Home, place: "bar" },
   { key: "timetable", label: "Timetable", path: "/timetable", icon: CalendarDays, place: "bar" },
   { key: "results", label: "Results", path: "/results", icon: Award, place: "bar" },
   { key: "attendance", label: "Attendance", path: "/attendance", icon: CircleCheck, place: "off" },
+  { key: "inbox", label: "Inbox", path: "/inbox", icon: Inbox, place: "inbox" },
   { key: "notices", label: "Notices", path: "/notices", icon: Bell, place: "inbox" },
   { key: "messages", label: "Messages", path: "/messages", icon: MessageSquare, place: "inbox" },
   { key: "fees", label: "Fees", path: "/fees", icon: Wallet, place: "bar" },
@@ -38,7 +40,7 @@ export const NAV: NavItem[] = [
 /** The tabs on the bar, in order. */
 export const TABS = NAV.filter((item) => item.place === "bar");
 
-/** The screens behind the Inbox button. */
+/** The screens the Inbox button stands for: the Inbox, and a notice or conversation opened from it. */
 export const INBOX = NAV.filter((item) => item.place === "inbox");
 
 /** The nav item a path belongs to: `/notices/12` is Notices. */

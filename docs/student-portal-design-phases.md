@@ -42,8 +42,12 @@ the backend documents win: they record the owner's later decisions.
    help (notices, fees) on wide screens.
    **Changed 26 October 2026 (owner, the redesign's option 3b):** the split
    bar. Home, Timetable, Results and Fees are the tabs; a round Inbox button
-   beside the pill opens Notices and Messages as two tiles and carries both
-   unread counts. Profile opens from the avatar at the top of every screen,
+   beside the pill carries both unread counts and opens the Inbox (design
+   4a): notices and conversations in one list, newest first, with All,
+   Notices and Messages, a notice marked read as it opens. "Mark all as read"
+   covers notices only: marking a conversation read shows the teacher a read
+   receipt, so conversations are read by opening them. `/notices` and
+   `/messages` open the Inbox on that list. Profile opens from the avatar at the top of every screen,
    with "Switch pupil" in its place on Profile; Attendance opens from its
    card on Home. There is no More.
 10. Assignments are not built, and are hidden. Messages were hidden until

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { accountBalanceWords, dayKey, formatClock, formatDate, formatDayLabel, formatLongDate, formatNaira, formatTimeOfDay, formatWhen } from "./format";
+import { accountBalanceWords, dayKey, formatClock, formatDate, formatDayLabel, formatLongDate, formatNaira, formatRowWhen, formatTimeOfDay, formatWhen } from "./format";
 
 describe("formatting", () => {
   it("writes kobo as naira with two decimals", () => {
@@ -48,6 +48,12 @@ describe("writing when a message was sent", () => {
     expect(formatWhen(at(17), now)).toBe("Sat");
     expect(formatWhen(at(10), now)).toBe("10 Oct 2026");
     expect(formatWhen("not a date", now)).toBe("");
+  });
+
+  it("leaves this year's year off in a list row, and keeps an older one", () => {
+    expect(formatRowWhen(at(10), now)).toBe("10 Oct");
+    expect(formatRowWhen(new Date(2025, 11, 2, 9).toISOString(), now)).toBe("2 Dec 2025");
+    expect(formatRowWhen(at(20), now)).toBe("Yesterday");
   });
 
   it("labels a day in a thread and groups by the reader's day", () => {

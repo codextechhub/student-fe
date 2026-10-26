@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 
 import { InstallListener } from "@/components/install-offer";
@@ -16,6 +16,7 @@ import { AttendancePage } from "@/pages/attendance";
 import { DeleteAccountPage } from "@/pages/delete-account";
 import { FeesPage } from "@/pages/fees";
 import { HomePage } from "@/pages/home";
+import { InboxPage } from "@/pages/inbox";
 import { MessagesPage } from "@/pages/messages";
 import { NoticesPage } from "@/pages/notices";
 import { NotFoundPage } from "@/pages/not-found";
@@ -86,10 +87,13 @@ export default function App() {
             <Route path="fees/pay/:invoiceRef" element={<PayPage />} />
             <Route path="fees/paid" element={<PaidPage />} />
             <Route path="fees/receipts/:paymentRef" element={<ReceiptPage />} />
-            <Route path="notices" element={<NoticesPage />} />
+            <Route path="inbox" element={<InboxPage />} />
+            <Route path="inbox/new" element={<InboxPage />} />
+            {/* The lists live in the Inbox now; their old addresses open it on that list. */}
+            <Route path="notices" element={<Navigate to="/inbox?show=notices" replace />} />
             <Route path="notices/:id" element={<NoticesPage />} />
-            <Route path="messages" element={<MessagesPage />} />
-            <Route path="messages/new" element={<MessagesPage />} />
+            <Route path="messages" element={<Navigate to="/inbox?show=messages" replace />} />
+            <Route path="messages/new" element={<Navigate to="/inbox/new" replace />} />
             <Route path="messages/:id" element={<MessagesPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="profile/delete-account" element={<DeleteAccountPage />} />

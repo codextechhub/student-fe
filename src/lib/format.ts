@@ -97,6 +97,13 @@ export function formatWhen(value: string, now: Date = new Date()): string {
   return formatTimestampDate(value);
 }
 
+/** As `formatWhen`, without the year for a date in this year ("19 Oct"): for a list row, where room is short. */
+export function formatRowWhen(value: string, now: Date = new Date()): string {
+  const when = formatWhen(value, now);
+  const year = ` ${now.getFullYear()}`;
+  return when.endsWith(year) ? when.slice(0, -year.length) : when;
+}
+
 /** The heading over one day's messages in a thread: "Today", "Yesterday" or the date. */
 export function formatDayLabel(value: string, now: Date = new Date()): string {
   const at = new Date(value);
