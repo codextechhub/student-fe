@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, Building2, CreditCard, Lock, Wallet } from "lucide-react";
-import { Link, useParams } from "react-router";
+import { Building2, Check, CreditCard, Lock, Wallet } from "lucide-react";
+import { useParams } from "react-router";
 
 import { TransferPanel } from "@/components/fees/transfer-panel";
 import { PageShell } from "@/components/layout/page-shell";
+import { BottomBar, DetailBar } from "@/components/layout/screen";
 import { Button } from "@/components/ui/button";
 import { cardPaymentsOn, isCardPaymentsOff } from "@/lib/card-payments";
 import { formatDate, formatNaira, parseNaira } from "@/lib/format";
@@ -24,7 +25,9 @@ import "./fees.css";
 import "./pay.css";
 
 /**
- * One bill, paid on the gateway or into the pupil's permanent bank account.
+ * One bill, paid on the gateway or into the pupil's permanent bank account
+ * (design 2h). A screen opened from Fees, with its own back bar; on the card
+ * route "Continue to secure payment" waits in the bar at the foot.
  *
  * Where the school takes no card payments the page shows the transfer view
  * only, with no method choice. A screen that was open before the school
@@ -49,20 +52,26 @@ export function PayPage() {
 
   return (
     <PageShell className="pay-page">
+      <DetailBar title="Pay a bill" back="/fees" backLabel="Back to fees" />
       <div className="pay-wrap">
-        <h1 className="sr-only">Pay a bill</h1>
-        <Link to="/fees" className="pay-back"><ArrowLeft size={17} aria-hidden="true" />My fees</Link>
         {isLoading && !fees && <div className="pay-loading" role="status" aria-label="Loading bill" />}
         {fees && !invoice && <Note>This bill isn&apos;t on your account.</Note>}
         {fees && invoice && (
           <div className="pay-layout">
             <div className="pay-overview">
-              <section className="pay-bill" aria-label="Selected bill"><span className="pay-bill-label">Selected bill</span><h2>{invoice.title}</h2>{invoice.number && <p>{invoice.number}</p>}<strong>{formatNaira(Math.max(0, invoice.balance))}</strong><div className="pay-bill-chips"><span>{invoice.balance > 0 ? "Balance to pay" : "Fully paid"}</span>{invoice.due_date && invoice.balance > 0 && <span>Due {formatDate(invoice.due_date)}</span>}</div></section>
-              <div className="pay-guardian"><Wallet size={17} aria-hidden="true" /><p><strong>Fees are normally paid by a parent or guardian.</strong> You can pay here if they can&apos;t use their own app right now.</p></div>
+              <section className="pay-bill" aria-label="Selected bill">
+                <div className="screen-orb" aria-hidden="true" />
+                <span className="pay-bill-label">Selected bill</span>
+                <h2>{invoice.title}</h2>
+                {invoice.number && <p>{invoice.number}</p>}
+                <strong>{formatNaira(Math.max(0, invoice.balance))}</strong>
+                <div className="pay-bill-chips"><span>{invoice.balance > 0 ? "Balance to pay" : "Fully paid"}</span>{invoice.due_date && invoice.balance > 0 && <span>Due {formatDate(invoice.due_date)}</span>}</div>
+              </section>
+              <div className="info-note pay-guardian"><Wallet size={17} aria-hidden="true" /><p>{cardOn ? <><strong>Fees are normally paid by a parent or guardian.</strong> You can pay here if they can&apos;t use their own app right now.</> : "Your parent or guardian can pay by transfer to your account number."}</p></div>
             </div>
             <div className="pay-detail">
               {!fees.can_pay ? <Note>Your school doesn&apos;t take payments from pupils here. Ask your parent or guardian to pay.</Note> : invoice.balance <= 0 ? <Note>This bill is fully paid. Thank you.</Note> : !cardOn ? <TransferOnly turnedOff={refused} /> : offline ? <Note>You&apos;re offline. You can pay when you&apos;re back online.</Note> : <>
-                <div className="pay-section-heading"><h2>How would you like to pay?</h2></div>
+                <div className="screen-section pay-section-heading"><h2>How would you like to pay?</h2></div>
                 <div className="pay-methods" role="radiogroup" aria-label="How would you like to pay?">
                   <MethodButton active={method === "card"} onClick={() => setMethod("card")} icon={<CreditCard size={19} />} label="Card" description="Secure checkout" />
                   <MethodButton active={method === "transfer"} onClick={() => setMethod("transfer")} icon={<Building2 size={19} />} label="Bank transfer" description="Pay from any bank" />
@@ -78,11 +87,30 @@ export function PayPage() {
 }
 
 function Note({ children }: { children: React.ReactNode }) {
-  return <div className="pay-note">{children}</div>;
+  return <div className="screen-card pay-note">{children}</div>;
 }
 
+/** A way to pay, as a tile: the chosen one ringed in blue with a tick in its corner. */
 function MethodButton({ active, onClick, icon, label, description }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; description?: string }) {
-  return <button type="button" role="radio" aria-checked={active} onClick={onClick} className={cn("pay-method", active && "is-active")}><span className="pay-method-icon">{icon}</span><span><strong>{label}</strong>{description && <small>{description}</small>}</span></button>;
+  return (
+    <button type="button" role="radio" aria-checked={active} onClick={onClick} className={cn("pay-method", active && "is-active")}>
+      {active && <span className="pay-method-tick" aria-hidden="true"><Check size={12} /></span>}
+      <span className="pay-method-icon">{icon}</span>
+      <strong>{label}</strong>
+      {description && <small>{description}</small>}
+    </button>
+  );
+}
+
+/** How much, as a row with a round radio: the amount or a word on the right. */
+function AmountOption({ active, onClick, label, aside }: { active: boolean; onClick: () => void; label: string; aside: string }) {
+  return (
+    <button type="button" role="radio" aria-checked={active} onClick={onClick} className={cn("pay-amount-option", active && "is-active")}>
+      <span className="pay-radio" aria-hidden="true" />
+      <strong>{label}</strong>
+      <span className="pay-amount-aside">{aside}</span>
+    </button>
+  );
 }
 
 function CardPayment({ fees, invoice, onCardOff }: { fees: Fees; invoice: Invoice; onCardOff: () => void }) {
@@ -125,29 +153,34 @@ function CardPayment({ fees, invoice, onCardOff }: { fees: Fees; invoice: Invoic
     }
   };
 
-  return <section className="pay-card-panel">
-    <h3>How much will you pay?</h3>
-    <div className="pay-amount-options" role="radiogroup" aria-label="How much">
-      <MethodButton active={mode === "full"} onClick={() => { setMode("full"); setError(""); }} icon={<span className="pay-amount-icon">{formatNaira(invoice.balance)}</span>} label="Pay in full" />
-      <MethodButton active={mode === "part"} onClick={() => { setMode("part"); setError(""); }} icon={<span className="pay-amount-icon">Choose an amount</span>} label="Part payment" />
+  return <section className="pay-card-panel" aria-label="Card payment">
+    <div className="screen-section"><h2>How much will you pay?</h2></div>
+    <div className="screen-card pay-amount-options" role="radiogroup" aria-label="How much">
+      <AmountOption active={mode === "full"} onClick={() => { setMode("full"); setError(""); }} label="Pay in full" aside={formatNaira(invoice.balance)} />
+      <AmountOption active={mode === "part"} onClick={() => { setMode("part"); setError(""); }} label="Part payment" aside="Choose an amount" />
+      {mode === "part" && <label className="pay-amount-label"><span className="sr-only">Amount to pay</span><div className="pay-amount-field"><span>₦</span><input inputMode="decimal" placeholder="e.g. 5,000" value={typed} onChange={(event) => { setTyped(event.target.value); setError(""); }} aria-invalid={!!error} aria-describedby="pay-minimum" /></div><small id="pay-minimum">At least {formatNaira(fees.min_part_payment)} for a part payment, or pay the full balance.</small></label>}
     </div>
-    {mode === "part" && <label className="pay-amount-label">Amount to pay<div className="pay-amount-field"><span>₦</span><input inputMode="decimal" placeholder="e.g. 5,000" value={typed} onChange={(event) => { setTyped(event.target.value); setError(""); }} aria-invalid={!!error} aria-describedby="pay-minimum" /></div><small id="pay-minimum">At least {formatNaira(fees.min_part_payment)} for a part payment, or pay the full balance.</small></label>}
-    <dl className="pay-review"><div><dt>You&apos;ll pay</dt><dd>{amount ? formatNaira(amount) : "–"}</dd></div><div><dt>Left to pay after</dt><dd>{amount && amount <= invoice.balance ? formatNaira(Math.max(0, invoice.balance - amount)) : "–"}</dd></div></dl>
+    <dl className="screen-card pay-review"><div><dt>You&apos;ll pay</dt><dd>{amount ? formatNaira(amount) : "–"}</dd></div><div><dt>Left to pay after</dt><dd>{amount && amount <= invoice.balance ? formatNaira(Math.max(0, invoice.balance - amount)) : "–"}</dd></div></dl>
     {error && <p className="pay-error" role="alert">{error}</p>}
-    <Button className="pay-primary-action" onClick={go} loading={isLoading} disabled={isLoading}><Lock size={17} aria-hidden="true" />Continue to secure payment</Button>
-    <p className="pay-secure"><Lock size={15} aria-hidden="true" />Your card details go on the secure gateway page, never in this app. The gateway may offer other methods there.</p>
+    <p className="pay-secure"><Lock size={14} aria-hidden="true" />Your card details go on the secure gateway page, never in this app. The gateway may offer other methods there.</p>
+    <BottomBar>
+      <Button className="xs-button pay-primary-action" onClick={go} loading={isLoading} disabled={isLoading}><Lock size={17} aria-hidden="true" />Continue to secure payment</Button>
+    </BottomBar>
   </section>;
 }
 
 /** The whole page body where the school takes no card: the account number in front of the pupil while they pay, and arrivals under it. */
 function TransferOnly({ turnedOff }: { turnedOff: boolean }) {
   return <div className="pay-transfer">
-    <div className="pay-section-heading"><h2>Pay by bank transfer</h2></div>
+    <div className="screen-section pay-section-heading"><h2>Pay by bank transfer</h2></div>
     {turnedOff && <p className="pay-card-off" role="status">Your school takes fee payments by bank transfer. Pay into the account number below.</p>}
     <TransferPanel title="Pay into this account" lead waiting />
   </div>;
 }
 
 function TransferPayment() {
-  return <div className="pay-transfer"><TransferPanel title="Pay into this account" waiting note={<p className="pay-transfer-note">Transfer any amount from a bank app. There is no card-payment minimum for a bank transfer.</p>} /></div>;
+  return <div className="pay-transfer">
+    <div className="screen-section pay-section-heading"><h2>Pay into this account</h2></div>
+    <TransferPanel title="Pay into this account" lead waiting note={<p className="pay-transfer-note">Transfer any amount from a bank app. There is no card-payment minimum for a bank transfer.</p>} />
+  </div>;
 }

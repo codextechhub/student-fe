@@ -19,7 +19,7 @@ export function TransferActivity({ since, waiting = false }: { since: string; wa
   if (deposits.length === 0) {
     return waiting ? (
       <section className="transfer-activity" aria-label="Transfer activity">
-        <p className="transfer-activity-waiting" role="status">Waiting for your transfer. Keep this page open to see it arrive.</p>
+        <p className="transfer-activity-waiting" role="status"><span className="live-dot live-dot--good" aria-hidden="true" /><span><strong>Waiting for your transfer.</strong> Keep this page open to see it arrive.</span></p>
       </section>
     ) : null;
   }

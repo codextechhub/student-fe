@@ -23,8 +23,10 @@ describe("the tab bar", () => {
 });
 
 describe("a screen opened from another", () => {
-  it("is the report card, and not the screen it opens from", () => {
+  it("is the report card or paying a bill, and not the screen either opens from", () => {
     expect(isDetailPath("/results/card/7")).toBe(true);
+    expect(isDetailPath("/fees/pay/251")).toBe(true);
+    expect(isDetailPath("/fees")).toBe(false);
     expect(isDetailPath("/results")).toBe(false);
     expect(isDetailPath("/results/card/7/extra")).toBe(false);
   });
