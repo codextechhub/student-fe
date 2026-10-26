@@ -1,9 +1,10 @@
 /**
- * The hues the redesign gives people and subjects, far enough apart to tell
- * at a glance. Each name keeps its hue wherever it appears, so a teacher's
- * avatar is the same colour in the Inbox and in the conversation.
+ * The hues the redesign gives people and subjects: ten, evenly round the
+ * wheel from the brand blue, so two names that differ never land on near
+ * neighbours by accident of the list. Each name keeps its hue wherever it
+ * appears, so a subject is the same colour on Home, Timetable and Results.
  */
-const HUES = [255, 25, 150, 300, 205, 70, 120, 340, 180, 230] as const;
+const HUES = [255, 291, 327, 3, 39, 75, 111, 147, 183, 219] as const;
 
 /** A name's hue, the same every time for the same name. */
 export function hueFor(name: string): number {

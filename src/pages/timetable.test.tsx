@@ -7,10 +7,18 @@ vi.mock("@/redux/services/portal-api", () => ({
     published: true,
     class_name: "JSS1 A",
     days: [
-      { day_of_week: 1, day_label: "Monday", is_today: true, cells: [{ start_time: "08:00", end_time: "08:40", kind: "LESSON", label: "Mathematics", subject: "Mathematics" }] },
+      { day_of_week: 1, day_label: "Monday", is_today: true, cells: [
+        { start_time: "07:20", end_time: "08:00", kind: "LESSON", label: "French", subject: "French" },
+        { start_time: "08:00", end_time: "08:40", kind: "LESSON", label: "Mathematics", subject: "Mathematics" },
+        { start_time: "08:40", end_time: "09:00", kind: "BREAK", label: "Short break" },
+      ] },
       { day_of_week: 2, day_label: "Tuesday", is_today: false, cells: [{ start_time: "09:00", end_time: "09:40", kind: "LESSON", label: "English", subject: "English" }] },
     ],
-    today: { date: "2026-10-19", periods: [{ start_time: "08:00", end_time: "08:40", kind: "LESSON", label: "Mathematics", subject: "Mathematics", state: "now" }] },
+    today: { date: "2026-10-19", periods: [
+      { start_time: "07:20", end_time: "08:00", kind: "LESSON", label: "French", subject: "French", state: "done" },
+      { start_time: "08:00", end_time: "08:40", kind: "LESSON", label: "Mathematics", subject: "Mathematics", state: "now" },
+      { start_time: "08:40", end_time: "09:00", kind: "BREAK", label: "Short break", state: "later" },
+    ] },
   }, isLoading: false, isError: false }),
 }));
 
@@ -44,5 +52,15 @@ describe("timetable week navigation", () => {
     act(() => (container.querySelector('button[aria-label="Next week"]') as HTMLButtonElement).click());
     expect(container.querySelector(".timetable-day-button.is-selected")?.textContent).toContain("Tue");
     expect(container.querySelector(".timetable-day-heading")?.textContent).toContain("Tuesday · 27 Oct");
+  });
+
+  it("opens on today with the lesson under way picked out, the one gone faded and the break as a divider", () => {
+    act(() => root.render(<TimetablePage />));
+    expect(container.querySelector(".timetable-day-button.is-selected")?.getAttribute("aria-label")).toBe("Monday 19 Oct, today");
+    expect(container.querySelector(".timetable-lesson.is-now")?.textContent).toContain("Mathematics");
+    expect(container.querySelector(".timetable-lesson-badge.is-now")?.textContent).toBe("Now");
+    expect(container.querySelector(".timetable-lesson.is-done")?.textContent).toContain("French");
+    expect(container.querySelector(".timetable-break")?.textContent).toBe("Short break · 8:40 – 9:00");
+    expect(container.querySelector(".timetable-day-heading")?.textContent).toContain("2 periods");
   });
 });

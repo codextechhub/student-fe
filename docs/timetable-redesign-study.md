@@ -16,3 +16,8 @@ from `timetable/`, and the unpublished state keeps its existing explanation.
 The API does not supply a date for each weekday, so the live weekday selector
 uses day names rather than guessed dates. The sample-data prototype was removed
 after implementation.
+
+**Superseded 26 October 2026** by the XVS Student Redesign (design 2c): the
+current-lesson card moved to Home, and Timetable is now the week strip and
+the chosen day's periods as cards in subject colours, with "Week at a glance"
+beside them from 900px.
