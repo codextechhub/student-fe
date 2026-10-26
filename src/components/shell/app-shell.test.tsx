@@ -81,6 +81,18 @@ describe("the app shell", () => {
     expect(inbox?.hasAttribute("data-showing")).toBe(false);
   });
 
+  it("puts the tinted pill under the tab showing, and fades it where no tab is showing", () => {
+    render("/");
+    const pill = container.querySelector<HTMLElement>(".tab-bar-pill")!;
+    expect(pill.style.transform).toBe("translateX(calc(0% + 0px))");
+    expect(pill.hasAttribute("data-hidden")).toBe(false);
+  });
+
+  it("fades the pill on a screen that is no tab", () => {
+    render("/inbox");
+    expect(container.querySelector(".tab-bar-pill")?.hasAttribute("data-hidden")).toBe(true);
+  });
+
   it("opens the Inbox from the Inbox button", () => {
     render("/");
     expect(container.querySelector(".tab-bar-inbox")?.getAttribute("href")).toBe("/inbox");

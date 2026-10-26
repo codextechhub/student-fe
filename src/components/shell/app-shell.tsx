@@ -144,9 +144,21 @@ function TabBar({ badges }: { badges: Partial<Record<NavItem["key"], number>> })
   const { pathname } = useLocation();
   const inboxShowing = INBOX.some((item) => item.key === itemFor(pathname)?.key);
   const inboxCount = INBOX.reduce((sum, item) => sum + (badges[item.key] ?? 0), 0);
+  // The tinted pill slides to the tab showing. On a screen that is no tab (the
+  // Inbox, Attendance, Profile) it fades where it was, and slides on from there.
+  const index = TABS.findIndex((item) => item.key === itemFor(pathname)?.key);
+  const [lastIndex, setLastIndex] = useState(Math.max(0, index));
+  if (index >= 0 && index !== lastIndex) setLastIndex(index);
+  const at = index >= 0 ? index : lastIndex;
   return (
     <nav aria-label="Screens" className="app-shell-tabs">
       <div className="tab-bar">
+        <span
+          className="tab-bar-pill"
+          data-hidden={index < 0 || undefined}
+          style={{ width: `calc((100% - 12px - ${(TABS.length - 1) * 2}px) / ${TABS.length})`, transform: `translateX(calc(${at * 100}% + ${at * 2}px))` }}
+          aria-hidden="true"
+        />
         {TABS.map((item) => {
           const Icon = item.icon;
           return (
