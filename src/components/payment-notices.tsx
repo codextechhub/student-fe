@@ -25,14 +25,12 @@ export function PaymentNotices() {
   if (shown.length === 0) return null;
 
   return (
-    <section aria-labelledby="home-payments-title">
-      <div className="home-section-heading">
-        <div>
-          <h2 id="home-payments-title">Payments</h2>
-          <p>{shown.length === 1 ? "1 new" : `${shown.length} new`}</p>
-        </div>
+    <section className="home-payments-section" aria-labelledby="home-payments-title">
+      <div className="screen-section">
+        <h2 id="home-payments-title">Payments</h2>
+        <span className="screen-section-aside">{shown.length === 1 ? "1 new" : `${shown.length} new`}</span>
       </div>
-      <div className="home-surface home-payments-card">
+      <div className="screen-card home-payments-card">
         <ul className="home-payments">
           {shown.map((notice) => (
             <li key={notice.id}>
@@ -41,7 +39,7 @@ export function PaymentNotices() {
                 className="home-payment"
                 onClick={() => void markRead(notice.id)}
               >
-                <span className="home-notice-icon">
+                <span className="icon-tile icon-tile--good home-notice-icon">
                   <ReceiptText size={19} aria-hidden="true" />
                 </span>
                 <span className="home-payment-main">

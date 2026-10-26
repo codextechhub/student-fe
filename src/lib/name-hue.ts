@@ -17,3 +17,8 @@ export function toneFor(name: string): { background: string; color: string } {
   const hue = hueFor(name);
   return { background: `oklch(0.95 0.035 ${hue})`, color: `oklch(0.45 0.11 ${hue})` };
 }
+
+/** The bright dot or bar for a name: a subject's colour in a timetable list. */
+export function dotFor(name: string): string {
+  return `oklch(0.64 0.14 ${hueFor(name)})`;
+}

@@ -1,5 +1,5 @@
 .app-shell--design {
-  background: radial-gradient(circle at 12% 0%, #e9eafe 0, transparent 31rem), #f5f7fc;
+  background: radial-gradient(circle at 12% 0%, #e9eafe 0, transparent 26rem), #f4f6fa;
 }
 
 .app-shell--design :is(.home-page, .timetable-page, .results-page, .fees-page, .pay-page, .paid-page, .receipt-page, .attendance-page, .notices-page, .profile-page, .report-page) {
