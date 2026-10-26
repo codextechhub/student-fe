@@ -12,7 +12,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useUnreadMessagesQuery } from "@/redux/services/messages-api";
 import { useMeQuery, useNoticesQuery } from "@/redux/services/portal-api";
 
-import { INBOX, isConversationPath, itemFor, TABS, type NavItem } from "./nav";
+import { INBOX, isConversationPath, isDetailPath, itemFor, TABS, type NavItem } from "./nav";
 import { OfflineBar } from "./offline-bar";
 import { PullToRefresh } from "./pull-to-refresh";
 import "@/components/layout/screen.css";
@@ -48,7 +48,11 @@ const LARGE_TITLE_PAST = 56;
  * conversation fills the screen, and on a phone the shell's own header (crest,
  * title, avatar) and the tab bar both step aside, so the conversation's
  * header with its back arrow is the top of the screen, as in a messaging app.
- * Both return on the list. From 800px,
+ * Both return on the list.
+ *
+ * A screen opened from another (the report card, `isDetailPath`) draws its
+ * own back bar and action bar, so the header and the tab bar step aside for
+ * it at every size. From 800px,
  * where the list sits beside the thread, the shell header and tab bar stay.
  */
 export function AppShell() {
@@ -80,6 +84,7 @@ export function AppShell() {
   });
   const current = itemFor(pathname);
   const conversationOpen = isConversationPath(pathname);
+  const detail = isDetailPath(pathname);
   const viewport = useVisualViewportBox(conversationOpen);
   const onDesignPage = pathname.startsWith("/inbox") || pathname === "/" || pathname === "/timetable" || pathname.startsWith("/results") || pathname === "/attendance" || pathname.startsWith("/profile") || pathname.startsWith("/fees") || pathname.startsWith("/notices") || pathname.startsWith("/messages");
   const badges: Partial<Record<NavItem["key"], number>> = { notices: unread, messages: unreadMessages };
@@ -88,10 +93,10 @@ export function AppShell() {
 
   return (
     <div
-      className={cn("app-shell flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onDesignPage && "app-shell--design", conversationOpen && "app-shell--conversation", viewport?.keyboard && "is-keyboard")}
+      className={cn("app-shell flex min-h-dvh min-w-0 flex-col bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]", onDesignPage && "app-shell--design", conversationOpen && "app-shell--conversation", detail && "app-shell--detail", viewport?.keyboard && "is-keyboard")}
       style={viewport ? ({ "--vv-top": `${viewport.top}px`, "--vv-height": `${viewport.height}px` } as CSSProperties) : undefined}
     >
-      <header data-hidden-on-phone={conversationOpen || undefined} className={cn("app-shell-head sticky top-0 z-30 flex min-h-[58px] min-w-0 items-center gap-3 border-b px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 transition-[background-color,backdrop-filter,border-color] duration-200 sm:min-h-[66px] lg:px-6", onDesignPage ? scrolled ? "border-[#dbe0eb] bg-[#f5f7fc]/70 backdrop-blur-xl backdrop-saturate-150" : "border-transparent bg-transparent" : scrolled ? "border-border bg-background/75 backdrop-blur-xl" : "border-border bg-background")}>
+      <header data-hidden-on-phone={conversationOpen || undefined} data-hidden={detail || undefined} className={cn("app-shell-head sticky top-0 z-30 flex min-h-[58px] min-w-0 items-center gap-3 border-b px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 transition-[background-color,backdrop-filter,border-color] duration-200 sm:min-h-[66px] lg:px-6", onDesignPage ? scrolled ? "border-[#dbe0eb] bg-[#f5f7fc]/70 backdrop-blur-xl backdrop-saturate-150" : "border-transparent bg-transparent" : scrolled ? "border-border bg-background/75 backdrop-blur-xl" : "border-border bg-background")}>
         <SchoolMark logo={me?.school.logo_url || null} size={onDesignPage ? 34 : 28} animate={false} alt={where} className={onDesignPage ? "max-h-7 sm:max-h-[34px]" : undefined} />
         <div className="min-w-0 flex-1">
           <p className={cn("app-shell-title truncate font-semibold text-foreground", onDesignPage ? "text-base" : "text-sm")} data-hidden={(current && LARGE_TITLE.has(current.key) && !titlePast) || undefined}>{screenTitle}</p>
@@ -102,7 +107,7 @@ export function AppShell() {
       <PullToRefresh disabled={conversationOpen}>
         <Outlet />
       </PullToRefresh>
-      <TabBar badges={badges} hiddenOnPhone={conversationOpen} />
+      {!detail && <TabBar badges={badges} hiddenOnPhone={conversationOpen} />}
     </div>
   );
 }

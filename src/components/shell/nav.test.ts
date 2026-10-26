@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { INBOX, isConversationPath, itemFor, TABS } from "./nav";
+import { INBOX, isConversationPath, isDetailPath, itemFor, TABS } from "./nav";
 
 describe("the tab bar", () => {
   it("holds Home, Timetable, Results and Fees, in that order", () => {
@@ -19,6 +19,14 @@ describe("the tab bar", () => {
     expect(itemFor("/timetable")?.key).toBe("timetable");
     expect(itemFor("/inbox")?.key).toBe("inbox");
     expect(itemFor("/inbox/new")?.key).toBe("inbox");
+  });
+});
+
+describe("a screen opened from another", () => {
+  it("is the report card, and not the screen it opens from", () => {
+    expect(isDetailPath("/results/card/7")).toBe(true);
+    expect(isDetailPath("/results")).toBe(false);
+    expect(isDetailPath("/results/card/7/extra")).toBe(false);
   });
 });
 

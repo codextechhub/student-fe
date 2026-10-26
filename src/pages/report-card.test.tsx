@@ -41,23 +41,30 @@ function render() {
   act(() => root.render(<MemoryRouter initialEntries={["/results/card/3"]}><Routes><Route path="/results/card/:termId" element={<ReportCardPage />} /></Routes></MemoryRouter>));
 }
 
-describe("report card reader", () => {
-  it("shows only served fields and opens the year view from the same card", () => {
+describe("the report card", () => {
+  it("shows the card in small with only the fields the school served, and offers the PDF", () => {
     render();
-    expect(container.textContent).toContain("Ebere Bello");
-    expect(container.textContent).toContain("72%");
-    expect(container.textContent).not.toContain("Class average");
-    expect(container.textContent).not.toContain("Principal’s comment");
-    const subject = container.querySelector(".report-subject") as HTMLDetailsElement;
-    act(() => subject.open = true);
-    expect(subject.textContent).toContain("CA · out of 40");
-    act(() => (container.querySelector('button[role="tab"][aria-selected="false"]') as HTMLButtonElement).click());
-    expect(container.textContent).toContain("Promoted to JSS2 A");
-    expect(container.textContent).toContain("70%");
-    expect(container.querySelector(".report-paper.is-hidden-screen")).not.toBeNull();
-    act(() => (container.querySelector('button[aria-pressed="false"]') as HTMLButtonElement).click());
-    expect(container.querySelector(".report-paper.is-hidden-screen")).toBeNull();
-    expect(container.querySelector(".report-view-switch.is-paper .report-view-indicator")).not.toBeNull();
+    const pocket = container.querySelector(".report-pocket")!;
+    expect(pocket.textContent).toContain("Lagoon View School");
+    expect(pocket.textContent).toContain("Ebere Bello");
+    const header = [...pocket.querySelectorAll(".report-pocket-table thead th")].map((th) => th.textContent);
+    expect(header.slice(0, 5)).toEqual(["Subject", "CA40", "Exam60", "Total", "Grd"]);
+    expect(pocket.querySelector(".report-pocket-table tbody tr")?.textContent).toBe("Mathematics304272B");
+    expect(pocket.textContent).toContain("72%");
+    expect(pocket.textContent).not.toContain("Class avg");
+    expect(pocket.textContent).not.toContain("Principal's comment");
+    expect(container.querySelector(".detail-bar h1")?.textContent).toBe("Report card");
+    expect(container.querySelector(".detail-bar p")?.textContent).toBe("Third Term · 2025/2026");
+    expect(container.querySelector('.detail-bar a[href="/results"]')).not.toBeNull();
+    expect(container.textContent).toContain("Download PDF");
+    expect(container.querySelector(".report-paper")?.textContent).toBe("Printable school sheet");
+  });
+
+  it("adds the school year on a last term's card", () => {
+    render();
+    const year = [...container.querySelectorAll(".report-pocket-box")].find((box) => box.textContent?.startsWith("The school year"))!;
+    expect(year.textContent).toContain("Promoted to JSS2 A");
+    expect(year.querySelector("tbody tr")?.textContent).toBe("Mathematics68707270");
   });
 
   it("never renders a held card or offers its PDF", () => {

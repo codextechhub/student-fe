@@ -51,6 +51,16 @@ export function itemFor(pathname: string): NavItem | undefined {
 }
 
 /**
+ * Whether the path is a screen opened from another, drawn with its own back
+ * bar at the top and, where it has one, its own action bar at the bottom
+ * (the report card). The shell's header and tab bar step aside for it, at
+ * every size, as an iPhone pushes a screen over its tabs.
+ */
+export function isDetailPath(pathname: string): boolean {
+  return /^\/results\/card\/[^/]+\/?$/.test(pathname);
+}
+
+/**
  * Whether the path is an open conversation (`/messages/41`).
  *
  * The app shell reads this to give the conversation the whole screen: the tab

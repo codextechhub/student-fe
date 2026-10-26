@@ -10,6 +10,10 @@
   min-height: 0;
 }
 
+/* A screen opened from another draws its own bars. */
+.app-shell-head[data-hidden] { display: none; }
+.app-shell--detail { padding-bottom: 0; }
+
 /* An open conversation: held to the visible height so only its message list scrolls. */
 .app-shell--conversation {
   position: fixed;
