@@ -207,6 +207,13 @@ describe("a transfer arriving on the Fees screen", () => {
   });
 });
 
+describe("the guardian note where card payments are off", () => {
+  it("says a parent or guardian can pay by transfer to the account number", () => {
+    render();
+    expect(container.querySelector(".fees-guardian")?.textContent).toBe("Your parent or guardian can pay by transfer to your account number.");
+  });
+});
+
 describe("a school that takes card payments", () => {
   it("is the screen it always was: Pay bill, and the transfer account on demand", () => {
     mocks.cardPayments = true;

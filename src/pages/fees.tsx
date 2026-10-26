@@ -94,7 +94,7 @@ export function FeesPage() {
               </div>
             </section>
 
-            {fees.can_pay && <div className="info-note fees-guardian"><Info size={18} aria-hidden="true" /><p><strong>Your parent or guardian usually pays school fees.</strong> {cardOn ? "If they can't pay in their app right now, you can pay a bill here." : "If they can't pay in their app right now, you can pay by transfer to your account number."}</p></div>}
+            {fees.can_pay && <div className="info-note fees-guardian"><Info size={18} aria-hidden="true" /><p>{cardOn ? <><strong>Your parent or guardian usually pays school fees.</strong> If they can&apos;t pay in their app right now, you can pay a bill here.</> : "Your parent or guardian can pay by transfer to your account number."}</p></div>}
 
             <section aria-labelledby="fees-bills-heading">
               <div className="fees-detail-top fees-simple-detail-top">
