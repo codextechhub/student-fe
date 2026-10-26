@@ -18,3 +18,22 @@ export function noticePath(actionUrl: string | undefined): string {
   const id = RECEIPT_URL.exec(actionUrl ?? "")?.[1];
   return id ? `/fees/receipts/${id}` : "/fees";
 }
+
+const AMOUNT_FIRST = /^\s*(₦\s?[\d,]+(?:\.\d+)?)/;
+
+/**
+ * The amount a notice leads with.
+ *
+ * The school's subject reads "₦500.00 received from Tunde Bello": the amount
+ * is what a pupil looks for, so Home sets it large. A subject that does not
+ * start with an amount is shown whole, as the headline, and nothing is guessed.
+ */
+export function noticeHeadline(subject: string): string {
+  const text = subject.trim();
+  return AMOUNT_FIRST.exec(text)?.[1].replace(/\s+/g, "") ?? (text || "Payment received");
+}
+
+/** What a notice opens, in words: the receipt it names, or Fees when it names none. */
+export function noticeActionLabel(actionUrl: string | undefined): string {
+  return RECEIPT_URL.test(actionUrl ?? "") ? "View receipt" : "View fees";
+}

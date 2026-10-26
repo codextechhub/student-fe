@@ -1,8 +1,8 @@
-import { ReceiptText } from "lucide-react";
+import { ChevronRight, ReceiptText } from "lucide-react";
 import { Link } from "react-router";
 
 import { formatTimestampDate } from "@/lib/format";
-import { noticePath } from "@/lib/payment-notices";
+import { noticeActionLabel, noticeHeadline, noticePath } from "@/lib/payment-notices";
 import {
   useMarkPaymentNoticeReadMutation,
   usePaymentNoticesQuery,
@@ -11,9 +11,10 @@ import {
 /**
  * The payments the school has booked that the pupil has not yet opened.
  *
- * One line per unread "payment received" notice from the pupil's own
- * notification feed, each opening the receipt and clearing itself as it is
- * opened. It draws nothing while there is nothing new, while the feed is still
+ * One compact card holding a row per unread "payment received" notice from
+ * the pupil's own notification feed: the amount large, "Payment received"
+ * under it, the date and a "View receipt" cue beside. Each row opens the
+ * receipt and clears itself as it is opened. It draws nothing while there is nothing new, while the feed is still
  * loading and when the feed cannot be read, so a quiet pupil sees no empty
  * block. A notice opens the receipt its address names, or Fees when it names none.
  */
@@ -31,30 +32,37 @@ export function PaymentNotices() {
           <p>{shown.length === 1 ? "1 new" : `${shown.length} new`}</p>
         </div>
       </div>
-      <ul className="home-payments">
-        {shown.map((notice) => (
+      <div className="home-surface home-payments-card">
+        <ul className="home-payments">
+          {shown.map((notice) => (
             <li key={notice.id}>
               <Link
                 to={noticePath(notice.actionUrl)}
-                className="home-surface home-notice home-notice-link"
+                className="home-payment"
                 onClick={() => void markRead(notice.id)}
               >
                 <span className="home-notice-icon">
                   <ReceiptText size={19} aria-hidden="true" />
                 </span>
-                <span className="home-notice-body">
-                  <span className="home-notice-top">
-                    <strong>
-                      <span className="home-unread-dot" aria-label="Unread" />
-                      {notice.subject || "Payment received"}
-                    </strong>
-                    <time dateTime={notice.createdAt}>{formatTimestampDate(notice.createdAt)}</time>
+                <span className="home-payment-main">
+                  <strong className="home-payment-amount">
+                    <span className="home-unread-dot" aria-label="Unread" />
+                    {noticeHeadline(notice.subject)}
+                  </strong>
+                  <span className="home-payment-line">Payment received</span>
+                </span>
+                <span className="home-payment-side">
+                  <time dateTime={notice.createdAt}>{formatTimestampDate(notice.createdAt)}</time>
+                  <span className="home-payment-action">
+                    {noticeActionLabel(notice.actionUrl)}
+                    <ChevronRight size={14} aria-hidden="true" />
                   </span>
                 </span>
               </Link>
             </li>
-        ))}
-      </ul>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

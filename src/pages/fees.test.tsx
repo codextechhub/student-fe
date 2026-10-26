@@ -264,7 +264,7 @@ describe("fees account number", () => {
     act(() => (container.querySelector('button[aria-controls="fees-charge-4"]') as HTMLButtonElement).click());
     act(() => (container.querySelector('button[aria-controls="fees-transfer-account"]') as HTMLButtonElement).click());
     expect(container.textContent).toContain("Get my account number");
-    expect(container.textContent).toContain("Open Bank transfer account below to get your account number");
+    expect(container.textContent).toContain("Open Show account number below to get your account number");
     expect(container.textContent).not.toContain("Ask the school office");
   });
 

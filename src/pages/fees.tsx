@@ -22,10 +22,13 @@ import "./fees.css";
 /**
  * One balance, a short bill list, and supporting information on demand.
  *
- * Where the school takes card payments the pupil can pay a bill by card or
- * open their transfer account on demand. Where it does not (`card_payments`
- * false) the screen is transfer-only: the pupil's account number leads, under
- * the balance, with live arrival beneath it, and there is no card button.
+ * The pupil's account number is never above the bills. It sits behind a
+ * "Show account number" disclosure under Payment history, so the bills stay
+ * the first thing read. Where the school takes card payments a bill is paid by
+ * card or by transfer on its Pay screen. Where it does not (`card_payments`
+ * false) the disclosure always offers the number (or the offer of one, or the
+ * school's sentence) with live arrival beneath it, a bill's Pay screen shows
+ * the number, and there is no card button.
  */
 export function FeesPage() {
   const [billPage, setBillPage] = useState(1);
@@ -48,7 +51,13 @@ export function FeesPage() {
   const hasBills = fees?.has_bills ?? false;
   const { owing, credit } = fees ? feeFigures(fees) : { owing: 0, credit: 0 };
   const cardOn = fees ? cardPaymentsOn(fees) : true;
-  const canShowTransfer = cardOn && (account?.state === "ISSUED" || (account?.state === "NONE" && !!fees && owing > 0 && !offline));
+  const canShowTransfer = cardOn
+    ? account?.state === "ISSUED" || (account?.state === "NONE" && !!fees && owing > 0 && !offline)
+    : !!fees?.can_pay;
+  const showTransfer = () => {
+    setTransferOpen(true);
+    window.requestAnimationFrame(() => document.getElementById(TRANSFER_PANEL_ID)?.scrollIntoView?.({ behavior: "smooth", block: "nearest" }));
+  };
   const filterActive = billYear !== "all" || billStatus !== "all" || paymentYear !== "all";
 
   return (
@@ -66,8 +75,6 @@ export function FeesPage() {
                 {owing > 0 && credit > 0 && <p className="fees-hero-credit">{formatNaira(credit)} credit held by the school. Ask the school to apply it before you pay.</p>}
               </div>
             </section>
-
-            {!cardOn && fees.can_pay && <div className="fees-transfer-lead"><TransferPanel title="Pay school fees into this account" lead /></div>}
 
             {fees.can_pay && <div className="fees-guardian"><Info size={17} aria-hidden="true" /><p><strong>Your parent or guardian usually pays school fees.</strong> {cardOn ? "If they can't pay in their app right now, you can pay a bill here." : "If they can't pay in their app right now, you can pay by transfer to your account number."}</p></div>}
 
@@ -93,31 +100,33 @@ export function FeesPage() {
                 : !hasBills ? <div className="fees-surface fees-empty">No bills yet. They will appear here when the school issues one.</div>
                 : currentFees.items.length === 0 ? <div className="fees-surface fees-empty">No bills match these filters.</div>
                 : <ul className="fees-invoices fees-simple-items">{currentFees.items.map((item) => item.kind === "invoice"
-                    ? <InvoiceCard key={"invoice-" + item.invoice_ref} invoice={item} canPay={cardOn && fees.can_pay && !offline} offline={cardOn && offline} byTransfer={!cardOn && fees.can_pay} />
-                    : <ChargeCard key={"charge-" + item.note_ref} charge={item} transfer={account?.state} canShowTransfer={canShowTransfer} onShowTransfer={() => setTransferOpen(true)} transferAbove={!cardOn} />)}</ul>}
+                    ? <InvoiceCard key={"invoice-" + item.invoice_ref} invoice={item} canPay={fees.can_pay && (!cardOn || !offline)} offline={cardOn && offline} />
+                    : <ChargeCard key={"charge-" + item.note_ref} charge={item} transfer={account?.state} canShowTransfer={canShowTransfer} onShowTransfer={showTransfer} />)}</ul>}
               {currentFees && <PageControls label="School bills" page={currentFees.pagination} onChange={setBillPage} />}
             </section>
 
-            <div className="fees-secondary-actions">
+            <div className="fees-secondary">
               <DisclosureButton title="Payment history" description="Payments and receipts" open={historyOpen} controls="fees-payment-history" onClick={() => setHistoryOpen((value) => !value)} />
-              {canShowTransfer && <DisclosureButton title="Bank transfer account" description="Your own account number" open={transferOpen} controls="fees-transfer-account" onClick={() => setTransferOpen((value) => !value)} />}
+              <section className="fees-secondary-panel" id="fees-payment-history" hidden={!historyOpen} aria-label="Payment history">
+                {historyOpen && <>
+                  <h2>Payment history</h2><p>Confirmed payments and transfers on their way.</p>
+                  <div className="fees-history">{paymentsError && !currentPayments ? <p className="fees-empty">Payments can&apos;t be shown right now. <button type="button" onClick={() => refetchPayments()}>Try again</button></p>
+                    : !currentPayments ? <p className="fees-empty" role="status">Loading payments…</p>
+                    : currentPayments.pagination.total === 0 ? <p className="fees-empty">{paymentYear === "all" ? "No payments yet." : "No payments match this year."}</p>
+                    : <ul>{currentPayments.items.map((payment) => <PaymentRow key={payment.reference} payment={payment} />)}</ul>}</div>
+                  {currentPayments && <PageControls label="Payment history" page={currentPayments.pagination} onChange={setPaymentPage} />}
+                </>}
+              </section>
+              {canShowTransfer && <DisclosureButton title="Show account number" description="Your own account number for bank transfers" open={transferOpen} controls={TRANSFER_PANEL_ID} onClick={() => setTransferOpen((value) => !value)} />}
+              {canShowTransfer && <section className="fees-secondary-panel fees-account-section" id={TRANSFER_PANEL_ID} hidden={!transferOpen} aria-label="Account number">
+                {transferOpen && (cardOn
+                  ? <>
+                    {account?.state === "ISSUED" && <TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Your account number" />}
+                    {account?.state === "NONE" && <GetTransferAccount />}
+                  </>
+                  : <TransferPanel title="Your account number" lead />)}
+              </section>}
             </div>
-            <section className="fees-secondary-panel" id="fees-payment-history" hidden={!historyOpen} aria-label="Payment history">
-              {historyOpen && <>
-                <h2>Payment history</h2><p>Confirmed payments and transfers on their way.</p>
-                <div className="fees-history">{paymentsError && !currentPayments ? <p className="fees-empty">Payments can&apos;t be shown right now. <button type="button" onClick={() => refetchPayments()}>Try again</button></p>
-                  : !currentPayments ? <p className="fees-empty" role="status">Loading payments…</p>
-                  : currentPayments.pagination.total === 0 ? <p className="fees-empty">{paymentYear === "all" ? "No payments yet." : "No payments match this year."}</p>
-                  : <ul>{currentPayments.items.map((payment) => <PaymentRow key={payment.reference} payment={payment} />)}</ul>}</div>
-                {currentPayments && <PageControls label="Payment history" page={currentPayments.pagination} onChange={setPaymentPage} />}
-              </>}
-            </section>
-            {canShowTransfer && <section className="fees-secondary-panel fees-account-section" id="fees-transfer-account" hidden={!transferOpen} aria-label="Bank transfer account">
-              {transferOpen && <><h2>Bank transfer account</h2>
-                {account?.state === "ISSUED" && <TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Your account number" />}
-                {account?.state === "NONE" && <GetTransferAccount />}
-              </>}
-            </section>}
           </div>
         )}
         {!fees && account?.state === "ISSUED" && <section className="fees-secondary-panel fees-account-section"><h2>Bank transfer account</h2><TransferAccountCard account={account} pupilName={me?.student.full_name || signedInName} title="Your account number" /></section>}
@@ -125,6 +134,8 @@ export function FeesPage() {
     </PageShell>
   );
 }
+
+const TRANSFER_PANEL_ID = "fees-transfer-account";
 
 function DisclosureButton({ title, description, open, controls, onClick }: {
   title: string; description: string; open: boolean; controls: string; onClick: () => void;
@@ -149,7 +160,7 @@ function PageControls({ label, page, onChange }: { label: string; page: PageInfo
   </nav>;
 }
 
-function InvoiceCard({ invoice, canPay, offline, byTransfer }: { invoice: Invoice; canPay: boolean; offline: boolean; byTransfer: boolean }) {
+function InvoiceCard({ invoice, canPay, offline }: { invoice: Invoice; canPay: boolean; offline: boolean }) {
   const [open, setOpen] = useState(false);
   const panelId = "fees-invoice-" + invoice.invoice_ref;
   return <li className="fees-invoice fees-surface">
@@ -164,17 +175,15 @@ function InvoiceCard({ invoice, canPay, offline, byTransfer }: { invoice: Invoic
     </div>
     <div className="fees-invoice-detail" id={panelId} hidden={!open}>
       {open && <><dl>{invoice.lines.map((line, index) => <div className="fees-invoice-line" key={index}><dt>{line.description}</dt><dd>{formatNaira(line.amount)}</dd></div>)}<div className="fees-invoice-line is-total"><dt>Total billed</dt><dd>{formatNaira(invoice.total)}</dd></div><div className="fees-invoice-line"><dt>Paid</dt><dd>{formatNaira(invoice.paid)}</dd></div><div className="fees-invoice-line is-balance"><dt>Balance</dt><dd>{formatNaira(invoice.balance)}</dd></div></dl>
-        {invoice.balance > 0 ? canPay ? <Link className="fees-detail-pay" to={"/fees/pay/" + invoice.invoice_ref}>Pay balance →</Link> : offline ? <p className="fees-invoice-note">You can pay when you&apos;re back online.</p> : byTransfer ? <p className="fees-invoice-note">Pay this by bank transfer to your account number above. Any amount you send is shared across what you owe, oldest first.</p> : null : <p className="fees-invoice-note is-paid"><Check size={16} aria-hidden="true" />This bill is fully paid. Thank you.</p>}
+        {invoice.balance > 0 ? canPay ? <Link className="fees-detail-pay" to={"/fees/pay/" + invoice.invoice_ref}>Pay balance →</Link> : offline ? <p className="fees-invoice-note">You can pay when you&apos;re back online.</p> : null : <p className="fees-invoice-note is-paid"><Check size={16} aria-hidden="true" />This bill is fully paid. Thank you.</p>}
       </>}
     </div>
   </li>;
 }
 
 /** Added charges are settled by transfer, never by a bill-specific card payment. */
-function ChargeCard({ charge, transfer, canShowTransfer, onShowTransfer, transferAbove }: {
+function ChargeCard({ charge, transfer, canShowTransfer, onShowTransfer }: {
   charge: DebitNote; transfer?: TransferAccount["state"]; canShowTransfer: boolean; onShowTransfer: () => void;
-  /** The transfer-only layout, where the account number is already on screen above the bills. */
-  transferAbove: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const panelId = "fees-charge-" + charge.note_ref;
@@ -188,7 +197,7 @@ function ChargeCard({ charge, transfer, canShowTransfer, onShowTransfer, transfe
     <div className="fees-invoice-detail" id={panelId} hidden={!open}>
       {open && <><dl><div className="fees-invoice-line"><dt>Reference</dt><dd>{charge.number}</dd></div><div className="fees-invoice-line is-total"><dt>Charge</dt><dd>{formatNaira(charge.total)}</dd></div><div className="fees-invoice-line"><dt>Paid</dt><dd>{formatNaira(charge.paid)}</dd></div><div className="fees-invoice-line is-balance"><dt>Balance</dt><dd>{formatNaira(charge.balance)}</dd></div></dl>
         {charge.balance > 0 ? <>
-          <p className="fees-invoice-note">{transferAbove ? "Pay this by bank transfer to your account number above. Money sent there settles the oldest amount owed first." : transfer === "ISSUED" ? "Pay this by bank transfer to your account number. Money sent there settles the oldest amount owed first." : transfer === "NONE" ? "Open Bank transfer account below to get your account number, then send the money there." : "Ask the school office how to pay this charge."}</p>
+          <p className="fees-invoice-note">{transfer === "ISSUED" ? "Pay this by bank transfer to your account number. Money sent there settles the oldest amount owed first." : transfer === "NONE" ? "Open Show account number below to get your account number, then send the money there." : "Ask the school office how to pay this charge."}</p>
           {canShowTransfer && <button type="button" className="fees-transfer-reveal" onClick={onShowTransfer}>Show transfer account →</button>}
         </> : <p className="fees-invoice-note is-paid"><Check size={16} aria-hidden="true" />This charge is fully paid. Thank you.</p>}
       </>}

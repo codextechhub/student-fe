@@ -10,6 +10,7 @@ import { NativeLinks } from "@/native/native-links";
 import { NativePushListener } from "@/native/native-push";
 import { isNativeApp, routerBasename } from "@/native/platform";
 import { SplashGate } from "@/native/splash-gate";
+import { StatusBarGate } from "@/native/status-bar-gate";
 import { VersionGate } from "@/native/version-gate";
 import { AttendancePage } from "@/pages/attendance";
 import { DeleteAccountPage } from "@/pages/delete-account";
@@ -44,6 +45,7 @@ import { currentSchoolSlug } from "@/utils/school-host";
  * screen is drawn (`SplashGate`), links from a school's website open the right
  * screen (`NativeLinks`), a card payment's checkout browser hands back to the
  * result screen (`NativeCheckoutReturn`), the version check can block or nudge (`VersionGate`),
+ * the status bar's text colour follows the screen showing (`StatusBarGate`),
  * and until a school code has been entered the only
  * screen is the one that asks for it. Choosing a school reloads the app, so
  * this reads the school once per load.
@@ -55,6 +57,7 @@ export default function App() {
       <BrowserRouter basename={routerBasename()}>
         <SchoolChoicePage />
         <SplashGate ready />
+        <StatusBarGate />
         <NativeLinks />
         <VersionGate />
         <Toaster position="top-center" richColors closeButton />
@@ -98,6 +101,7 @@ export default function App() {
         <>
           <NativePushListener />
           <SplashGate />
+          <StatusBarGate />
           <NativeLinks />
           <NativeCheckoutReturn />
           <VersionGate />

@@ -137,7 +137,7 @@
 .fees-bill-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; min-height: 94px; padding: 17px 21px; }
 .fees-bill-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: #e9eef9; color: #4a659d; }
 .fees-charge .fees-bill-icon { background: #f8efe2; color: #a77232; }
-.fees-bill-row .fees-invoice-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.fees-bill-row .fees-invoice-title strong { overflow-wrap: anywhere; font-weight: 700; }
 .fees-bill-row .fees-invoice-title small { color: #75849c; }
 .fees-bill-balance { text-align: right; white-space: nowrap; }
 .fees-bill-balance strong, .fees-bill-balance small { display: block; }
@@ -162,7 +162,8 @@
 .fees-simple-items .fees-invoice-line.is-total { margin-top: 12px; }
 .fees-simple-items .fees-invoice-note { margin: 13px 0 0; font-weight: 600; line-height: 1.45; }
 .fees-detail-pay, .fees-transfer-reveal { display: inline-flex; margin-top: 13px; padding: 0; border: 0; background: none; color: #405d91; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
-.fees-secondary-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 25px; }
+/* Payment history, then the account number: one column, each button followed by its panel. */
+.fees-secondary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 25px; min-width: 0; }
 .fees-secondary-button { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; min-height: 72px; padding: 16px 18px; border: 1px solid #e3e9f2; border-radius: 15px; background: white; color: #243654; text-align: left; box-shadow: 0 7px 20px #2638590a; cursor: pointer; }
 .fees-secondary-button:hover, .fees-secondary-button[aria-expanded="true"] { border-color: #aebfdf; }
 .fees-secondary-button strong, .fees-secondary-button small { display: block; }
@@ -170,7 +171,7 @@
 .fees-secondary-button small { margin-top: 4px; color: #75849c; font-size: 12px; }
 .fees-secondary-button svg { flex: none; color: #4a659d; transition: transform .2s; }
 .fees-secondary-button svg.is-open { transform: rotate(180deg); }
-.fees-secondary-panel { min-width: 0; margin-top: 12px; padding: 19px 21px; border: 1px solid #e3e9f2; border-radius: 15px; background: #fff; }
+.fees-secondary-panel { min-width: 0; padding: 19px 21px; border: 1px solid #e3e9f2; border-radius: 15px; background: #fff; }
 .fees-secondary-panel h2 { margin: 0 0 6px; color: #243654; font-size: 16px; font-weight: 700; }
 .fees-secondary-panel > p { margin: 0 0 12px; color: #75849c; font-size: 13px; }
 .fees-secondary-panel .fees-history { padding: 0; border: 0; border-radius: 0; box-shadow: none; }
@@ -185,15 +186,14 @@
   .fees-simple-items .fees-invoice-detail { margin: 0 16px 18px 70px; }
 }
 @media (max-width: 480px) {
-  .fees-secondary-actions { grid-template-columns: 1fr; gap: 9px; }
+  .fees-secondary { gap: 9px; }
   .fees-simple-detail-top .fees-section-heading p { max-width: 155px; }
   .fees-bill-balance strong { font-size: 16px; }
   .fees-bill-row .fees-invoice-title strong { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .fees-simple-items .fees-invoice-toggle svg, .fees-secondary-button svg { transition: none; } }
 
-/* Transfer-only: the account number leads, and arrivals show under it. */
-.fees-transfer-lead { display: grid; gap: 10px; min-width: 0; }
+/* The account card (lead layout) and arrivals under it, in the disclosure and on the Pay screen. */
 .student-transfer-card.is-lead .student-transfer-bank.is-bank { margin-top: 11px; color: #3a4d6e; font-size: 13px; font-weight: 650; }
 .student-transfer-number.is-lead { cursor: default; }
 .student-transfer-copy { display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: 40px; padding: 8px 13px; border: 0; border-radius: 11px; background: #2d4778; color: white; font-size: 13px; font-weight: 700; cursor: pointer; }

@@ -139,12 +139,12 @@ function CardPayment({ fees, invoice, onCardOff }: { fees: Fees; invoice: Invoic
   </section>;
 }
 
-/** The whole page body where the school takes no card: the account number, and arrivals under it. */
+/** The whole page body where the school takes no card: the account number in front of the pupil while they pay, and arrivals under it. */
 function TransferOnly({ turnedOff }: { turnedOff: boolean }) {
   return <div className="pay-transfer">
     <div className="pay-section-heading"><h2>Pay by bank transfer</h2></div>
     {turnedOff && <p className="pay-card-off" role="status">Your school takes fee payments by bank transfer. Pay into the account number below.</p>}
-    <TransferPanel title="Pay into this account" lead />
+    <TransferPanel title="Pay into this account" lead waiting />
   </div>;
 }
 

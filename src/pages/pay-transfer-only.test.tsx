@@ -78,6 +78,14 @@ describe("paying at a school that takes no card payments", () => {
     expect(container.querySelector(".pay-card-off")).toBeNull();
   });
 
+  it("keeps the account card in front of the pupil while they pay, with the watch waiting under it", () => {
+    render();
+    const card = container.querySelector(".pay-transfer .student-transfer-card.is-lead");
+    expect(card?.textContent).toContain("0123456789");
+    expect(card?.textContent).toContain("Bank account name: AMAKA BALOGUN");
+    expect(container.querySelector(".transfer-activity-waiting")?.textContent).toContain("Waiting for your transfer");
+  });
+
   it("shows a transfer on its way and then received, with the receipt", () => {
     mocks.deposits = [{ reference: "T1", amount: 1_168_750, status: "CONFIRMED", status_label: "Received", received_at: "x", payment_ref: 78, has_receipt: true }];
     render();

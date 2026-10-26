@@ -117,6 +117,12 @@ service worker. Native push (below) takes the place of Web Push.
   app never gets that far the plugin removes the splash after 8 seconds
   (`launchShowDuration` in `capacitor.config.ts`). The web view's own colour
   before it paints is the app's page background, so nothing flashes black.
+- **Status bar.** The status bar's text colour is set by the app
+  (`src/native/status-bar.ts`, `status-bar-gate.tsx`, `@capacitor/status-bar`
+  8.0.4): light over the sign-in's dark blue header (with a strip of the same
+  blue held under the status bar so it stays readable as the white card scrolls
+  up), dark on every other screen, the school choice included. It is always set
+  explicitly, because the app's screens do not follow the phone's dark mode.
 - **Icons and splash art.** The sources are in `assets/` and are drawn from the
   XVS crest in `public/svg/`, never the bare CodeX mark. `npm run store-art`
   redraws them (`scripts/render-store-art.mjs`, which needs Google Chrome) and

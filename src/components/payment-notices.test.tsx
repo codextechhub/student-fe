@@ -94,12 +94,50 @@ describe("PaymentNotices", () => {
     await settle();
     const text = last.container.textContent ?? "";
     expect(text).toContain("Payments");
-    expect(text).toContain("₦500.00 received from Tunde Bello");
+    expect(text).toContain("₦500.00");
     expect(text).toContain("25 Oct 2026");
     expect(last.container.querySelector("a")?.getAttribute("href")).toBe("/fees/receipts/42");
     const feed = calls.find((c) => c.url.includes("/notify/") && !c.url.includes("mark-read"));
     expect(feed?.url).toContain("event_type_key=billing.payment_received");
     expect(feed?.url).toContain("is_read=false");
+  });
+
+  it("sets the amount large with Payment received under it, the date and a View receipt cue", async () => {
+    const { impl } = school([row()]);
+    vi.stubGlobal("fetch", impl);
+    last = render();
+    await settle();
+    const line = last.container.querySelector(".home-payment")!;
+    expect(line.querySelector(".home-payment-amount")?.textContent).toBe("₦500.00");
+    expect(line.querySelector(".home-payment-line")?.textContent).toBe("Payment received");
+    expect(line.querySelector("time")?.textContent).toBe("25 Oct 2026");
+    expect(line.querySelector(".home-payment-action")?.textContent).toBe("View receipt");
+  });
+
+  it("lists several notices as compact rows in one card that can shrink inside the page", async () => {
+    const { impl } = school([
+      row(),
+      row({ id: "6f0d9c52-0000-4000-8000-000000000002", subject: "₦12,500.00 received from Tunde Bello", action_url: "/student/fees/receipts/43" }),
+    ]);
+    vi.stubGlobal("fetch", impl);
+    last = render();
+    await settle();
+    const cards = last.container.querySelectorAll(".home-payments-card");
+    expect(cards.length).toBe(1);
+    const rows = cards[0].querySelectorAll("ul.home-payments > li");
+    expect(rows.length).toBe(2);
+    expect([...rows].map((r) => r.querySelector("a")?.getAttribute("href"))).toEqual(["/fees/receipts/42", "/fees/receipts/43"]);
+    expect([...rows].map((r) => r.querySelector(".home-payment-amount")?.textContent)).toEqual(["₦500.00", "₦12,500.00"]);
+    expect(last.container.textContent).toContain("2 new");
+  });
+
+  it("falls back to the school's own subject and to Fees when it carries no amount or receipt", async () => {
+    const { impl } = school([row({ subject: "Payment confirmed", action_url: "" })]);
+    vi.stubGlobal("fetch", impl);
+    last = render();
+    await settle();
+    expect(last.container.querySelector(".home-payment-amount")?.textContent).toBe("Payment confirmed");
+    expect(last.container.querySelector(".home-payment-action")?.textContent).toBe("View fees");
   });
 
   it("opens Fees when the notice names no receipt in this app", async () => {
@@ -127,7 +165,7 @@ describe("PaymentNotices", () => {
     const marked = calls.find((c) => c.url.includes("/notify/mark-read/"));
     expect(marked?.method).toBe("POST");
     expect(JSON.parse(marked!.body)).toEqual({ ids: [row().id] });
-    expect(last.container.textContent).not.toContain("₦500.00 received from Tunde Bello");
+    expect(last.container.textContent).not.toContain("₦500.00");
   });
 
   it("draws nothing when there is no unread payment notice", async () => {
