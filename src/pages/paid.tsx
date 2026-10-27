@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowUpRight, Check, CircleAlert, Clock3, ReceiptText, X } from "lucide-react";
+import { Check, CircleAlert, Clock3, ReceiptText, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router";
 
 import { PageShell } from "@/components/layout/page-shell";
+import { BottomBar, DetailBar } from "@/components/layout/screen";
 import { feeFigures } from "@/lib/fee-figures";
 import { formatNaira } from "@/lib/format";
 import { useAppDispatch } from "@/redux/hooks";
@@ -29,7 +30,12 @@ type Outcome = {
   receiptRef?: number | null;
 };
 
-/** The gateway return waits for the server before claiming money was received. */
+/**
+ * Where card checkout comes back to (design 5d to 5i): a screen of its own
+ * over Fees that waits for the server before claiming money was received.
+ * Its colour follows the outcome: amber while confirming, green once
+ * received, red when not completed, grey when the status could not be read.
+ */
 export function PaidPage() {
   const [params] = useSearchParams();
   const reference = params.get("reference") || params.get("trxref") || "";
@@ -63,34 +69,46 @@ export function PaidPage() {
 
   const outcome = describeOutcome({ reference, status, fees: fees ? feeFigures(fees) : undefined, receiptRef, gaveUp, isError: !!isError });
 
-  return <PageShell className="paid-page"><div className="paid-wrap">
+  const failed = outcome.tone === "failed";
+  const checkAgain = isError && !status && !!reference;
+
+  return <PageShell className={"paid-page is-" + outcome.tone}>
     <h1 className="sr-only">Payment status</h1>
-    <Link to="/fees" className="paid-back"><ArrowLeft size={17} aria-hidden="true" />My fees</Link>
-    <div className="paid-layout">
+    <DetailBar back="/fees" backText="My fees" backLabel="Back to my fees" action={<span className={"paid-status-chip is-" + outcome.tone}>{outcome.chip}</span>} />
+    <div className="paid-wrap">
       <section className="paid-cover" aria-labelledby="paid-outcome-title" role="status">
-        <div className="paid-cover-top"><span>Payment update</span><span className="paid-status-chip">{outcome.chip}</span></div>
+        <span className="paid-cover-label">Payment update</span>
         <span className="paid-cover-icon" aria-hidden="true">{outcome.icon}</span>
         <h2 id="paid-outcome-title">{outcome.title}</h2>
         <p className="paid-cover-text">{outcome.text}</p>
-        {outcome.amount && <p className="paid-amount"><strong>{outcome.amount}</strong><span>{status?.status === "CONFIRMED" ? "paid by card" : "card payment"}</span></p>}
+        {outcome.amount && <p className={"paid-amount" + (failed ? " is-void" : "")}><strong>{outcome.amount}</strong><span>{status?.status === "CONFIRMED" ? "paid by card" : "card payment"}</span></p>}
       </section>
-      <section className="paid-card" aria-labelledby="paid-detail-title">
-        <h2 id="paid-detail-title"><ReceiptText size={19} aria-hidden="true" />Payment details</h2>
+      <section className="screen-card paid-card" aria-labelledby="paid-detail-title">
+        <h2 id="paid-detail-title"><ReceiptText size={17} aria-hidden="true" />Payment details</h2>
         <dl className="paid-details">
-          {outcome.details.map(({ label, value, emphasis }) => <div key={label}><dt>{label}</dt><dd className={emphasis ? "is-" + emphasis : undefined}>{value}</dd></div>)}
+          {outcome.details.map(({ label, value, emphasis }) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd className={[emphasis ? "is-" + emphasis : "", label === "Reference" ? "is-reference" : "", label === "Status" ? "is-status" : ""].filter(Boolean).join(" ") || undefined}>
+                {label === "Status" && <span className="paid-status-dot" aria-hidden="true" />}{value}
+              </dd>
+            </div>
+          ))}
         </dl>
-        <div className={"paid-note is-" + outcome.tone} role="status">
-          <CircleAlert size={18} aria-hidden="true" /><span>{outcome.note}</span>
-        </div>
-        <div className="paid-actions">
-          {outcome.receiptRef && <Link to={"/fees/receipts/" + outcome.receiptRef} className="paid-primary">View receipt<ArrowUpRight size={17} aria-hidden="true" /></Link>}
-          {isError && !status && reference && <button type="button" className="paid-primary" onClick={() => void refetch()}>Check again</button>}
-          <Link to="/fees" className={outcome.receiptRef || (isError && !status && reference) ? "paid-secondary" : "paid-primary"}>Back to my fees</Link>
-        </div>
-        <p className="paid-hint">{outcome.hint}</p>
       </section>
+      <div className={"paid-note is-" + outcome.tone} role="status">
+        <CircleAlert size={17} aria-hidden="true" /><span>{outcome.note}</span>
+      </div>
     </div>
-  </div></PageShell>;
+    <BottomBar>
+      <div className="paid-actions">
+        {outcome.receiptRef && <Link to={"/fees/receipts/" + outcome.receiptRef} className="xs-button"><ReceiptText size={18} aria-hidden="true" />View receipt</Link>}
+        {checkAgain && <button type="button" className="xs-button" onClick={() => void refetch()}>Check again</button>}
+        <Link to="/fees" className={"xs-button" + (outcome.receiptRef || checkAgain ? " xs-button--plain" : "")}>Back to my fees</Link>
+        <p className="paid-hint">{outcome.hint}</p>
+      </div>
+    </BottomBar>
+  </PageShell>;
 }
 
 function describeOutcome({ reference, status, fees, receiptRef, gaveUp, isError }: {
@@ -103,7 +121,7 @@ function describeOutcome({ reference, status, fees, receiptRef, gaveUp, isError 
 }): Outcome {
   if (!reference) return {
     chip: "No reference",
-    icon: <Clock3 size={36} />,
+    icon: <Clock3 size={38} />,
     title: "Thank you",
     text: "If you made a payment, it will appear in My fees once the bank confirms it.",
     tone: "neutral",
@@ -120,7 +138,7 @@ function describeOutcome({ reference, status, fees, receiptRef, gaveUp, isError 
 
   if (!status) return {
     chip: isError ? "Check unavailable" : "Checking",
-    icon: isError ? <CircleAlert size={36} /> : <Clock3 size={36} />,
+    icon: isError ? <CircleAlert size={38} /> : <Clock3 size={38} />,
     title: isError ? "Could not check yet" : "Checking your payment",
     text: isError ? "We could not get the latest payment status right now." : "We are requesting the latest status from the bank.",
     tone: "neutral",
@@ -145,7 +163,7 @@ function describeOutcome({ reference, status, fees, receiptRef, gaveUp, isError 
       : fees.credit > 0 ? " You have " + formatNaira(fees.credit) + " in credit." : " Your fees are fully paid.";
     return {
       chip: "Confirmed",
-      icon: <Check size={36} />,
+      icon: <Check size={40} strokeWidth={2.5} />,
       title: "Payment received",
       text: "Your payment to " + status.payee_name + " has been confirmed." + balanceLine,
       amount: status.amount_naira,
@@ -159,7 +177,7 @@ function describeOutcome({ reference, status, fees, receiptRef, gaveUp, isError 
 
   if (status.status === "PENDING") return {
     chip: gaveUp ? "Still confirming" : "Confirming",
-    icon: <Clock3 size={36} />,
+    icon: <Clock3 size={38} />,
     title: gaveUp ? "Still checking" : "Almost there",
     text: gaveUp ? "This is taking longer than usual. Your payment is still being checked." : "The bank has not confirmed this payment yet. This usually takes a few seconds.",
     amount: status.amount_naira,
@@ -171,7 +189,7 @@ function describeOutcome({ reference, status, fees, receiptRef, gaveUp, isError 
 
   return {
     chip: "Not completed",
-    icon: <X size={36} />,
+    icon: <X size={40} strokeWidth={2.5} />,
     title: status.status === "ABANDONED" ? "Payment was cancelled" : "Payment did not go through",
     text: "You have not been charged, and your fees have not changed.",
     amount: status.amount_naira,

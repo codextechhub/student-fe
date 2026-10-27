@@ -40,12 +40,13 @@ export function ScreenTitle({
 
 /**
  * The top of a screen opened from another (`isDetailPath`): a round back
- * button, the title and a line under it in the middle, and an optional round
- * action on the right. It stays at the top and turns frosted once the screen
+ * button, or with `backText` a pill that names where it goes ("My fees"), the
+ * title and a line under it in the middle (or none), and an optional action
+ * on the right. It stays at the top and turns frosted once the screen
  * scrolls under it. (The app shell opens every screen at its top.) A
  * `<header>`, so it never prints.
  */
-export function DetailBar({ title, subtitle, back, backLabel, action }: { title: string; subtitle?: string; back: string; backLabel: string; action?: ReactNode }) {
+export function DetailBar({ title, subtitle, back, backLabel, backText, action }: { title?: string; subtitle?: string; back: string; backLabel: string; backText?: string; action?: ReactNode }) {
   const [scrolled, setScrolled] = useState(() => window.scrollY > 4);
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 4);
@@ -53,13 +54,15 @@ export function DetailBar({ title, subtitle, back, backLabel, action }: { title:
     return () => window.removeEventListener("scroll", update);
   }, []);
   return (
-    <header className={cn("detail-bar", scrolled && "is-scrolled")}>
-      <Link to={back} className="detail-bar-button" aria-label={backLabel}><ChevronLeft size={22} aria-hidden="true" /></Link>
+    <header className={cn("detail-bar", backText && "has-pill", scrolled && "is-scrolled")}>
+      {backText
+        ? <Link to={back} className="detail-bar-pill" aria-label={backLabel}><ChevronLeft size={20} aria-hidden="true" />{backText}</Link>
+        : <Link to={back} className="detail-bar-button" aria-label={backLabel}><ChevronLeft size={22} aria-hidden="true" /></Link>}
       <div className="detail-bar-title">
-        <h1>{title}</h1>
+        {title && <h1>{title}</h1>}
         {subtitle && <p>{subtitle}</p>}
       </div>
-      {action ?? <span aria-hidden="true" />}
+      {action ? <div className="detail-bar-action">{action}</div> : <span aria-hidden="true" />}
     </header>
   );
 }
