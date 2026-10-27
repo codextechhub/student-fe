@@ -18,7 +18,8 @@ const COUNT_FROM = MESSAGE_MAX - 500;
  *
  * `compact` is the conversation's own reply bar (design 2k): a rounded box
  * that grows as the pupil writes, a round Send beside it, and any word about
- * the limit or being offline above them.
+ * the limit or being offline above them. `showLabel` puts the label in sight
+ * over the box, as the new-message sheet does ("Your message to Mr. Okafor").
  */
 export function MessageBox({
   id,
@@ -32,6 +33,7 @@ export function MessageBox({
   sendLabel = "Send",
   autoFocus = false,
   compact = false,
+  showLabel = false,
 }: {
   id: string;
   label: string;
@@ -45,6 +47,7 @@ export function MessageBox({
   sendLabel?: string;
   autoFocus?: boolean;
   compact?: boolean;
+  showLabel?: boolean;
 }) {
   const length = value.length;
   const over = length > MESSAGE_MAX;
@@ -62,7 +65,7 @@ export function MessageBox({
     </button>
   );
   return (
-    <div className={cn("messages-box", compact && "is-compact")}>
+    <div className={cn("messages-box", compact && "is-compact", showLabel && "shows-label")}>
       <label htmlFor={id} className="messages-box-label">{label}</label>
       <textarea
         id={id}
@@ -72,7 +75,7 @@ export function MessageBox({
         disabled={!!blocked}
         aria-invalid={over}
         aria-describedby={`${id}-help`}
-        placeholder={blocked ? "" : compact ? "Your reply" : "Write your message"}
+        placeholder={blocked ? "" : compact && !showLabel ? "Your reply" : "Write your message"}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {

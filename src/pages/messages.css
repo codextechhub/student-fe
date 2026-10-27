@@ -60,7 +60,7 @@
 /* The message box: a plain box and Send in the sheet; a rounded box with a round Send in a conversation. */
 .messages-box { display: grid; gap: 8px; min-width: 0; }
 .messages-box-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.messages-sheet .messages-box-label { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; color: var(--xs-ink-2); font-size: 13px; font-weight: 600; }
+.messages-box.shows-label .messages-box-label { position: static; width: auto; height: auto; margin: 0 4px; overflow: visible; clip: auto; white-space: normal; color: var(--xs-ink-2); font-size: 12.5px; font-weight: 600; }
 .messages-box textarea { display: block; width: 100%; min-width: 0; min-height: 68px; max-height: 11rem; padding: 10px 14px; border: 0; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1px #dde3ee; color: var(--xs-ink); font: inherit; font-size: 16px; line-height: 1.45; resize: none; field-sizing: content; overflow-wrap: anywhere; outline: none; }
 .messages-box textarea:focus { box-shadow: inset 0 0 0 2px var(--xs-brand); }
 .messages-box textarea:disabled { background: #eef1f6; color: var(--xs-hint); }
@@ -70,34 +70,43 @@
 .messages-box-bar p.is-over { color: var(--xs-bad); }
 .messages-send { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: none; min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--xs-brand); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 .messages-send:disabled { opacity: .45; cursor: not-allowed; }
-.messages-box.is-compact { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 6px 8px; }
+/* Rows stay empty when there is no label or warning, so the space between them is on the label and the warning, not the grid. */
+.messages-box.is-compact { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 0 8px; }
 .messages-box.is-compact .messages-box-bar { display: contents; }
-.messages-box.is-compact .messages-box-bar p { grid-column: 1 / -1; grid-row: 1; padding: 0 6px; }
+.messages-box.is-compact .messages-box-label { grid-column: 1 / -1; grid-row: 1; margin-bottom: 6px; }
+.messages-box.is-compact .messages-box-bar p { grid-column: 1 / -1; grid-row: 2; margin-bottom: 6px; padding: 0 6px; }
 .messages-box.is-compact .messages-box-bar p:empty { display: none; }
-.messages-box.is-compact textarea { grid-column: 1; grid-row: 2; min-height: 44px; max-height: min(11rem, 30dvh); padding: 11px 16px; border-radius: 22px; font-size: 15px; line-height: 1.45; }
-.messages-send.is-round { grid-column: 2; grid-row: 2; width: 44px; min-height: 44px; padding: 0; border-radius: 50%; }
+.messages-box.is-compact textarea { grid-column: 1; grid-row: 3; min-height: 44px; max-height: min(11rem, 30dvh); padding: 11px 16px; border-radius: 22px; font-size: 15px; line-height: 1.45; }
+.messages-send.is-round { grid-column: 2; grid-row: 3; width: 44px; min-height: 44px; padding: 0; border-radius: 50%; }
+/* In the sheet: a taller box with a light fill, and a Send that stays grey until there is someone to write to and something to send. */
+.messages-box.shows-label textarea { min-height: 68px; border-radius: 18px; background: #f6f8fb; }
+.messages-box.shows-label .messages-send.is-round { width: 46px; min-height: 46px; }
+.messages-send.is-round:disabled { background: #cfd6e2; opacity: 1; }
 
 /* The new-message sheet: from the bottom on a phone, centred on a wide screen. */
 .messages-sheet-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(23, 36, 69, .38); }
-.messages-sheet { position: fixed; z-index: 50; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; max-height: 92dvh; border-radius: 28px 28px 0 0; background: #fff; box-shadow: 0 -12px 40px rgba(27, 53, 109, .2); outline: none; animation: messages-sheet-up .22s ease-out; }
+.messages-sheet { position: fixed; z-index: 50; right: 8px; bottom: max(8px, env(safe-area-inset-bottom)); left: 8px; display: flex; flex-direction: column; max-height: calc(100dvh - 120px); border-radius: 34px; background: #fff; box-shadow: 0 -12px 40px rgba(27, 53, 109, .2); outline: none; animation: messages-sheet-up .22s ease-out; }
 .messages-sheet::before { content: ""; display: block; flex: none; width: 38px; height: 5px; margin: 8px auto 0; border-radius: 9px; background: #cfd8e8; }
 .messages-sheet-head { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 18px 8px; }
-.messages-sheet-head h2 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -.03em; }
-.messages-sheet-close { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--xs-bg); color: var(--xs-muted); cursor: pointer; }
-.messages-sheet-body { display: flex; flex: 1 1 auto; flex-direction: column; gap: 14px; min-height: 0; padding: 4px 18px max(18px, env(safe-area-inset-bottom)); }
+.messages-sheet-head h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.03em; }
+.messages-sheet-close { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--xs-bg); color: var(--xs-muted); cursor: pointer; }
+.messages-sheet-body { display: flex; flex: 1 1 auto; flex-direction: column; gap: 12px; min-height: 0; padding: 4px 14px 20px; }
+.messages-sheet-body > .messages-box { padding-top: 12px; border-top: 1px solid var(--xs-line); }
 .messages-sheet-body > * { flex: none; }
 .messages-sheet-body > .messages-contacts { display: flex; flex: 0 1 auto; flex-direction: column; min-height: 11rem; }
-.messages-sheet-body .messages-box textarea { background: var(--xs-bg); box-shadow: inset 0 0 0 1px var(--xs-field); }
 .messages-contacts { min-width: 0; }
-.messages-contacts > p { margin: 0 0 8px; color: var(--xs-ink-2); font-size: 13px; font-weight: 600; }
+.messages-contacts > p { margin: 0 6px 8px; color: var(--xs-faint); font-size: 13px; font-weight: 600; }
 .messages-contacts-scroll { flex: 1 1 auto; }
-.messages-contacts ul { display: grid; gap: 7px; margin: 0; padding: 3px; list-style: none; }
-.messages-contact { display: flex; align-items: center; gap: 11px; min-height: 52px; padding: 9px 12px; border-radius: 16px; background: var(--xs-bg); cursor: pointer; }
-.messages-contact:has(input:checked) { background: var(--xs-brand-soft); box-shadow: inset 0 0 0 2px var(--xs-brand); }
+.messages-contacts ul { display: grid; gap: 4px; margin: 0; padding: 2px; list-style: none; }
+/* A teacher: avatar in their colour, name and role, the radio at the end; the chosen one on a soft blue. */
+.messages-contact { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: transparent; cursor: pointer; transition: background-color .2s; }
+.messages-contact:hover { background: #f6f8fb; }
+.messages-contact:has(input:checked) { background: #eef2fa; }
+.messages-contact-avatar { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; font-size: 14px; font-weight: 650; }
 .messages-contact:has(input:focus-visible) { outline: 3px solid #5975ff; outline-offset: 2px; }
 .messages-contact input { flex: none; width: 22px; height: 22px; margin: 0; appearance: none; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1.5px #c3cad6; cursor: pointer; transition: box-shadow .2s; }
 .messages-contact input:checked { box-shadow: inset 0 0 0 7px var(--xs-brand); }
-.messages-contact-text { display: grid; min-width: 0; }
+.messages-contact-text { display: grid; flex: 1; min-width: 0; }
 .messages-contact-text strong { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
 .messages-contact-text small { color: var(--xs-faint); font-size: 12px; overflow-wrap: anywhere; }
 @keyframes messages-sheet-up { from { transform: translateY(24px); opacity: .6; } }

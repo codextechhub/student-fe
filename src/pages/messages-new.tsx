@@ -14,13 +14,18 @@ import {
   useStartConversationMutation,
 } from "@/redux/services/messages-api";
 
+import { initialsOf } from "@/lib/initials";
+import { toneFor } from "@/lib/name-hue";
+
 import { MessageBox } from "./messages-box";
 
 /**
  * The sheet a new message is written in.
  *
  * It is an address (`/inbox/new`), so Back closes it and a link can open it;
- * closing it returns to `closeTo`, the list it was opened over.
+ * closing it returns to `closeTo`, the list it was opened over. Each teacher
+ * shows with their avatar in their own colour (design 5c), and the box under
+ * them names who the message is for once one is chosen.
  * It rises from the bottom of the screen on a phone and sits centred on a wide
  * one. The teachers are read only while it is open. The list of teachers
  * scrolls inside the sheet, so the box and Send stay in reach however many
@@ -100,16 +105,17 @@ function NewMessageForm() {
               {data.contacts.map((contact) => (
                 <li key={contact.user_id}>
                   <label className="messages-contact">
+                    <span className="messages-contact-avatar" style={toneFor(contact.name)} aria-hidden="true">{initialsOf(contact.name)}</span>
+                    <span className="messages-contact-text">
+                      <strong>{contact.name}</strong>
+                      <small>{contact.label}</small>
+                    </span>
                     <input
                       type="radio"
                       name="new-message-to"
                       checked={staff === contact.user_id}
                       onChange={() => setStaff(contact.user_id)}
                     />
-                    <span className="messages-contact-text">
-                      <strong>{contact.name}</strong>
-                      <small>{contact.label}</small>
-                    </span>
                   </label>
                 </li>
               ))}
@@ -117,6 +123,8 @@ function NewMessageForm() {
             </ScrollArea>
           </div>
           <MessageBox
+            compact
+            showLabel
             id="new-message-body"
             label={chosen ? `Your message to ${chosen.name}` : "Your message"}
             value={text}
