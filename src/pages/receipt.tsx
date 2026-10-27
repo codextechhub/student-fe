@@ -1,14 +1,20 @@
 import { useState } from "react";
-import { ArrowLeft, Check, CircleAlert, Download } from "lucide-react";
+import { Check, Clock3, Download } from "lucide-react";
 import { Link, useParams } from "react-router";
 
 import { PageShell } from "@/components/layout/page-shell";
+import { BottomBar, DetailBar } from "@/components/layout/screen";
 import { accountBalanceWords, formatDate, formatNaira } from "@/lib/format";
 import { useLazyReceiptPdfQuery, useReceiptQuery, type Receipt } from "@/redux/services/portal-api";
 
 import "./receipt.css";
 
-/** A confirmed payment's receipt, with the balance frozen when it was booked. */
+/**
+ * A confirmed payment's receipt (design 5j), with the balance frozen when it
+ * was booked: a screen of its own over Fees, the payment in a green card, the
+ * receipt as a ticket under it, and Download PDF at the foot. Before a
+ * payment is confirmed there is no receipt yet, and the screen says so (5k).
+ */
 export function ReceiptPage() {
   const { paymentRef } = useParams();
   const ref = Number(paymentRef);
@@ -32,37 +38,40 @@ export function ReceiptPage() {
 
   return (
     <PageShell className="receipt-page">
+      <DetailBar title="Receipt" back="/fees" backText="My fees" backLabel="Back to my fees" />
       <div className="receipt-wrap">
-        <Link to="/fees" className="receipt-back"><ArrowLeft size={17} aria-hidden="true" />My fees</Link>
         {isLoading && !receipt && <div className="receipt-loading" role="status" aria-label="Loading receipt" />}
         {(!validRef || isError) && !receipt && <Unavailable />}
         {receipt && (
-          <div className="receipt-layout">
-            <div className="receipt-overview">
-              <section className="receipt-summary" aria-label="Confirmed payment">
-                <span className="receipt-summary-label">Payment received</span>
-                <strong className="receipt-summary-amount">{formatNaira(receipt.amount)}</strong>
-                <div className="receipt-summary-bottom"><span className="receipt-status">Received</span><span>{formatDate(receipt.paid_on)}</span></div>
-              </section>
-              <button type="button" className="receipt-download" onClick={download} disabled={isFetching}>
-                <Download size={18} aria-hidden="true" />{isFetching ? "Preparing PDF…" : "Download PDF receipt"}
-              </button>
-              {pdfError && <p role="alert" className="receipt-pdf-error">{pdfError}</p>}
-            </div>
+          <>
+            <section className="receipt-summary" aria-label="Confirmed payment">
+              <div className="screen-orb" aria-hidden="true" />
+              <span className="receipt-summary-label">Payment received</span>
+              <strong className="receipt-summary-amount">{formatNaira(receipt.amount)}</strong>
+              <div className="receipt-summary-bottom"><span className="receipt-status">Received</span><span>{formatDate(receipt.paid_on)}</span></div>
+            </section>
             <ReceiptDocument receipt={receipt} />
-          </div>
+            {pdfError && <p role="alert" className="receipt-pdf-error">{pdfError}</p>}
+          </>
         )}
       </div>
+      {receipt && (
+        <BottomBar>
+          <button type="button" className="xs-button receipt-download" onClick={download} disabled={isFetching}>
+            <Download size={18} aria-hidden="true" />{isFetching ? "Preparing PDF…" : "Download PDF receipt"}
+          </button>
+        </BottomBar>
+      )}
     </PageShell>
   );
 }
 
 function Unavailable() {
-  return <section className="receipt-unavailable" role="status">
-    <span className="receipt-unavailable-icon"><CircleAlert size={27} aria-hidden="true" /></span>
+  return <section className="screen-card receipt-unavailable" role="status">
+    <span className="receipt-unavailable-icon"><Clock3 size={28} aria-hidden="true" /></span>
     <h2>Receipt not available yet</h2>
     <p>A payment gets its receipt once it is confirmed. Check your payment status in Fees.</p>
-    <Link to="/fees" className="receipt-secondary">Back to My fees</Link>
+    <Link to="/fees" className="xs-button xs-button--plain receipt-secondary">Back to My fees</Link>
   </section>;
 }
 
