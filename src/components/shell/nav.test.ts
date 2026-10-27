@@ -29,6 +29,8 @@ describe("a screen opened from another", () => {
     expect(isDetailPath("/notices/12")).toBe(true);
     expect(isDetailPath("/fees/paid")).toBe(true);
     expect(isDetailPath("/fees/receipts/42")).toBe(true);
+    expect(isDetailPath("/profile/delete-account")).toBe(true);
+    expect(isDetailPath("/profile")).toBe(false);
     expect(isDetailPath("/fees")).toBe(false);
     expect(isDetailPath("/results")).toBe(false);
     expect(isDetailPath("/results/card/7/extra")).toBe(false);

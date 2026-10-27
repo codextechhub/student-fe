@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, Clock3 } from "lucide-react";
+import { Clock3, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 
 import { leaveAfterClosure } from "@/auth/device-session";
 import { PageShell } from "@/components/layout/page-shell";
+import { BottomBar, DetailBar, ScreenTitle } from "@/components/layout/screen";
 import { Button } from "@/components/ui/button";
 import { pendingSentence, REQUEST_SENTENCE } from "@/lib/closure-words";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
@@ -14,33 +15,36 @@ import {
 } from "@/redux/services/account-closure-api";
 import { refusal } from "@/redux/services/portal-api";
 
-import "./profile.css";
 import "./delete-account.css";
 
 /**
- * Deleting the pupil's own account, from Profile (web and store app alike;
- * the app stores require it inside the app).
+ * Deleting the pupil's own account, from Profile (design 5l; web and store
+ * app alike, as the app stores require it inside the app). A screen of its
+ * own: the "My profile" pill, the large title, a card saying what happens,
+ * and the red button with "Keep my account" under it at the foot.
  *
  * A pupil's request goes to the school, which decides, and the pupil keeps
- * using the app meanwhile. The screen says exactly that before the one button,
- * and once a request is waiting it shows the date instead of the button. An
- * account the API does not offer deletion for (a 403, or not eligible) is told
- * to ask the school office. Where an account closes at once, the confirmation
- * says so, and on success the pupil is taken off this phone: their stored
- * credential, offline copy and notification choice are discarded, and the next
- * pupil on the phone is shown, or the sign-in screen.
+ * using the app meanwhile. The card says exactly that before the button, and
+ * once a request is waiting an amber note gives the date instead of the
+ * buttons. An account the API does not offer deletion for (a 403, or not
+ * eligible) is told to ask the school office. Where an account closes at
+ * once, the card says so, and on success the pupil is taken off this phone:
+ * their stored credential, offline copy and notification choice are
+ * discarded, and the next pupil on the phone is shown, or the sign-in screen.
  */
 export function DeleteAccountPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const account = useAppSelector((s) => s.session.active);
   const offline = useAppSelector((s) => s.connectivity.offline);
-  const { data: state, isLoading, isError, error, refetch } = useClosureStateQuery();
+  const { data: state, isFetching, isError, error, refetch } = useClosureStateQuery();
   const [confirm, { isLoading: sending }] = useConfirmClosureMutation();
   const [problem, setProblem] = useState("");
   const [sent, setSent] = useState(false);
   const closesNow = state?.mode === "close";
   const notOffered = (isError && (error as { status?: unknown })?.status === 403) || (!!state && !closureOffered(state));
+  const offered = !!state && closureOffered(state);
+  const waiting = !!state?.pending || sent;
 
   const submit = async () => {
     setProblem("");
@@ -59,43 +63,57 @@ export function DeleteAccountPage() {
   };
 
   return (
-    <PageShell className="delete-account-page">
-      <div className="delete-account-wrap">
-        <Link to="/profile" className="delete-account-back"><ArrowLeft size={17} aria-hidden="true" />My profile</Link>
-        <section className="profile-surface delete-account-card" aria-labelledby="delete-account-title">
-          <h1 id="delete-account-title">Delete my account</h1>
-          {isLoading && !state && <div className="profile-loading" role="status" aria-label="Loading" style={{ height: 96, marginTop: 16 }} />}
-          {isError && !notOffered && !state && (
-            <p role="alert">Deleting your account can&apos;t be checked right now. <button type="button" className="text-primary underline" onClick={() => void refetch()}>Try again</button></p>
-          )}
-          {notOffered && <p>Deleting your account isn&apos;t available here for this account. Ask the school office for help.</p>}
-          {state?.pending && !sent && (
-            <div className="delete-account-pending" role="status">
-              <Clock3 size={18} aria-hidden="true" />
-              <span>{pendingSentence(state.pending.requested_at)} You can keep using the app until the school has acted on it.</span>
-            </div>
-          )}
-          {state && !state.pending && !sent && closureOffered(state) && (
-            <>
-              {closesNow ? (
-                <p><strong>Your account will be deleted now</strong> and you will be signed out on this device.</p>
-              ) : (
-                <p>{REQUEST_SENTENCE}</p>
-              )}
-              {!closesNow && <p>You can keep using the app until the school has acted on your request.</p>}
-              {problem && <p className="delete-account-error" role="alert">{problem}</p>}
-              {offline && <p>You can send this when you&apos;re back online.</p>}
-              <div className="delete-account-actions">
-                <Button variant="destructive" loading={sending} disabled={sending || offline} onClick={() => void submit()}>
-                  {closesNow ? "Delete my account now" : "Send my request to the school"}
-                </Button>
-                <Button variant="outline" disabled={sending} onClick={() => navigate("/profile")}>Keep my account</Button>
-              </div>
-            </>
-          )}
-          {sent && <p role="status">Your request has been sent to your school. You can keep using the app until the school has acted on it.</p>}
-        </section>
+    <PageShell className="delete-page">
+      <DetailBar back="/profile" backText="My profile" backLabel="Back to my profile" />
+      <div className="delete-wrap">
+        <ScreenTitle title="Delete my account" />
+        {/* While asking, a retry included: RTK reports neither loading nor an error then. */}
+        {isFetching && !state && <div className="delete-loading" role="status" aria-label="Loading" />}
+        {isError && !isFetching && !notOffered && !state && (
+          <section className="screen-card delete-card" role="alert">
+            <p className="delete-lead">Deleting your account can&apos;t be checked right now.</p>
+            <button type="button" className="xs-button xs-button--plain delete-retry" onClick={() => void refetch()}>Try again</button>
+          </section>
+        )}
+        {notOffered && (
+          <section className="screen-card delete-card">
+            <p className="delete-lead">Deleting your account isn&apos;t available here for this account. Ask the school office for help.</p>
+          </section>
+        )}
+        {offered && (
+          <section className="screen-card delete-card">
+            <span className="delete-icon"><Trash2 size={21} aria-hidden="true" /></span>
+            {closesNow
+              ? <p className="delete-lead"><strong>Your account will be deleted now</strong> and you will be signed out on this device.</p>
+              : <p className="delete-lead">{REQUEST_SENTENCE}</p>}
+            {!closesNow && !waiting && <p className="delete-sub">You can keep using the app until the school has acted on your request.</p>}
+          </section>
+        )}
+        {offered && waiting && (
+          <div className="delete-note" role="status">
+            <Clock3 size={17} aria-hidden="true" />
+            <span>{sent
+              ? "Your request has been sent to your school. You can keep using the app until the school has acted on it."
+              : `${pendingSentence(state.pending!.requested_at)} You can keep using the app until the school has acted on it.`}</span>
+          </div>
+        )}
+        {offered && !waiting && problem && <p className="delete-error" role="alert">{problem}</p>}
+        {offered && !waiting && offline && <p className="delete-offline">You can send this when you&apos;re back online.</p>}
       </div>
+      <BottomBar>
+        <div className="delete-actions">
+          {offered && !waiting ? (
+            <>
+              <Button className="xs-button delete-send" loading={sending} disabled={sending || offline} onClick={() => void submit()}>
+                {closesNow ? "Delete my account now" : "Send my request to the school"}
+              </Button>
+              <button type="button" className="xs-button xs-button--plain" disabled={sending} onClick={() => navigate("/profile")}>Keep my account</button>
+            </>
+          ) : (
+            <Link to="/profile" className="xs-button xs-button--plain">Back to my profile</Link>
+          )}
+        </div>
+      </BottomBar>
     </PageShell>
   );
 }

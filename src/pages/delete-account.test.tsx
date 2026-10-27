@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   state: undefined as unknown,
-  query: { isLoading: false, isError: false, error: undefined as unknown },
+  query: { isFetching: false, isError: false, error: undefined as unknown },
   refetch: vi.fn(),
   confirm: vi.fn(),
   navigate: vi.fn(),
@@ -46,7 +46,7 @@ beforeEach(() => {
   document.body.appendChild(container);
   root = createRoot(container);
   mocks.state = { eligible: true, mode: "request", pending: null };
-  mocks.query = { isLoading: false, isError: false, error: undefined };
+  mocks.query = { isFetching: false, isError: false, error: undefined };
   mocks.offline = false;
   mocks.refetch.mockReset();
   mocks.navigate.mockReset();
@@ -118,7 +118,7 @@ describe("the confirmation screen", () => {
 
   it("offers no button when the API answers that deletion is not offered", () => {
     mocks.state = undefined;
-    mocks.query = { isLoading: false, isError: true, error: { status: 403 } };
+    mocks.query = { isFetching: false, isError: true, error: { status: 403 } };
     render();
     expect(container.textContent).toContain("isn't available here for this account");
     expect(button("Send my request")).toBeUndefined();
@@ -126,11 +126,19 @@ describe("the confirmation screen", () => {
 
   it("says it cannot check, and offers a retry, when the school cannot be reached", () => {
     mocks.state = undefined;
-    mocks.query = { isLoading: false, isError: true, error: { status: "FETCH_ERROR" } };
+    mocks.query = { isFetching: false, isError: true, error: { status: "FETCH_ERROR" } };
     render();
     expect(container.textContent).toContain("can't be checked right now");
     act(() => button("Try again")!.click());
     expect(mocks.refetch).toHaveBeenCalled();
+  });
+
+  it("shows it is asking again, not a blank screen, while a retry is on its way", () => {
+    mocks.state = undefined;
+    mocks.query = { isFetching: true, isError: false, error: undefined };
+    render();
+    expect(container.querySelector('[aria-label="Loading"]')).not.toBeNull();
+    expect(container.textContent).not.toContain("can't be checked right now");
   });
 
   it("holds the button while offline", () => {

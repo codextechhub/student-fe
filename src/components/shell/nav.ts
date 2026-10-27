@@ -57,7 +57,7 @@ export function itemFor(pathname: string): NavItem | undefined {
  * every size, as an iPhone pushes a screen over its tabs.
  */
 export function isDetailPath(pathname: string): boolean {
-  return /^\/(results\/card|fees\/pay|fees\/receipts|notices)\/[^/]+\/?$/.test(pathname) || /^\/fees\/paid\/?$/.test(pathname);
+  return /^\/(results\/card|fees\/pay|fees\/receipts|notices)\/[^/]+\/?$/.test(pathname) || /^\/(fees\/paid|profile\/delete-account)\/?$/.test(pathname);
 }
 
 /**
