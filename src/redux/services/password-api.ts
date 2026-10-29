@@ -56,6 +56,9 @@ export function passwordRefusals(error: unknown): PasswordRefusals {
   if ((error as { status?: unknown })?.status === "FETCH_ERROR") {
     return { form: "You're offline. Try again when you have a connection." };
   }
+  if ((error as { status?: unknown })?.status === "TIMEOUT_ERROR") {
+    return { form: "The school took too long to answer. Try again." };
+  }
   const data = (error as { data?: { message?: string; error?: Record<string, unknown> } })?.data;
   const detail = data?.error ?? {};
   const out: PasswordRefusals = {};

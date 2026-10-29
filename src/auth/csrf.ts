@@ -1,3 +1,5 @@
+import { timeoutSignal } from "@/lib/request-timeout";
+
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 // A deployment that shares a parent domain with its twin names its own CSRF
 // cookie; this matches the backend's CSRF_COOKIE_NAME.
@@ -27,6 +29,7 @@ export async function getCsrfToken(): Promise<string> {
       method: "GET",
       credentials: "include",
       headers: { accept: "application/json" },
+      signal: timeoutSignal(),
     });
     if (!response.ok) return "";
     const data = await response.json() as { data?: { csrf_token?: string } };

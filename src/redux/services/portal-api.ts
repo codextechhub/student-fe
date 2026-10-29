@@ -601,6 +601,9 @@ export function refusal(error: unknown): { message: string; field?: string } {
   if ((error as { status?: unknown })?.status === "FETCH_ERROR") {
     return { message: "You're offline. Try again when you have a connection." };
   }
+  if ((error as { status?: unknown })?.status === "TIMEOUT_ERROR") {
+    return { message: "The school took too long to answer. Try again." };
+  }
   return {
     message: data?.message || "That couldn't be saved. Try again in a moment.",
     field: data?.error?.detail?.field,

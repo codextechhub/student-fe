@@ -1,3 +1,5 @@
+import { timeoutSignal } from "@/lib/request-timeout";
+
 import { accessFor } from "./access-tokens";
 import { API_BASE, requestCredentials, withTenant } from "./api";
 import { refreshAccess } from "./refresh";
@@ -31,6 +33,7 @@ export async function pupilRequest(account: string, method: string, path: string
         Authorization: `Bearer ${accessFor(account)}`,
       },
       body: JSON.stringify(body ?? {}),
+      signal: timeoutSignal(),
     });
   try {
     if (!accessFor(account)) {

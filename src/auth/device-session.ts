@@ -1,5 +1,6 @@
 import type { ThunkDispatch, UnknownAction } from "@reduxjs/toolkit";
 
+import { timeoutSignal } from "@/lib/request-timeout";
 import { putCredential } from "@/native/credentials";
 import { isNativeApp } from "@/native/platform";
 import { forgetPupilDevice } from "@/native/push-register";
@@ -55,6 +56,7 @@ async function fetchMe(account: string): Promise<Me | "ended" | "unreachable"> {
     fetch(`${API_BASE}${withTenant("/portal/student/me/")}`, {
       credentials: requestCredentials(),
       headers: { accept: "application/json", Authorization: `Bearer ${accessFor(account)}` },
+      signal: timeoutSignal(),
     });
   let response: Response;
   try {

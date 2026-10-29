@@ -10,6 +10,7 @@ import { accessFor } from "@/auth/access-tokens";
 import { API_BASE, requestCredentials, withTenant } from "@/auth/api";
 import { getCsrfToken } from "@/auth/csrf";
 import { refreshAccess } from "@/auth/refresh";
+import { REQUEST_TIMEOUT_MS, UPLOAD_TIMEOUT_MS } from "@/lib/request-timeout";
 import { isNativeApp } from "@/native/platform";
 import { keepAnswer, keptAnswer } from "@/offline/offline-copy";
 import {
@@ -25,6 +26,7 @@ type StateWithSession = { session: SessionState; connectivity: ConnectivityState
 const raw = fetchBaseQuery({
   baseUrl: API_BASE,
   credentials: requestCredentials(),
+  timeout: REQUEST_TIMEOUT_MS,
   prepareHeaders: async (headers, { getState, type }) => {
     const active = (getState() as StateWithSession).session.active;
     const access = active ? accessFor(active) : "";
@@ -38,8 +40,16 @@ const raw = fetchBaseQuery({
   },
 });
 
+/** `args` with this school's `?tenant=`, and an upload given longer than other requests. */
 function tenanted(args: string | FetchArgs): string | FetchArgs {
-  return typeof args === "string" ? withTenant(args) : { ...args, url: withTenant(args.url) };
+  if (typeof args === "string") return withTenant(args);
+  const upload = args.body instanceof FormData && args.timeout === undefined;
+  return { ...args, url: withTenant(args.url), ...(upload ? { timeout: UPLOAD_TIMEOUT_MS } : {}) };
+}
+
+/** No answer from the school: no connection, or one so slow the request was given up. */
+export function unreachable(error: FetchBaseQueryError | undefined): boolean {
+  return error?.status === "FETCH_ERROR" || error?.status === "TIMEOUT_ERROR";
 }
 
 /** A read, as opposed to a write: only reads are kept and answered offline. */
@@ -58,7 +68,8 @@ function readKey(args: string | FetchArgs): string {
  * Settles a finished request against the offline copy.
  *
  * A read that reached the school is kept for the pupil. A read that failed for
- * want of a connection is answered from the pupil's copy where there is one,
+ * want of an answer (no connection, or one too slow to wait for) is answered
+ * from the pupil's copy where there is one,
  * and the app is told it is showing old data. A write that could not be sent
  * fails as it is: nothing is changed offline.
  */
@@ -70,7 +81,7 @@ async function withOfflineCopy(
   offlineNow: boolean,
   live: boolean,
 ): Promise<Awaited<ReturnType<typeof raw>>> {
-  if (result.error?.status === "FETCH_ERROR") {
+  if (unreachable(result.error)) {
     if (!account || !isRead(args) || live) {
       dispatch(wentOffline());
       return result;

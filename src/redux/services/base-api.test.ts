@@ -16,6 +16,9 @@ const probe = baseApi.injectEndpoints({
     probeRead: b.query<unknown, void>({ query: () => "/portal/student/probe/" }),
     probeLive: b.query<unknown, void>({ query: () => "/portal/student/probe/live/", extraOptions: { live: true } }),
     probeWrite: b.mutation<unknown, void>({ query: () => ({ url: "/portal/student/probe/", method: "POST", body: {} }) }),
+    probeUpload: b.mutation<unknown, void>({
+      query: () => ({ url: "/portal/student/probe/photo/", method: "POST", body: new FormData() }),
+    }),
   }),
 });
 
@@ -40,7 +43,23 @@ beforeEach(async () => {
   await wipePupil("a-tunde");
 });
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
+
+/** A school that takes the request and never answers it, until the app gives up. */
+const silent = () => {
+  const fetcher = vi.fn((input: Request | string, init?: RequestInit) => {
+    const signal = input instanceof Request ? input.signal : init?.signal;
+    return new Promise<Response>((_, reject) => {
+      // As a browser does: the fetch fails with the reason the signal gave up.
+      signal?.addEventListener("abort", () => reject(signal.reason));
+    });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  return fetcher;
+};
 
 describe("the offline copy", () => {
   it("keeps what the pupil read, under that pupil", async () => {
@@ -107,5 +126,35 @@ describe("a live read (a message poll)", () => {
     answer(new Response(JSON.stringify({ data: "bola's" }), { status: 200 }));
     const result = await pending;
     expect(result.data).toBeUndefined();
+  });
+});
+
+describe("a request the school never answers", () => {
+  it("is given up after 45 seconds and answered from the pupil's copy", async () => {
+    await keepAnswer("a-bola", "/portal/student/probe/", { data: "bola's" }, 1_000);
+    const fetcher = silent();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const store = storeFor("a-bola");
+    const pending = store.dispatch(probe.endpoints.probeRead.initiate());
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalled());
+    await vi.advanceTimersByTimeAsync(45_000);
+    const result = await pending;
+    expect(result.data).toEqual({ data: "bola's" });
+    expect(store.getState().connectivity).toEqual({ offline: true, lastUpdated: 1_000 });
+  });
+
+  it("gives an upload two minutes before giving up", async () => {
+    document.cookie = "csrftoken=abc; path=/";
+    const fetcher = silent();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const store = storeFor("a-bola");
+    let settled = false;
+    const pending = store.dispatch(probe.endpoints.probeUpload.initiate()).finally(() => { settled = true; });
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalled());
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(60_000);
+    const result = await pending;
+    expect("error" in result && (result.error as { status?: unknown }).status).toBe("TIMEOUT_ERROR");
   });
 });
