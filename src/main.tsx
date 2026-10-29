@@ -8,9 +8,11 @@ import "@fontsource-variable/geist/index.css";
 import "@fontsource-variable/geist-mono/index.css";
 
 import App from "./App";
+import { CrashBoundary } from "./components/crash-boundary";
 import { captureInstallPrompt } from "./install/install-prompt";
 import { checkRelatedApps } from "./install/installed";
 import { applySchoolApp } from "./lib/school-app";
+import { CrashPage } from "./pages/crash";
 import { isNativeApp } from "./native/platform";
 import { logDebugToken } from "./native/push-debug";
 import { loadSchoolCode } from "./native/school-code";
@@ -44,7 +46,10 @@ async function start() {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <Provider store={store}>
-        <App />
+        {/* Inside the store: the error page's crest is read through it. */}
+        <CrashBoundary fallback={() => <CrashPage />}>
+          <App />
+        </CrashBoundary>
       </Provider>
     </StrictMode>,
   );

@@ -3,6 +3,7 @@ import { Inbox } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation, useNavigationType } from "react-router";
 
 import { refreshShowingPupil } from "@/auth/device-session";
+import { CrashBoundary } from "@/components/crash-boundary";
 import { SchoolMark } from "@/components/school-mark";
 import { PupilAvatar } from "@/components/pupil-avatar";
 import { PupilSwitcher } from "@/components/session/pupil-switcher";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useUnreadMessagesQuery } from "@/redux/services/messages-api";
 import { useMeQuery, useNoticesQuery } from "@/redux/services/portal-api";
+import { CrashPanel } from "@/pages/crash";
 
 import { INBOX, isConversationPath, isDetailPath, itemFor, TABS, type NavItem } from "./nav";
 import { OfflineBar } from "./offline-bar";
@@ -40,7 +42,9 @@ const LARGE_TITLE_PAST = 56;
  * Profile the avatar's place is "Switch pupil", the way to another pupil or
  * to signing out. The offline bar sits under the header
  * whenever the app is showing kept data, and a pull down from the top of a
- * screen reads everything on it again.
+ * screen reads everything on it again. A screen that crashes is replaced by
+ * a card with Try again, under the same header and above the same tab bar,
+ * and moving to another address leaves it behind.
  *
  * An open Messages conversation is the one screen that does not scroll as a
  * page. The shell is held to the visible height (`100dvh`, narrowed to
@@ -105,7 +109,9 @@ export function AppShell() {
       </header>
       <OfflineBar />
       <PullToRefresh disabled={conversationOpen}>
-        <Outlet />
+        <CrashBoundary resetKey={pathname} fallback={(retry) => <CrashPanel onRetry={retry} />}>
+          <Outlet />
+        </CrashBoundary>
       </PullToRefresh>
       {!detail && !conversationOpen && <TabBar badges={badges} />}
     </div>

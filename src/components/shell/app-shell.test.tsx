@@ -4,7 +4,7 @@
  * screen opened from another, at every size.
  */
 import { configureStore } from "@reduxjs/toolkit";
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Provider } from "react-redux";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router";
@@ -41,6 +41,7 @@ function render(at: string) {
             <Route path="notices" element={<p>notices</p>} />
             <Route path="inbox" element={<Steer />} />
             <Route path="timetable" element={<p>timetable</p>} />
+            <Route path="results" element={<Broken />} />
             <Route path="profile" element={<p>profile</p>} />
             <Route path="messages" element={<p>list</p>} />
             <Route path="messages/:id" element={<p>thread</p>} />
@@ -49,6 +50,13 @@ function render(at: string) {
       </MemoryRouter>
     </Provider>,
   ));
+}
+
+/** A screen with a bug in it: it throws until the bug is "fixed". */
+let broken = true;
+function Broken(): ReactNode {
+  if (broken) throw new Error("a bug in Results");
+  return <p>results</p>;
 }
 
 /** Moves about the way a pupil does: the Inbox's filter, and Back. */
@@ -156,5 +164,36 @@ describe("the app shell", () => {
     press("Back");
     expect(container.textContent).toContain("timetable");
     expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  describe("a screen that crashes", () => {
+    beforeEach(() => {
+      broken = true;
+      // React reports the caught error to the console; the test expects it.
+      vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+    afterEach(() => vi.restoreAllMocks());
+
+    it("shows Try again in its place and keeps the header and the tab bar", () => {
+      render("/results");
+      expect(container.querySelector("[role=alert]")?.textContent).toContain("This screen stopped working.");
+      expect(container.querySelector("nav")).not.toBeNull();
+      expect(container.querySelector("header")).not.toBeNull();
+    });
+
+    it("draws the screen again on Try again", () => {
+      render("/results");
+      broken = false;
+      press("Try again");
+      expect(container.querySelector("[role=alert]")).toBeNull();
+      expect(container.textContent).toContain("results");
+    });
+
+    it("leaves the crash behind when the pupil opens another tab", () => {
+      render("/results");
+      press("Timetable");
+      expect(container.querySelector("[role=alert]")).toBeNull();
+      expect(container.textContent).toContain("timetable");
+    });
   });
 });
