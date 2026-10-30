@@ -222,9 +222,10 @@ the result of an `await` or an async return (`push-device.test.ts` holds that).
   (the Google services Gradle plugin is applied by `app/build.gradle` when the
   file exists) and `ios/App/App/GoogleService-Info.plist` (an App target
   resource). The plugin configures Firebase on iOS when it loads. iOS also has
-  `aps-environment` (`development`; the store build needs `production`) in
-  `App.entitlements`, the `remote-notification` background mode in `Info.plist`,
-  and the three APNs forwarding methods in `AppDelegate.swift`.
+  `aps-environment` in `App.entitlements` (`development`, for Debug) and
+  `AppRelease.entitlements` (`production`, which the Release build and so every
+  store build signs with), the `remote-notification` background mode in
+  `Info.plist`, and the three APNs forwarding methods in `AppDelegate.swift`.
   `capacitor.config.ts` links the plugin by symlink for Swift Package Manager
   (`ios/App/CapApp-SPM/symlinks/` is git-ignored and rewritten by `cap sync`)
   and sets the iPhone to show the banner and sound for an open app.
@@ -253,9 +254,11 @@ the result of an `await` or an async return (`push-device.test.ts` holds that).
 - **An open app.** iPhone shows the system banner; Android shows a toast.
 - **Debug builds** log `[push] Firebase token obtained: <token>` once at start
   (`push-debug.ts`); a release build logs nothing.
-- Not done: Android's small notification icon is the app icon (a monochrome
-  one would look better); the iPhone `aps-environment` must be `production` in
-  a store build, and the APNs key must be uploaded to Firebase.
+- Android's small notification icon is the crest's outline
+  (`res/drawable/ic_stat_notification.xml`), tinted `#1D47A1`, named as
+  Firebase's default in `AndroidManifest.xml`.
+- Not done: the APNs key must be uploaded to Firebase (Project settings,
+  Cloud Messaging, Apple app configuration) before an iPhone receives anything.
 
 ## Deleting the account
 
