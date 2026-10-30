@@ -321,6 +321,19 @@ A stale screen that starts a card checkout after the school turned card off
 gets a 409 `CARD_PAYMENTS_OFF`: the fees are read again and the Pay screen
 falls to the transfer view with a plain line, not an error.
 
+## What the App Store is told
+
+- **Camera.** The profile photo is a web file picker, and on an iPhone that
+  picker offers "Take Photo". iOS ends the app the moment that is tapped unless
+  `Info.plist` says why the camera is wanted, so `NSCameraUsageDescription`
+  says it: only when the person chooses to take a profile photo.
+- **Privacy manifest.** `ios/App/App/PrivacyInfo.xcprivacy`, bundled by the
+  App target, declares what XVS Student collects (no tracking, every item linked
+  to the person and used only to run the app) and its one reason-required API
+  (UserDefaults, `CA92.1`, the app's own settings). It must match the privacy
+  answers given in App Store Connect, which the privacy policy draft lists
+  under "App store privacy answers"; change both together.
+
 ## Later phases
 
 File sharing of receipts and report cards; the camera for the profile photo.
